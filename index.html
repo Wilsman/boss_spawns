@@ -1,0 +1,100 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tarkov Boss Spawns</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/ca020585-dce5-46bd-a952-cac963a2aff4-profile_image-70x70.png"
+            alt="Profile Image">
+        <h1>Tarkov Boss Spawns</h1>
+        <img src="https://static-cdn.jtvnw.net/jtv_user_pictures/ca020585-dce5-46bd-a952-cac963a2aff4-profile_image-70x70.png"
+            alt="Profile Image">
+    </div>
+    <div id="loadingIndicator">Loading...</div>
+
+    <div id="filters">
+        <select id="mapFilter"></select>
+        <select id="bossFilter"></select>
+        <input type="text" id="filterInput" placeholder="Search...">
+        <button id="exportButton">Export to CSV</button>
+    </div>
+
+    <div id="cacheCountdowns">
+        <div id="cacheCountdownRegular"></div>
+        <div id="cacheCountdownPve"></div>
+    </div>
+
+    <div id="modeToggle">
+        <label>
+            <input type="radio" name="mode" value="regular" checked>
+            Regular Mode
+        </label>
+        <label>
+            <input type="radio" name="mode" value="pve">
+            PVE Mode
+        </label>
+        <label>
+            <input type="radio" name="mode" value="compare">
+            Compare Mode
+        </label>
+    </div>
+
+    <div id="tablesContainer">
+        <div class="tableWrapper" id="regularTableWrapper">
+            <h2>Regular Mode</h2>
+            <table id="regularTable">
+                <thead>
+                    <tr>
+                        <th data-column="map">Map</th>
+                        <th data-column="boss">Boss</th>
+                        <th data-column="spawnChance">Spawn Chance</th>
+                        <th data-column="location">Location</th>
+                        <th data-column="locationChance">Location Chance</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="tableWrapper" id="pveTableWrapper" style="display:none;">
+            <h2>PVE Mode</h2>
+            <table id="pveTable">
+                <thead>
+                    <tr>
+                        <th data-column="map">Map</th>
+                        <th data-column="boss">Boss</th>
+                        <th data-column="spawnChance">Spawn Chance</th>
+                        <th data-column="location">Location</th>
+                        <th data-column="locationChance">Location Chance</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="tableWrapper" id="compareTableWrapper" style="display:none;">
+            <h2>Compare Mode - Differences</h2>
+            <table id="compareTable">
+                <thead>
+                    <tr>
+                        <th>Map</th>
+                        <th>Boss</th>
+                        <th class="regular-column">Regular Spawn Chance</th>
+                        <th class="pve-column">PVE Spawn Chance</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,157 @@
+/* styles.css */
+body {
+    font-family: Arial, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+h1 {
+    text-align: center;
+}
+
+#loadingIndicator {
+    display: none;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+#filters {
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+#filters select,
+#filters input {
+    padding: 5px;
+    font-size: 16px;
+}
+
+#filters button {
+    padding: 5px 10px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#cacheCountdowns {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+}
+
+#modeToggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+#modeToggle label {
+    margin: 0 10px;
+    font-size: 16px;
+}
+
+#tablesContainer {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.tableWrapper {
+    flex: 1;
+    max-width: 100%;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #2e2e2e;
+}
+
+th, td {
+    border: 1px solid #444444;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #3a3a3a;
+    cursor: pointer;
+}
+
+th:hover {
+    background-color: #4a4a4a;
+}
+
+tr:nth-child(even) {
+    background-color: #252525;
+}
+
+tr:hover {
+    background-color: #333333;
+}
+
+.popup {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #444444;
+    color: #ffffff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    z-index: 1000;
+    opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    #tablesContainer {
+        flex-direction: column;
+    }
+}
+
+.highlight {
+    background-color: #555555;
+    color: #ffffff;
+}
+
+.blank-row {
+    height: 30px;
+    background-color: transparent !important;
+}
+
+.blank-row td {
+    border: none !important;
+}
+
+/* Styles for compare mode columns */
+#compareTable th, #compareTable td {
+    text-align: center;
+}
+
+#compareTable th.regular-column, #compareTable td.regular-column {
+    background-color: #3a3a3a;
+    color: #ffffff;
+}
+
+#compareTable th.pve-column, #compareTable td.pve-column {
+    background-color: #4a4a4a;
+    color: #ffffff;
+}
+
+/* Style for the bold border between maps */
+#compareTable tr.map-divider td {
+    border-top: 3px solid #ffffff;
+}
+
+/* Style for the bold border between maps in Regular and PVE modes */
+#regularTable tr.map-divider td,
+#pveTable tr.map-divider td {
+    border-top: 3px solid #ffffff;
+}
