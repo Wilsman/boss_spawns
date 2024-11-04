@@ -1,93 +1,148 @@
-import { useState, useEffect } from 'react';
-import { DataTable } from '@/components/DataTable';
-import { DataMode, SpawnData } from '@/types';
-import { fetchSpawnData } from '@/lib/api';
-import { Header } from '@/components/Header';
-import { FilterBar } from '@/components/FilterBar';
-import { ModeToggle } from '@/components/ModeToggle';
-import { CacheStatus } from '@/components/CacheStatus';
+import { useState, useEffect, useCallback } from "react";
+import { DataTable } from "@/components/DataTable";
+import { DataMode, SpawnData } from "@/types";
+import { fetchSpawnData } from "@/lib/api";
+import { Header } from "@/components/Header";
+import { FilterBar } from "@/components/FilterBar";
+import { ModeToggle } from "@/components/ModeToggle";
+import { CacheStatus } from "@/components/CacheStatus";
+
+const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export default function App() {
-  const [mode, setMode] = useState<DataMode>('regular');
+  const [mode, setMode] = useState<DataMode>("regular");
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
   const [pveData, setPveData] = useState<SpawnData[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const [mapFilter, setMapFilter] = useState('');
-  const [bossFilter, setBossFilter] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [mapFilter, setMapFilter] = useState("");
+  const [bossFilter, setBossFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    const loadData = async () => {
+  const loadData = useCallback(
+    async (gameMode?: "regular" | "pve" | "both") => {
       setLoading(true);
       try {
-        const [regular, pve] = await Promise.all([
-          fetchSpawnData('regular'),
-          fetchSpawnData('pve')
-        ]);
-        setRegularData(regular);
-        setPveData(pve);
+        if (gameMode === "regular" || gameMode === "both") {
+          const regular = await fetchSpawnData("regular");
+          setRegularData(regular);
+          localStorage.setItem("maps_regular_timestamp", Date.now().toString());
+        }
+        if (gameMode === "pve" || gameMode === "both") {
+          const pve = await fetchSpawnData("pve");
+          setPveData(pve);
+          localStorage.setItem("maps_pve_timestamp", Date.now().toString());
+        }
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
+    },
+    []
+  );
+
+  // Initial data load
+  useEffect(() => {
+    loadData("both");
+  }, [loadData]);
+
+  // Check cache and refresh data when needed
+  useEffect(() => {
+    const checkCacheAndRefresh = () => {
+      const regularTimestamp = parseInt(
+        localStorage.getItem("maps_regular_timestamp") || "0"
+      );
+      const pveTimestamp = parseInt(
+        localStorage.getItem("maps_pve_timestamp") || "0"
+      );
+      const now = Date.now();
+
+      if (now - regularTimestamp >= CACHE_EXPIRY_TIME) {
+        loadData("regular");
+      }
+      if (now - pveTimestamp >= CACHE_EXPIRY_TIME) {
+        loadData("pve");
+      }
     };
-    loadData();
-  }, []);
+
+    // Check when component mounts and when window regains focus
+    checkCacheAndRefresh();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        checkCacheAndRefresh();
+      }
+    };
+
+    // Set up timer to check every minute
+    const interval = setInterval(checkCacheAndRefresh, 60000);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [loadData]);
 
   const handleExport = () => {
-    const data = mode === 'regular' ? regularData : pveData;
+    const data = mode === "regular" ? regularData : pveData;
     if (!data) return;
 
     const csvContent = [
-      ['Map', 'Boss', 'Spawn Chance', 'Location', 'Location Chance'].join(','),
-      ...data.flatMap((map: SpawnData) => 
-        map.bosses.flatMap(boss => 
-          boss.spawnLocations.map(location => 
+      ["Map", "Boss", "Spawn Chance", "Location", "Location Chance"].join(","),
+      ...data.flatMap((map: SpawnData) =>
+        map.bosses.flatMap((boss) =>
+          boss.spawnLocations.map((location) =>
             [
               map.normalizedName,
               boss.boss.normalizedName,
               `${Math.round(boss.spawnChance * 100)}%`,
               location.name,
-              `${Math.round(location.chance * 100)}%`
-            ].join(',')
+              `${Math.round(location.chance * 100)}%`,
+            ].join(",")
           )
         )
-      )
-    ].join('\n');
+      ),
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = url;
-    link.download = `tarkov_spawns_${mode === 'regular' ? 'pvp' : mode}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `tarkov_spawns_${mode === "regular" ? "pvp" : mode}_${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100">
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+    <div className="min-h-screen text-gray-100 bg-gray-900">
+      <div className="px-2 py-4 mx-auto max-w-7xl sm:px-4 sm:py-8">
         <Header />
-        
-        <div className="space-y-4 sm:space-y-6 mb-4 sm:mb-8">
-          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
-            <div className="px-3 sm:px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
-              <CacheStatus mode="regular" />
+
+        <div className="mb-4 space-y-4 sm:space-y-6 sm:mb-8">
+          <div className="flex flex-row justify-center gap-2 sm:gap-4">
+            <div className="px-2 py-1 border rounded-lg sm:px-4 bg-gray-800/50 border-gray-700/50">
+              <CacheStatus
+                mode="regular"
+                onExpired={() => loadData("regular")}
+              />
             </div>
-            <div className="px-3 sm:px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
-              <CacheStatus mode="pve" />
+            <div className="px-2 py-1 border rounded-lg sm:px-4 bg-gray-800/50 border-gray-700/50">
+              <CacheStatus mode="pve" onExpired={() => loadData("pve")} />
             </div>
           </div>
 
           <div className="flex justify-center">
-            <div className="bg-gray-800/30 rounded-lg p-1 w-full sm:w-auto">
+            <div className="w-full p-1 rounded-lg bg-gray-800/30 sm:w-auto">
               <ModeToggle mode={mode} onChange={setMode} />
             </div>
           </div>
 
-          <div className="bg-gray-800/30 rounded-lg p-2 sm:p-4">
+          <div className="p-2 rounded-lg bg-gray-800/30 sm:p-4">
             <FilterBar
               mapFilter={mapFilter}
               bossFilter={bossFilter}
@@ -96,24 +151,24 @@ export default function App() {
               onBossFilterChange={setBossFilter}
               onSearchQueryChange={setSearchQuery}
               onExport={handleExport}
-              data={mode === 'regular' ? regularData : pveData}
+              data={mode === "regular" ? regularData : pveData}
             />
           </div>
         </div>
 
-        <div className="rounded-lg bg-gray-800/30 p-2 sm:p-4">
+        <div className="p-2 rounded-lg bg-gray-800/30 sm:p-4">
           {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            <div className="flex items-center justify-center h-64">
+              <div className="w-12 h-12 border-t-2 border-b-2 border-purple-500 rounded-full animate-spin"></div>
             </div>
           ) : (
             <DataTable
-              data={mode === 'regular' ? regularData : pveData}
+              data={mode === "regular" ? regularData : pveData}
               mode={mode}
               filters={{
                 map: mapFilter,
                 boss: bossFilter,
-                search: searchQuery
+                search: searchQuery,
               }}
             />
           )}

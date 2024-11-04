@@ -1,46 +1,42 @@
-import { useState, useEffect } from 'react'
-import { Clock } from 'lucide-react'
+import { useEffect, useState } from "react"
 
 interface CacheStatusProps {
-  mode: 'regular' | 'pve'
+  mode: "regular" | "pve"
+  onExpired?: () => void
 }
 
-export function CacheStatus({ mode }: CacheStatusProps) {
-  const [timeLeft, setTimeLeft] = useState('')
+const CACHE_EXPIRY_TIME = 5 * 60 * 1000 // 5 minutes in milliseconds
+
+export function CacheStatus({ mode, onExpired }: CacheStatusProps) {
+  const [timeLeft, setTimeLeft] = useState<number>(0)
 
   useEffect(() => {
-    const cacheKey = `maps_${mode}`
-    const interval = setInterval(() => {
-      const cached = localStorage.getItem(cacheKey)
-      if (cached) {
-        const { timestamp } = JSON.parse(cached)
-        const expiryTime = timestamp + 5 * 60 * 1000 // 5 minutes
-        const now = new Date().getTime()
-        const distance = expiryTime - now
-
-        if (distance < 0) {
-          setTimeLeft('Expired')
-          return
-        }
-
-        const minutes = Math.floor((distance / (1000 * 60)) % 60)
-        const seconds = Math.floor((distance / 1000) % 60)
-        setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`)
-      } else {
-        setTimeLeft('No cache')
+    const updateTimer = () => {
+      const timestamp = parseInt(localStorage.getItem(`maps_${mode}_timestamp`) || "0")
+      const now = Date.now()
+      const remaining = Math.max(0, CACHE_EXPIRY_TIME - (now - timestamp))
+      
+      setTimeLeft(remaining)
+      
+      if (remaining === 0 && onExpired) {
+        onExpired()
       }
-    }, 1000)
+    }
+
+    updateTimer()
+    const interval = setInterval(updateTimer, 1000)
 
     return () => clearInterval(interval)
-  }, [mode])
+  }, [mode, onExpired])
+
+  const minutes = Math.floor(timeLeft / 60000)
+  const seconds = Math.floor((timeLeft % 60000) / 1000)
+
+  const displayMode = mode === "regular" ? "PVP" : mode.toUpperCase()
 
   return (
-    <div className="flex items-center gap-2">
-      <Clock className="w-4 h-4 text-purple-400" />
-      <span className="text-sm font-medium text-gray-400">
-        {mode.toUpperCase()} Cache:
-        <span className="ml-2 text-purple-400">{timeLeft}</span>
-      </span>
+    <div className="text-xs text-gray-400">
+      {displayMode}: {minutes}:{seconds.toString().padStart(2, "0")}
     </div>
   )
 } 
