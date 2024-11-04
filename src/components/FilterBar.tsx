@@ -30,52 +30,53 @@ export function FilterBar({
   )
 
   return (
-    <div className="flex flex-wrap gap-4 items-center justify-center">
-      <div className="relative">
-        <Map className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <select
-          value={mapFilter}
-          onChange={(e) => onMapFilterChange(e.target.value)}
-          className="pl-10 pr-4 py-2 bg-gray-800 rounded-lg border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-        >
-          <option value="">All Maps</option>
-          {Array.from(maps).sort().map(map => (
-            <option key={map} value={map}>{map}</option>
-          ))}
-        </select>
+    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 flex-grow">
+        <div className="relative flex-1">
+          <Map className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <select
+            value={mapFilter}
+            onChange={(e) => onMapFilterChange(e.target.value)}
+            className="bg-gray-800 text-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm w-full"
+          >
+            <option value="">All Maps</option>
+            {Array.from(maps).sort().map(map => (
+              <option key={map} value={map}>{map}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="relative flex-1">
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <select
+            value={bossFilter}
+            onChange={(e) => onBossFilterChange(e.target.value)}
+            className="bg-gray-800 text-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm w-full"
+          >
+            <option value="">All Bosses</option>
+            {Array.from(bosses).sort().map(boss => (
+              <option key={boss} value={boss}>{boss}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchQueryChange(e.target.value)}
+            placeholder="Search..."
+            className="bg-gray-800 text-gray-300 rounded-lg pl-9 pr-3 py-2 text-sm w-full"
+          />
+        </div>
       </div>
-
-      <div className="relative">
-        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <select
-          value={bossFilter}
-          onChange={(e) => onBossFilterChange(e.target.value)}
-          className="pl-10 pr-4 py-2 bg-gray-800 rounded-lg border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-        >
-          <option value="">All Bosses</option>
-          {Array.from(bosses).sort().map(boss => (
-            <option key={boss} value={boss}>{boss}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchQueryChange(e.target.value)}
-          placeholder="Search..."
-          className="pl-10 pr-4 py-2 bg-gray-800 rounded-lg border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-        />
-      </div>
-
+      
       <button
         onClick={onExport}
-        className="flex items-center space-x-2 px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors duration-200"
+        className="hidden sm:block bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors w-full sm:w-auto"
       >
-        <FileDown className="w-5 h-5" />
-        <span>Export CSV</span>
+        Export CSV
       </button>
     </div>
   )

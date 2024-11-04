@@ -68,26 +68,26 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <Header />
         
-        <div className="space-y-6 mb-8">
-          <div className="flex justify-center gap-4">
-            <div className="px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
+        <div className="space-y-4 sm:space-y-6 mb-4 sm:mb-8">
+          <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-4">
+            <div className="px-3 sm:px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
               <CacheStatus mode="regular" />
             </div>
-            <div className="px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
+            <div className="px-3 sm:px-4 py-2 bg-gray-800/50 rounded-lg border border-gray-700/50">
               <CacheStatus mode="pve" />
             </div>
           </div>
 
           <div className="flex justify-center">
-            <div className="bg-gray-800/30 rounded-lg p-1">
+            <div className="bg-gray-800/30 rounded-lg p-1 w-full sm:w-auto">
               <ModeToggle mode={mode} onChange={setMode} />
             </div>
           </div>
 
-          <div className="bg-gray-800/30 rounded-lg p-4">
+          <div className="bg-gray-800/30 rounded-lg p-2 sm:p-4">
             <FilterBar
               mapFilter={mapFilter}
               bossFilter={bossFilter}
@@ -101,7 +101,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="rounded-lg bg-gray-800/30 p-4">
+        <div className="rounded-lg bg-gray-800/30 p-2 sm:p-4">
           {loading ? (
             <div className="flex justify-center items-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>

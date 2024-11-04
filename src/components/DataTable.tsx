@@ -186,7 +186,8 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                 clipRule="evenodd"
               />
             </svg>
-            Note: Infected boss spawn rates may not be accurate due to their dynamic spawn behavior
+            Note: Infected boss spawn rates may not be accurate due to their
+            dynamic spawn behavior
           </p>
         </div>
         <div className="overflow-x-auto rounded-lg border border-gray-700">
@@ -249,44 +250,57 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
   }
 
   let filteredData = data.flatMap((map) => {
-    if (filters.map && !map.normalizedName.toLowerCase().includes(filters.map.toLowerCase()))
+    if (
+      filters.map &&
+      !map.normalizedName.toLowerCase().includes(filters.map.toLowerCase())
+    )
       return [];
 
     // Create a Map to store unique boss entries
-    const uniqueBossEntries = new Map<string, {
-      map: string
-      boss: string
-      spawnChance: number
-      location: string
-      locationChance: number
-    }>();
+    const uniqueBossEntries = new Map<
+      string,
+      {
+        map: string;
+        boss: string;
+        spawnChance: number;
+        location: string;
+        locationChance: number;
+      }
+    >();
 
     map.bosses.forEach((boss) => {
-      if (filters.boss && !boss.boss.normalizedName.toLowerCase().includes(filters.boss.toLowerCase()))
+      if (
+        filters.boss &&
+        !boss.boss.normalizedName
+          .toLowerCase()
+          .includes(filters.boss.toLowerCase())
+      )
         return;
 
       if (filters.search) {
         const search = filters.search.toLowerCase();
         const matchesMap = map.normalizedName.toLowerCase().includes(search);
-        const matchesBoss = boss.boss.normalizedName.toLowerCase().includes(search);
+        const matchesBoss = boss.boss.normalizedName
+          .toLowerCase()
+          .includes(search);
         if (!matchesMap && !matchesBoss) return;
       }
 
       // Filter valid locations (non-Unknown or with chance > 0)
-      const validLocations = boss.spawnLocations?.filter(location => 
-        location.name !== "Unknown" || location.chance > 0
+      const validLocations = boss.spawnLocations?.filter(
+        (location) => location.name !== "Unknown" || location.chance > 0
       );
 
       if (validLocations?.length) {
         // Add all valid locations
-        validLocations.forEach(location => {
+        validLocations.forEach((location) => {
           const key = `${map.normalizedName}-${boss.boss.normalizedName}-${boss.spawnChance}-${location.name}`;
           uniqueBossEntries.set(key, {
             map: map.normalizedName,
             boss: boss.boss.normalizedName,
             spawnChance: boss.spawnChance,
             location: location.name,
-            locationChance: location.chance
+            locationChance: location.chance,
           });
         });
       } else if (boss.spawnChance > 0) {
@@ -297,7 +311,7 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
           boss: boss.boss.normalizedName,
           spawnChance: boss.spawnChance,
           location: "Unknown",
-          locationChance: 0
+          locationChance: 0,
         });
       }
     });
@@ -306,7 +320,7 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
   });
 
   // Add debug logging for final filtered data
-  console.log('Final filtered data:', filteredData);
+  console.log("Final filtered data:", filteredData);
 
   // Apply sorting for regular/pve mode
   filteredData.sort((a, b) => {
@@ -328,24 +342,28 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
   });
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-700">
+    <div className="overflow-x-auto rounded-lg border border-gray-700 -mx-2 sm:mx-0">
       <table className="w-full">
         <thead>
           <tr className="bg-gray-800">
             <SortHeader field="map" className="w-1/4">
-              <span className="text-purple-300">Map</span>
+              <span className="text-purple-300 text-xs sm:text-sm">Map</span>
             </SortHeader>
             <SortHeader field="boss" className="w-1/4">
-              <span className="text-blue-300">Boss</span>
+              <span className="text-blue-300 text-xs sm:text-sm">Boss</span>
             </SortHeader>
             <SortHeader field="spawnChance" className="w-1/4">
-              <span className="text-amber-300">Spawn Chance</span>
+              <span className="text-amber-300 text-xs sm:text-sm">
+                Spawn Chance
+              </span>
             </SortHeader>
             <SortHeader field="location" className="w-1/6">
-              <span className="text-gray-400">Location</span>
+              <span className="text-gray-400 text-xs sm:text-sm">Location</span>
             </SortHeader>
             <SortHeader field="locationChance" className="w-1/6">
-              <span className="text-gray-400">Location Chance</span>
+              <span className="text-gray-400 text-xs sm:text-sm">
+                Location Chance
+              </span>
             </SortHeader>
           </tr>
         </thead>
@@ -359,22 +377,26 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                 key={`${row.map}-${row.boss}-${row.location}-${index}`}
                 className={`
                   hover:bg-gray-800/50 transition-colors duration-200
-                  ${isNewGroup ? "border-t-2 border-gray-600" : "border-t border-gray-800"}
+                  ${
+                    isNewGroup
+                      ? "border-t-2 border-gray-600"
+                      : "border-t border-gray-800"
+                  }
                 `}
               >
-                <td className="px-6 py-4 whitespace-nowrap font-semibold text-purple-300">
+                <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap font-semibold text-purple-300 text-xs sm:text-base">
                   {row.map}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap font-semibold text-blue-300">
+                <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap font-semibold text-blue-300 text-xs sm:text-base">
                   {row.boss}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap font-semibold text-amber-300">
+                <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap font-semibold text-amber-300 text-xs sm:text-base">
                   {Math.round(row.spawnChance * 100)}%
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-400">
+                <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-gray-400 text-xs sm:text-base">
                   {row.location}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-400">
+                <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-gray-400 text-xs sm:text-base">
                   {Math.round(row.locationChance * 100)}%
                 </td>
               </tr>
