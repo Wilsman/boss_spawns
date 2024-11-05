@@ -1,13 +1,14 @@
+import { getInfectedBossName } from "@/utils/boss-utils"
 import { SpawnData } from "@/types"
 
 export interface DataChange {
   map: string
   boss: string
-  field: "spawnChance" | "location" | "status"
+  field: string
   oldValue: string
   newValue: string
   timestamp: number
-  gameMode: "PvP" | "PvE"
+  gameMode: string
 }
 
 export function diffData(oldData: SpawnData[], newData: SpawnData[], gameMode: "PvP" | "PvE"): DataChange[] {
@@ -18,7 +19,12 @@ export function diffData(oldData: SpawnData[], newData: SpawnData[], gameMode: "
   const oldBossMap = new Map<string, { spawnChance: number; locations: Set<string> }>()
   oldData?.forEach(map => {
     map.bosses.forEach(boss => {
-      const key = `${map.normalizedName}-${boss.boss.normalizedName}`
+      // Normalize the boss name for infected bosses
+      const bossName = boss.boss.normalizedName === "infected"
+        ? getInfectedBossName(boss.spawnChance)
+        : boss.boss.normalizedName
+
+      const key = `${map.normalizedName}-${bossName}`
       oldBossMap.set(key, {
         spawnChance: boss.spawnChance,
         locations: new Set(boss.spawnLocations.map(loc => loc.name))
@@ -29,13 +35,18 @@ export function diffData(oldData: SpawnData[], newData: SpawnData[], gameMode: "
   // Compare new data with old data
   newData?.forEach(map => {
     map.bosses.forEach(boss => {
-      const key = `${map.normalizedName}-${boss.boss.normalizedName}`
+      // Normalize the boss name for infected bosses
+      const bossName = boss.boss.normalizedName === "infected"
+        ? getInfectedBossName(boss.spawnChance)
+        : boss.boss.normalizedName
+
+      const key = `${map.normalizedName}-${bossName}`
       const oldBoss = oldBossMap.get(key)
 
       if (!oldBoss) {
         changes.push({
           map: map.normalizedName,
-          boss: boss.boss.normalizedName,
+          boss: bossName,
           field: "status",
           oldValue: "Not Present",
           newValue: "Added",
@@ -49,7 +60,7 @@ export function diffData(oldData: SpawnData[], newData: SpawnData[], gameMode: "
       if (oldBoss.spawnChance !== boss.spawnChance) {
         changes.push({
           map: map.normalizedName,
-          boss: boss.boss.normalizedName,
+          boss: bossName,
           field: "spawnChance",
           oldValue: `${Math.round(oldBoss.spawnChance * 100)}%`,
           newValue: `${Math.round(boss.spawnChance * 100)}%`,
@@ -63,7 +74,7 @@ export function diffData(oldData: SpawnData[], newData: SpawnData[], gameMode: "
         if (!oldBoss.locations.has(loc.name)) {
           changes.push({
             map: map.normalizedName,
-            boss: boss.boss.normalizedName,
+            boss: bossName,
             field: "location",
             oldValue: "Not Present",
             newValue: loc.name,
@@ -75,5 +86,5 @@ export function diffData(oldData: SpawnData[], newData: SpawnData[], gameMode: "
     })
   })
 
-  return changes.sort((a, b) => b.timestamp - a.timestamp)
+  return changes
 } 
