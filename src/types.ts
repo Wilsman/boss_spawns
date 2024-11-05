@@ -1,4 +1,4 @@
-export type DataMode = "regular" | "pve" | "compare";
+export type DataMode = "regular" | "pve" | "compare" | "changes";
 
 export interface SpawnLocation {
   name: string;

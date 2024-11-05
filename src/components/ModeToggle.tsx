@@ -44,6 +44,18 @@ export function ModeToggle({ mode, onChange }: ModeToggleProps) {
       >
         Compare
       </button>
+      <button
+        onClick={() => onChange('changes')}
+        className={`
+          px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex-1 sm:flex-none
+          ${mode === 'changes' 
+            ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25' 
+            : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+          }
+        `}
+      >
+        Changes
+      </button>
     </div>
   )
 } 

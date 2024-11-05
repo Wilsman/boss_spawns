@@ -6,6 +6,9 @@ import { Header } from "@/components/Header";
 import { FilterBar } from "@/components/FilterBar";
 import { ModeToggle } from "@/components/ModeToggle";
 import { CacheStatus } from "@/components/CacheStatus";
+import { diffData, DataChange } from "@/lib/diff";
+import { ChangesTable } from "@/components/ChangesTable";
+import { saveChanges, getStoredChanges } from "@/lib/changes";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -17,6 +20,7 @@ export default function App() {
   const [mapFilter, setMapFilter] = useState("");
   const [bossFilter, setBossFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [changes, setChanges] = useState<DataChange[]>([]);
 
   const loadData = useCallback(
     async (gameMode?: "regular" | "pve" | "both") => {
@@ -85,6 +89,34 @@ export default function App() {
     };
   }, [loadData]);
 
+  useEffect(() => {
+    if (mode === "changes") {
+      setChanges(getStoredChanges())
+    }
+  }, [mode])
+
+  useEffect(() => {
+    if (mode === "changes" && regularData && pveData) {
+      const regularPrevious = JSON.parse(
+        localStorage.getItem("maps_regular_previous") || "{}"
+      )?.data?.maps || [];
+      
+      const pvePrevious = JSON.parse(
+        localStorage.getItem("maps_pve_previous") || "{}"
+      )?.data?.maps || [];
+
+      const regularChanges = diffData(regularPrevious, regularData, "PvP");
+      const pveChanges = diffData(pvePrevious, pveData, "PvE");
+      
+      // Save new changes to persistent storage
+      if (regularChanges.length > 0 || pveChanges.length > 0) {
+        const newChanges = [...regularChanges, ...pveChanges]
+        saveChanges(newChanges)
+        setChanges(getStoredChanges())
+      }
+    }
+  }, [mode, regularData, pveData]);
+
   const handleExport = () => {
     const data = mode === "regular" ? regularData : pveData;
     if (!data) return;
@@ -117,6 +149,10 @@ export default function App() {
     link.click();
     document.body.removeChild(link);
   };
+
+  const handleChangesUpdate = useCallback(() => {
+    setChanges(getStoredChanges())
+  }, [])
 
   return (
     <div className="min-h-screen text-gray-100 bg-gray-900">
@@ -161,6 +197,16 @@ export default function App() {
             <div className="flex items-center justify-center h-64">
               <div className="w-12 h-12 border-t-2 border-b-2 border-purple-500 rounded-full animate-spin"></div>
             </div>
+          ) : mode === "changes" ? (
+            <ChangesTable
+              changes={changes}
+              filters={{
+                map: mapFilter,
+                boss: bossFilter,
+                search: searchQuery,
+              }}
+              onChangesUpdate={handleChangesUpdate}
+            />
           ) : (
             <DataTable
               data={mode === "regular" ? regularData : pveData}

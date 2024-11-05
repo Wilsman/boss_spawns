@@ -6,6 +6,15 @@ export async function fetchSpawnData(
   const CACHE_KEY = `maps_${gameMode}`;
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+  // Before fetching new data, store current data as previous
+  const currentData = localStorage.getItem(`maps_${gameMode}`);
+  if (currentData) {
+    localStorage.setItem(
+      `maps_${gameMode}_previous`,
+      currentData
+    );
+  }
+
   // Check cache
   const cached = localStorage.getItem(CACHE_KEY);
   if (cached) {
