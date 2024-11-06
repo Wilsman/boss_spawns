@@ -1,4 +1,4 @@
-import { Ghost, Database } from "lucide-react";
+import { Calculator, Database } from "lucide-react";
 
 export function Header() {
   return (
@@ -32,11 +32,11 @@ export function Header() {
                      hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.02]
                      border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
           >
-            <Ghost className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
+            <Calculator className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
             <span className="text-sm font-medium text-gray-300 transition-colors duration-300 sm:text-base group-hover:text-purple-400">
               Check out the Cultist Circle Calculator!
             </span>
-            <Ghost className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:rotate-12" />
+            <Calculator className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:rotate-12" />
           </a>
 
           {/* New Tarkov.dev Attribution Link */}
