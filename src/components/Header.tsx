@@ -1,4 +1,4 @@
-import { Ghost } from 'lucide-react'
+import { Ghost, Database } from "lucide-react";
 
 export function Header() {
   return (
@@ -9,34 +9,53 @@ export function Header() {
           <img
             src="https://static-cdn.jtvnw.net/jtv_user_pictures/ca020585-dce5-46bd-a952-cac963a2aff4-profile_image-70x70.png"
             alt="Profile"
-            className="hidden sm:block w-12 h-12 rounded-full shadow-lg shadow-purple-500/20"
+            className="hidden w-12 h-12 rounded-full shadow-lg sm:block shadow-purple-500/20"
           />
-          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
             Tarkov Boss Spawns
           </h1>
           <img
             src="https://static-cdn.jtvnw.net/jtv_user_pictures/ca020585-dce5-46bd-a952-cac963a2aff4-profile_image-70x70.png"
             alt="Profile"
-            className="hidden sm:block w-12 h-12 rounded-full shadow-lg shadow-purple-500/20"
+            className="hidden w-12 h-12 rounded-full shadow-lg sm:block shadow-purple-500/20"
           />
         </div>
 
-        {/* Cultist Circle Link */}
-        <a
-          href="https://www.cultistcircle.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg 
-                   hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.02]
-                   border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
-        >
-          <Ghost className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
-          <span className="text-sm sm:text-base font-medium text-gray-300 group-hover:text-purple-400 transition-colors duration-300">
-            Check out the Cultist Circle Calculator!
-          </span>
-          <Ghost className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:rotate-12" />
-        </a>
+        {/* Links Section */}
+        <div className="flex flex-col space-y-3">
+          {/* Existing Cultist Circle Link */}
+          <a
+            href="https://www.cultistcircle.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg 
+                     hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.02]
+                     border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
+          >
+            <Ghost className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
+            <span className="text-sm font-medium text-gray-300 transition-colors duration-300 sm:text-base group-hover:text-purple-400">
+              Check out the Cultist Circle Calculator!
+            </span>
+            <Ghost className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:rotate-12" />
+          </a>
+
+          {/* New Tarkov.dev Attribution Link */}
+          <a
+            href="https://tarkov.dev"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg 
+                     hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.02]
+                     border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
+          >
+            <Database className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:rotate-12" />
+            <span className="text-sm font-medium text-gray-300 transition-colors duration-300 sm:text-base group-hover:text-purple-400">
+              Data provided by Tarkov.dev
+            </span>
+            <Database className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
+          </a>
+        </div>
       </div>
     </div>
-  )
+  );
 }
