@@ -7,14 +7,14 @@ export interface SpawnLocation {
 
 export interface Boss {
   boss: {
-    normalizedName: string;
+    name: string;
   };
   spawnLocations: SpawnLocation[];
   spawnChance: number;
 }
 
 export interface SpawnData {
-  normalizedName: string;
+  name: string;
   bosses: Boss[];
 }
 

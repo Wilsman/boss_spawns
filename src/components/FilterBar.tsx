@@ -27,13 +27,13 @@ export function FilterBar({
   onExport,
   data,
 }: FilterBarProps) {
-  const maps = new Set(data?.map((map) => map.normalizedName));
+  const maps = new Set(data?.map((map) => map.name));
   const bosses = new Set(
     data?.flatMap((map) =>
       map.bosses.map((boss) =>
-        boss.boss.normalizedName === "infected"
+        boss.boss.name === "infected"
           ? getInfectedBossName(boss.spawnChance)
-          : boss.boss.normalizedName
+          : boss.boss.name
       )
     )
   );
@@ -52,7 +52,7 @@ export function FilterBar({
             {Array.from(maps)
               .sort()
               .map((map) => (
-                <option key={map} value={map}>
+                <option key={`map-${map}`} value={map}>
                   {map}
                 </option>
               ))}
@@ -70,7 +70,7 @@ export function FilterBar({
             {Array.from(bosses)
               .sort()
               .map((boss) => (
-                <option key={boss} value={boss}>
+                <option key={`boss-${boss}`} value={boss}>
                   {boss}
                 </option>
               ))}

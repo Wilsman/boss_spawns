@@ -127,8 +127,8 @@ export default function App() {
         map.bosses.flatMap((boss) =>
           boss.spawnLocations.map((location) =>
             [
-              map.normalizedName,
-              boss.boss.normalizedName,
+              map.name,
+              boss.boss.name,
               `${Math.round(boss.spawnChance * 100)}%`,
               location.name,
               `${Math.round(location.chance * 100)}%`,

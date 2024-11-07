@@ -1,4 +1,4 @@
-import { SpawnData, DataMode, Boss } from "@/types";
+import { SpawnData, Boss, DataMode } from "@/types";
 import { useState } from "react";
 import { ArrowUpDown } from "lucide-react";
 
@@ -23,28 +23,6 @@ type SortField =
 type SortDirection = "asc" | "desc";
 
 type GroupBy = "none" | "map" | "boss" | "location";
-
-function getInfectedBossName(spawnChance: number) {
-  // If spawn chance is under 100%, it's Tagilla(Infected)
-  // Otherwise it's regular Infected (Zombies)
-  return spawnChance < 1 ? "Infected(Tagilla)" : "Infected(Zombie)";
-}
-
-function normalizeInfectedBossNames(data: SpawnData[]) {
-  return data.map((map) => ({
-    ...map,
-    bosses: map.bosses.map((boss) => ({
-      ...boss,
-      boss: {
-        ...boss.boss,
-        normalizedName:
-          boss.boss.normalizedName === "infected"
-            ? getInfectedBossName(boss.spawnChance)
-            : boss.boss.normalizedName,
-      },
-    })),
-  }));
-}
 
 function getLocationClasses(location: string, chance: number) {
   if (location === "Unknown" || chance === 0) {
@@ -139,14 +117,8 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
   }
 
   if (mode === "compare") {
-    const regularData = normalizeInfectedBossNames(
-      JSON.parse(localStorage.getItem("maps_regular") || "{}").data?.maps ||
-        ([] as SpawnData[])
-    );
-    const pveData = normalizeInfectedBossNames(
-      JSON.parse(localStorage.getItem("maps_pve") || "{}").data?.maps ||
-        ([] as SpawnData[])
-    );
+    const regularData = JSON.parse(localStorage.getItem("maps_regular") || "{}").data?.maps || ([] as SpawnData[]);
+    const pveData = JSON.parse(localStorage.getItem("maps_pve") || "{}").data?.maps || ([] as SpawnData[]);
 
     const uniqueComparisons = new Map<
       string,
@@ -160,13 +132,13 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
 
     regularData.forEach((regularMap: SpawnData) => {
       const pveMap = pveData.find(
-        (m: SpawnData) => m.normalizedName === regularMap.normalizedName
+        (m: SpawnData) => m.name === regularMap.name
       );
       if (!pveMap) return;
 
       regularMap.bosses.forEach((regularBoss: Boss) => {
         const pveBoss = pveMap.bosses.find(
-          (b: Boss) => b.boss.normalizedName === regularBoss.boss.normalizedName
+          (b: Boss) => b.boss.name === regularBoss.boss.name
         );
         if (!pveBoss) return;
 
@@ -175,13 +147,13 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
 
         if (regularChance !== pveChance) {
           const bossName =
-            regularBoss.boss.normalizedName === "infected"
-              ? getInfectedBossName(regularBoss.spawnChance)
-              : regularBoss.boss.normalizedName;
+            regularBoss.boss.name === "infected"
+              ? "Infected(Zombie)"
+              : regularBoss.boss.name;
 
-          const key = `${regularMap.normalizedName}-${bossName}`;
+          const key = `${regularMap.name}-${bossName}`;
           uniqueComparisons.set(key, {
-            map: regularMap.normalizedName,
+            map: regularMap.name,
             boss: bossName,
             regularChance,
             pveChance,
@@ -304,12 +276,12 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
     );
   }
 
-  const normalizedData = normalizeInfectedBossNames(data);
+  const normalizedData = data;
 
   let filteredData = normalizedData.flatMap((map) => {
     if (
       filters.map &&
-      !map.normalizedName.toLowerCase().includes(filters.map.toLowerCase())
+      !map.name.toLowerCase().includes(filters.map.toLowerCase())
     )
       return [];
 
@@ -325,7 +297,7 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
     >();
 
     map.bosses.forEach((boss) => {
-      const bossName = boss.boss.normalizedName;
+      const bossName = boss.boss.name;
 
       if (filters.boss) {
         const filterLower = filters.boss.toLowerCase();
@@ -335,7 +307,7 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
 
       if (filters.search) {
         const search = filters.search.toLowerCase();
-        const matchesMap = map.normalizedName.toLowerCase().includes(search);
+        const matchesMap = map.name.toLowerCase().includes(search);
         const matchesBoss = bossName.toLowerCase().includes(search);
         if (!matchesMap && !matchesBoss) return;
       }
@@ -346,9 +318,9 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
 
       if (validLocations?.length) {
         validLocations.forEach((location) => {
-          const key = `${map.normalizedName}-${bossName}-${boss.spawnChance}-${location.name}`;
+          const key = `${map.name}-${bossName}-${boss.spawnChance}-${location.name}`;
           uniqueBossEntries.set(key, {
-            map: map.normalizedName,
+            map: map.name,
             boss: bossName,
             spawnChance: boss.spawnChance,
             location: location.name,
@@ -356,9 +328,9 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
           });
         });
       } else if (boss.spawnChance > 0) {
-        const key = `${map.normalizedName}-${bossName}-${boss.spawnChance}-Unknown`;
+        const key = `${map.name}-${bossName}-${boss.spawnChance}-Unknown`;
         uniqueBossEntries.set(key, {
-          map: map.normalizedName,
+          map: map.name,
           boss: bossName,
           spawnChance: boss.spawnChance,
           location: "Unknown",

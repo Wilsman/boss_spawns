@@ -1,18 +1,30 @@
 import { SpawnData } from "@/types";
 
+const CACHE_VERSION = 2; // Add version number
+
 export async function fetchSpawnData(
   gameMode: "regular" | "pve"
 ): Promise<SpawnData[]> {
   const CACHE_KEY = `maps_${gameMode}`;
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+  // Check cache version and clear if outdated
+  const cacheVersion = localStorage.getItem("cache_version");
+  if (!cacheVersion || parseInt(cacheVersion) < CACHE_VERSION) {
+    // Clear all cached data
+    localStorage.removeItem(`maps_regular`);
+    localStorage.removeItem(`maps_pve`);
+    localStorage.removeItem(`maps_regular_previous`);
+    localStorage.removeItem(`maps_pve_previous`);
+    localStorage.removeItem(`spawn_changes_history`);
+    // Set new version
+    localStorage.setItem("cache_version", CACHE_VERSION.toString());
+  }
+
   // Before fetching new data, store current data as previous
   const currentData = localStorage.getItem(`maps_${gameMode}`);
   if (currentData) {
-    localStorage.setItem(
-      `maps_${gameMode}_previous`,
-      currentData
-    );
+    localStorage.setItem(`maps_${gameMode}_previous`, currentData);
   }
 
   // Check cache
@@ -35,10 +47,10 @@ export async function fetchSpawnData(
       query: `
         query {
           maps(gameMode: ${gameMode}) {
-            normalizedName
+            name
             bosses {
               boss {
-                normalizedName
+                name
               }
               spawnLocations {
                 name

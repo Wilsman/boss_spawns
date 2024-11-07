@@ -20,11 +20,11 @@ export function diffData(oldData: SpawnData[], newData: SpawnData[], gameMode: "
   oldData?.forEach(map => {
     map.bosses.forEach(boss => {
       // Normalize the boss name for infected bosses
-      const bossName = boss.boss.normalizedName === "infected"
+      const bossName = boss.boss.name === "infected"
         ? getInfectedBossName(boss.spawnChance)
-        : boss.boss.normalizedName
+        : boss.boss.name
 
-      const key = `${map.normalizedName}-${bossName}`
+      const key = `${map.name}-${bossName}`
       oldBossMap.set(key, {
         spawnChance: boss.spawnChance,
         locations: new Set(boss.spawnLocations.map(loc => loc.name))
@@ -36,16 +36,16 @@ export function diffData(oldData: SpawnData[], newData: SpawnData[], gameMode: "
   newData?.forEach(map => {
     map.bosses.forEach(boss => {
       // Normalize the boss name for infected bosses
-      const bossName = boss.boss.normalizedName === "infected"
+      const bossName = boss.boss.name === "infected"
         ? getInfectedBossName(boss.spawnChance)
-        : boss.boss.normalizedName
+        : boss.boss.name
 
-      const key = `${map.normalizedName}-${bossName}`
+      const key = `${map.name}-${bossName}`
       const oldBoss = oldBossMap.get(key)
 
       if (!oldBoss) {
         changes.push({
-          map: map.normalizedName,
+          map: map.name,
           boss: bossName,
           field: "status",
           oldValue: "Not Present",
@@ -59,7 +59,7 @@ export function diffData(oldData: SpawnData[], newData: SpawnData[], gameMode: "
       // Check spawn chance changes
       if (oldBoss.spawnChance !== boss.spawnChance) {
         changes.push({
-          map: map.normalizedName,
+          map: map.name,
           boss: bossName,
           field: "spawnChance",
           oldValue: `${Math.round(oldBoss.spawnChance * 100)}%`,
@@ -73,7 +73,7 @@ export function diffData(oldData: SpawnData[], newData: SpawnData[], gameMode: "
       boss.spawnLocations.forEach(loc => {
         if (!oldBoss.locations.has(loc.name)) {
           changes.push({
-            map: map.normalizedName,
+            map: map.name,
             boss: bossName,
             field: "location",
             oldValue: "Not Present",
