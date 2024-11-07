@@ -22,30 +22,41 @@ type SortField =
   | "locationChance";
 type SortDirection = "asc" | "desc";
 
+type GroupBy = "none" | "map" | "boss" | "location";
+
 function getInfectedBossName(spawnChance: number) {
   // If spawn chance is under 100%, it's Tagilla(Infected)
   // Otherwise it's regular Infected (Zombies)
-  return spawnChance < 1 ? "Infected(Tagilla)" : "Infected(Zombie)"
+  return spawnChance < 1 ? "Infected(Tagilla)" : "Infected(Zombie)";
 }
 
 function normalizeInfectedBossNames(data: SpawnData[]) {
-  return data.map(map => ({
+  return data.map((map) => ({
     ...map,
-    bosses: map.bosses.map(boss => ({
+    bosses: map.bosses.map((boss) => ({
       ...boss,
       boss: {
         ...boss.boss,
-        normalizedName: boss.boss.normalizedName === "infected"
-          ? getInfectedBossName(boss.spawnChance)
-          : boss.boss.normalizedName
-      }
-    }))
-  }))
+        normalizedName:
+          boss.boss.normalizedName === "infected"
+            ? getInfectedBossName(boss.spawnChance)
+            : boss.boss.normalizedName,
+      },
+    })),
+  }));
+}
+
+function getLocationClasses(location: string, chance: number) {
+  if (location === "Unknown" || chance === 0) {
+    return "text-gray-500 italic opacity-75"
+  }
+  return "text-gray-400"
 }
 
 export function DataTable({ data, mode, filters }: DataTableProps) {
   const [sortField, setSortField] = useState<SortField>("map");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [groupBy, setGroupBy] = useState<GroupBy>("map");
 
   if (!data) return null;
 
@@ -111,15 +122,31 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
     }
   };
 
+  function groupData(data: any[], grouping: GroupBy) {
+    if (grouping === "none") return { "": data };
+    
+    const grouped: Record<string, any[]> = {};
+    
+    data.forEach(item => {
+      const key = item[grouping];
+      if (!grouped[key]) {
+        grouped[key] = [];
+      }
+      grouped[key].push(item);
+    });
+    
+    return grouped;
+  }
+
   if (mode === "compare") {
     const regularData = normalizeInfectedBossNames(
       JSON.parse(localStorage.getItem("maps_regular") || "{}").data?.maps ||
-      ([] as SpawnData[])
-    )
+        ([] as SpawnData[])
+    );
     const pveData = normalizeInfectedBossNames(
       JSON.parse(localStorage.getItem("maps_pve") || "{}").data?.maps ||
-      ([] as SpawnData[])
-    )
+        ([] as SpawnData[])
+    );
 
     const uniqueComparisons = new Map<
       string,
@@ -147,9 +174,10 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
         const pveChance = Math.round(pveBoss.spawnChance * 100);
 
         if (regularChance !== pveChance) {
-          const bossName = regularBoss.boss.normalizedName === "infected"
-            ? getInfectedBossName(regularBoss.spawnChance)
-            : regularBoss.boss.normalizedName;
+          const bossName =
+            regularBoss.boss.normalizedName === "infected"
+              ? getInfectedBossName(regularBoss.spawnChance)
+              : regularBoss.boss.normalizedName;
 
           const key = `${regularMap.normalizedName}-${bossName}`;
           uniqueComparisons.set(key, {
@@ -276,25 +304,28 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
     );
   }
 
-  const normalizedData = normalizeInfectedBossNames(data)
-  
+  const normalizedData = normalizeInfectedBossNames(data);
+
   let filteredData = normalizedData.flatMap((map) => {
-    if (filters.map && !map.normalizedName.toLowerCase().includes(filters.map.toLowerCase()))
-      return []
+    if (
+      filters.map &&
+      !map.normalizedName.toLowerCase().includes(filters.map.toLowerCase())
+    )
+      return [];
 
     const uniqueBossEntries = new Map<
       string,
       {
-        map: string
-        boss: string
-        spawnChance: number
-        location: string
-        locationChance: number
+        map: string;
+        boss: string;
+        spawnChance: number;
+        location: string;
+        locationChance: number;
       }
-    >()
+    >();
 
     map.bosses.forEach((boss) => {
-      const bossName = boss.boss.normalizedName
+      const bossName = boss.boss.normalizedName;
 
       if (filters.boss) {
         const filterLower = filters.boss.toLowerCase();
@@ -334,10 +365,10 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
           locationChance: 0,
         });
       }
-    })
+    });
 
     return Array.from(uniqueBossEntries.values());
-  })
+  });
 
   console.log("Final filtered data:", filteredData);
 
@@ -360,68 +391,100 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
   });
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-700 -mx-2 sm:mx-0">
-      <table className="w-full">
-        <thead>
-          <tr className="bg-gray-800">
-            <SortHeader field="map" className="w-1/4">
-              <span className="text-purple-300 text-xs sm:text-sm">Map</span>
-            </SortHeader>
-            <SortHeader field="boss" className="w-1/4">
-              <span className="text-blue-300 text-xs sm:text-sm">Boss</span>
-            </SortHeader>
-            <SortHeader field="spawnChance" className="w-1/4">
-              <span className="text-amber-300 text-xs sm:text-sm">
-                Spawn Chance
-              </span>
-            </SortHeader>
-            <SortHeader field="location" className="w-1/6">
-              <span className="text-gray-400 text-xs sm:text-sm">Location</span>
-            </SortHeader>
-            <SortHeader field="locationChance" className="w-1/6">
-              <span className="text-gray-400 text-xs sm:text-sm">
-                Location Chance
-              </span>
-            </SortHeader>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredData.map((row, index) => {
-            const prevRow = index > 0 ? filteredData[index - 1] : null;
-            const isNewGroup = isNewSection(row, prevRow);
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-4 p-4 bg-gray-800/50 rounded-lg">
+        <select
+          value={groupBy}
+          onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+          className="px-3 py-2 text-sm bg-gray-800 rounded-md border border-gray-700"
+        >
+          <option value="map">Group by Map</option>
+          <option value="boss">Group by Boss</option>
+          <option value="location">Group by Location</option>
+          <option value="none">No Grouping</option>
+        </select>
+      </div>
 
-            return (
-              <tr
-                key={`${row.map}-${row.boss}-${row.location}-${index}`}
-                className={`
-                  hover:bg-gray-800/50 transition-colors duration-200
-                  ${
-                    isNewGroup
-                      ? "border-t-2 border-gray-600"
-                      : "border-t border-gray-800"
-                  }
-                `}
-              >
-                <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap font-semibold text-purple-300 text-xs sm:text-base">
-                  {row.map}
-                </td>
-                <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap font-semibold text-blue-300 text-xs sm:text-base">
-                  {row.boss}
-                </td>
-                <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap font-semibold text-amber-300 text-xs sm:text-base">
-                  {Math.round(row.spawnChance * 100)}%
-                </td>
-                <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-gray-400 text-xs sm:text-base">
-                  {row.location}
-                </td>
-                <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-gray-400 text-xs sm:text-base">
-                  {Math.round(row.locationChance * 100)}%
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {Object.entries(groupData(filteredData, groupBy)).map(([group, items]) => (
+        <div key={group} className="space-y-2">
+          {group && (
+            <h3 className="text-lg font-semibold text-gray-300 px-2">
+              {group}
+            </h3>
+          )}
+          <div className="overflow-x-auto rounded-lg border border-gray-700 -mx-2 sm:mx-0">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-800">
+                  {groupBy !== "map" && (
+                    <SortHeader field="map" className="w-1/4">
+                      <span className="text-purple-300 text-xs sm:text-sm">Map</span>
+                    </SortHeader>
+                  )}
+                  {groupBy !== "boss" && (
+                    <SortHeader field="boss" className="w-1/4">
+                      <span className="text-blue-300 text-xs sm:text-sm">Boss</span>
+                    </SortHeader>
+                  )}
+                  <SortHeader field="spawnChance" className="w-1/4">
+                    <span className="text-amber-300 text-xs sm:text-sm">
+                      Spawn Chance
+                    </span>
+                  </SortHeader>
+                  {groupBy !== "location" && (
+                    <SortHeader field="location" className="w-1/6">
+                      <span className="text-gray-400 text-xs sm:text-sm">Location</span>
+                    </SortHeader>
+                  )}
+                  <SortHeader field="locationChance" className="w-1/6">
+                    <span className="text-gray-400 text-xs sm:text-sm">
+                      Location Chance
+                    </span>
+                  </SortHeader>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((row, index) => {
+                  const prevRow = index > 0 ? items[index - 1] : null;
+                  const isNewGroup = isNewSection(row, prevRow);
+
+                  return (
+                    <tr
+                      key={`${row.map}-${row.boss}-${row.location}-${index}`}
+                      className={`
+                        hover:bg-gray-800/50 transition-colors duration-200
+                        ${isNewGroup ? "border-t-2 border-gray-600" : "border-t border-gray-800"}
+                      `}
+                    >
+                      {groupBy !== "map" && (
+                        <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap font-semibold text-purple-300 text-xs sm:text-base">
+                          {row.map}
+                        </td>
+                      )}
+                      {groupBy !== "boss" && (
+                        <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap font-semibold text-blue-300 text-xs sm:text-base">
+                          {row.boss}
+                        </td>
+                      )}
+                      <td className="px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap font-semibold text-amber-300 text-xs sm:text-base">
+                        {Math.round(row.spawnChance * 100)}%
+                      </td>
+                      {groupBy !== "location" && (
+                        <td className={`px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-base ${getLocationClasses(row.location, row.locationChance)}`}>
+                          {row.location}
+                        </td>
+                      )}
+                      <td className={`px-2 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-base ${getLocationClasses(row.location, row.locationChance)}`}>
+                        {Math.round(row.locationChance * 100)}%
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
