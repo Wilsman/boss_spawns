@@ -1,6 +1,6 @@
 import { SpawnData } from "@/types";
 
-const CACHE_VERSION = 2; // Add version number
+const CACHE_VERSION = 3; // Add version number
 
 export async function fetchSpawnData(
   gameMode: "regular" | "pve"
@@ -70,14 +70,29 @@ export async function fetchSpawnData(
     throw new Error("Failed to fetch data");
   }
 
-  // Update cache
+  // Transform Knight to Goons in the response data
+  const transformedData = {
+    ...result.data,
+    maps: result.data.maps.map((map: any) => ({
+      ...map,
+      bosses: map.bosses.map((boss: any) => ({
+        ...boss,
+        boss: {
+          ...boss.boss,
+          name: boss.boss.name === "Knight" ? "Goons" : boss.boss.name,
+        },
+      })),
+    })),
+  };
+
+  // Update cache with transformed data
   localStorage.setItem(
     CACHE_KEY,
     JSON.stringify({
-      data: result.data,
+      data: transformedData,
       timestamp: new Date().getTime(),
     })
   );
 
-  return result.data.maps;
+  return transformedData.maps;
 }

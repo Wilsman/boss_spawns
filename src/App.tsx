@@ -9,6 +9,7 @@ import { CacheStatus } from "@/components/CacheStatus";
 import { diffData, DataChange } from "@/lib/diff";
 import { ChangesTable } from "@/components/ChangesTable";
 import { saveChanges, getStoredChanges } from "@/lib/changes";
+import { VersionLabel } from "@/components/VersionLabel";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -155,8 +156,8 @@ export default function App() {
   }, [])
 
   return (
-    <div className="min-h-screen text-gray-100 bg-gray-900">
-      <div className="px-2 py-4 mx-auto max-w-7xl sm:px-4 sm:py-8">
+    <div className="min-h-screen text-gray-100 bg-gray-900 flex flex-col">
+      <div className="flex-1 px-2 py-4 mx-auto w-full max-w-7xl sm:px-4 sm:py-8">
         <Header />
 
         <div className="mb-4 space-y-4 sm:space-y-6 sm:mb-8">
@@ -220,6 +221,7 @@ export default function App() {
           )}
         </div>
       </div>
+      <VersionLabel />
     </div>
   );
 }
