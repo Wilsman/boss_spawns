@@ -4,15 +4,15 @@ export function VersionLabel() {
       <div className="w-full px-4">
         <div className="flex justify-end">
           <span className="text-xs text-gray-500">
-            <a 
-              href="https://buymeacoffee.com/wilsman77" 
-              target="_blank" 
+            <a
+              href="https://buymeacoffee.com/wilsman77"
+              target="_blank"
               rel="noopener noreferrer"
               className="text-purple-400 hover:text-purple-300 transition-colors duration-200"
             >
               Wilsman77
             </a>
-            {' '}updated on 08/11/2024
+            {' '}updated on 29/11/2024
           </span>
         </div>
       </div>
