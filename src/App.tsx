@@ -46,10 +46,34 @@ export default function App() {
     []
   );
 
-  // Initial data load
+  // Initial data load - load from cache first
   useEffect(() => {
-    // Removed initial loadData("both") since checkCacheAndRefresh will handle it
-  }, [loadData]);
+    const loadInitialData = () => {
+      // Try to load data from cache first
+      try {
+        const regularCached = localStorage.getItem("maps_regular");
+        const pveCached = localStorage.getItem("maps_pve");
+
+        if (regularCached) {
+          const { data } = JSON.parse(regularCached);
+          if (data?.maps) {
+            setRegularData(data.maps);
+          }
+        }
+
+        if (pveCached) {
+          const { data } = JSON.parse(pveCached);
+          if (data?.maps) {
+            setPveData(data.maps);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading cached data:", error);
+      }
+    };
+
+    loadInitialData();
+  }, []); // Only run once on mount
 
   // Check cache and refresh data when needed
   useEffect(() => {
@@ -64,6 +88,13 @@ export default function App() {
       );
       const now = Date.now();
 
+      // If no cache exists at all, load both
+      if (regularTimestamp === 0 && pveTimestamp === 0) {
+        loadData("both");
+        return;
+      }
+
+      // Check for expired caches
       if (now - regularTimestamp >= CACHE_EXPIRY_TIME && now - pveTimestamp >= CACHE_EXPIRY_TIME) {
         loadData("both");
       } else if (now - regularTimestamp >= CACHE_EXPIRY_TIME) {

@@ -21,19 +21,23 @@ export async function fetchSpawnData(
     localStorage.setItem("cache_version", CACHE_VERSION.toString());
   }
 
-  // Before fetching new data, store current data as previous
-  const currentData = localStorage.getItem(`maps_${gameMode}`);
-  if (currentData) {
-    localStorage.setItem(`maps_${gameMode}_previous`, currentData);
-  }
-
-  // Check cache
+  // Check cache first
   const cached = localStorage.getItem(CACHE_KEY);
   if (cached) {
-    const { data, timestamp } = JSON.parse(cached);
-    if (new Date().getTime() - timestamp < CACHE_DURATION) {
-      return data.maps;
+    try {
+      const { data, timestamp } = JSON.parse(cached);
+      if (data?.maps && new Date().getTime() - timestamp < CACHE_DURATION) {
+        return data.maps;
+      }
+    } catch (error) {
+      console.error("Error parsing cached data:", error);
     }
+  }
+
+  // Before fetching new data, store current data as previous
+  const currentData = localStorage.getItem(CACHE_KEY);
+  if (currentData) {
+    localStorage.setItem(`${CACHE_KEY}_previous`, currentData);
   }
 
   // Fetch fresh data
@@ -67,6 +71,17 @@ export async function fetchSpawnData(
   const result = await response.json();
 
   if (!result.data) {
+    // If API fails, try to use cached data even if expired
+    if (cached) {
+      try {
+        const { data } = JSON.parse(cached);
+        if (data?.maps) {
+          return data.maps;
+        }
+      } catch (error) {
+        console.error("Error parsing cached data:", error);
+      }
+    }
     throw new Error("Failed to fetch data");
   }
 
