@@ -48,12 +48,14 @@ export default function App() {
 
   // Initial data load
   useEffect(() => {
-    loadData("both");
+    // Removed initial loadData("both") since checkCacheAndRefresh will handle it
   }, [loadData]);
 
   // Check cache and refresh data when needed
   useEffect(() => {
     const checkCacheAndRefresh = () => {
+      if (loading) return; // Prevent multiple simultaneous requests
+
       const regularTimestamp = parseInt(
         localStorage.getItem("maps_regular_timestamp") || "0"
       );
@@ -62,20 +64,22 @@ export default function App() {
       );
       const now = Date.now();
 
-      if (now - regularTimestamp >= CACHE_EXPIRY_TIME) {
+      if (now - regularTimestamp >= CACHE_EXPIRY_TIME && now - pveTimestamp >= CACHE_EXPIRY_TIME) {
+        loadData("both");
+      } else if (now - regularTimestamp >= CACHE_EXPIRY_TIME) {
         loadData("regular");
-      }
-      if (now - pveTimestamp >= CACHE_EXPIRY_TIME) {
+      } else if (now - pveTimestamp >= CACHE_EXPIRY_TIME) {
         loadData("pve");
       }
     };
 
-    // Check when component mounts and when window regains focus
+    // Check when component mounts
     checkCacheAndRefresh();
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        checkCacheAndRefresh();
+        // Add small delay to prevent race conditions with other triggers
+        setTimeout(checkCacheAndRefresh, 100);
       }
     };
 
@@ -88,7 +92,7 @@ export default function App() {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [loadData]);
+  }, [loadData, loading]);
 
   useEffect(() => {
     if (mode === "changes") {
@@ -101,14 +105,14 @@ export default function App() {
       const regularPrevious = JSON.parse(
         localStorage.getItem("maps_regular_previous") || "{}"
       )?.data?.maps || [];
-      
+
       const pvePrevious = JSON.parse(
         localStorage.getItem("maps_pve_previous") || "{}"
       )?.data?.maps || [];
 
       const regularChanges = diffData(regularPrevious, regularData, "PvP");
       const pveChanges = diffData(pvePrevious, pveData, "PvE");
-      
+
       // Save new changes to persistent storage
       if (regularChanges.length > 0 || pveChanges.length > 0) {
         const newChanges = [...regularChanges, ...pveChanges]
@@ -143,9 +147,8 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `tarkov_spawns_${mode === "regular" ? "pvp" : mode}_${
-      new Date().toISOString().split("T")[0]
-    }.csv`;
+    link.download = `tarkov_spawns_${mode === "regular" ? "pvp" : mode}_${new Date().toISOString().split("T")[0]
+      }.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
