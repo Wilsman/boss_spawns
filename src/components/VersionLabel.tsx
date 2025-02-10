@@ -12,7 +12,7 @@ export function VersionLabel() {
             >
               Wilsman77
             </a>
-            {' '}updated on 29/11/2024
+            {' '}updated on 10/02/2025
           </span>
         </div>
       </div>

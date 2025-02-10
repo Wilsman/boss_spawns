@@ -1,17 +1,17 @@
+import { useCallback, useMemo, useEffect, useState } from "react";
 import { DataChange } from "@/lib/diff"
-import { getRelativeTime } from "@/lib/utils"
-import { ArrowUpDown, Download, Upload, Trash2 } from "lucide-react"
-import { useState, useEffect } from "react"
-import { clearChangesHistory, exportChanges, importChanges } from "@/lib/changes"
+import { ArrowUpDown, Download, RefreshCcw, AlertTriangle } from "lucide-react"
+import { exportChanges } from "@/lib/changes"
+import { useRelativeTime } from "@/hooks/useRelativeTime"
 
 interface ChangesTableProps {
-  changes: DataChange[]
+  changes: DataChange[];
   filters: {
-    map: string
-    boss: string
-    search: string
-  }
-  onChangesUpdate: () => void
+    map: string;
+    boss: string;
+    search: string;
+  };
+  onChangesUpdate: () => Promise<void>;
 }
 
 type SortField = "map" | "boss" | "field" | "oldValue" | "newValue" | "timestamp" | "gameMode"
@@ -19,18 +19,147 @@ type SortDirection = "asc" | "desc"
 type GroupBy = "none" | "day" | "week"
 type DateRange = "all" | "24h" | "7d" | "30d"
 
-export function ChangesTable({ changes, filters, onChangesUpdate }: ChangesTableProps) {
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+export function ChangesTable({ changes = [], filters, onChangesUpdate }: ChangesTableProps) {
   const [sortField, setSortField] = useState<SortField>("timestamp")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
   const [groupBy, setGroupBy] = useState<GroupBy>("none")
   const [dateRange, setDateRange] = useState<DateRange>("all")
-  const [, forceUpdate] = useState({})
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(() => {
+    return parseInt(localStorage.getItem('changes_timestamp') || Date.now().toString(), 10);
+  });
+  const [nextRefreshAllowed, setNextRefreshAllowed] = useState<number>(() => {
+    const timestamp = parseInt(localStorage.getItem('changes_timestamp') || '0', 10);
+    return timestamp + CACHE_DURATION;
+  });
+  const [timeUntilRefresh, setTimeUntilRefresh] = useState<number>(Math.max(0, nextRefreshAllowed - Date.now()));
+  const lastRefreshedTimeDisplay = useRelativeTime(lastRefreshTime)
+  const canRefresh = timeUntilRefresh === 0;
 
-  // Force update every minute to refresh relative times
+  const handleManualRefresh = useCallback(async () => {
+    const now = Date.now();
+    if (isRefreshing || now < nextRefreshAllowed) return;
+
+    setIsRefreshing(true);
+    setError(null);
+
+    try {
+      await onChangesUpdate();
+      const currentTime = Date.now();
+      setLastRefreshTime(currentTime);
+      setNextRefreshAllowed(currentTime + CACHE_DURATION);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch changes');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, onChangesUpdate, nextRefreshAllowed]);
+
+  // Calculate time until next refresh
   useEffect(() => {
-    const interval = setInterval(() => forceUpdate({}), 60000)
-    return () => clearInterval(interval)
-  }, [])
+    if (!canRefresh) {
+      const interval = setInterval(() => {
+        const remaining = Math.max(0, nextRefreshAllowed - Date.now());
+        setTimeUntilRefresh(remaining);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [nextRefreshAllowed, canRefresh]);
+
+  // Apply date range filter before other filters
+  const filteredChanges = useMemo(() => {
+    if (!Array.isArray(changes)) return [];
+
+    return changes.filter(change => {
+      const now = Date.now()
+      const changeTime = change.timestamp
+      const diff = now - changeTime
+      const millisecondsPerDay = 24 * 60 * 60 * 1000
+
+      // Apply date range filter
+      switch (dateRange) {
+        case "24h":
+          if (diff > millisecondsPerDay) return false;
+          break;
+        case "7d":
+          if (diff > 7 * millisecondsPerDay) return false;
+          break;
+        case "30d":
+          if (diff > 30 * millisecondsPerDay) return false;
+          break;
+      }
+
+      // Apply text filters
+      if (filters.map && !change.map.toLowerCase().includes(filters.map.toLowerCase()))
+        return false;
+      if (filters.boss && !change.boss.toLowerCase().includes(filters.boss.toLowerCase()))
+        return false;
+      if (filters.search) {
+        const search = filters.search.toLowerCase();
+        return (
+          change.map.toLowerCase().includes(search) ||
+          change.boss.toLowerCase().includes(search) ||
+          change.oldValue.toLowerCase().includes(search) ||
+          change.newValue.toLowerCase().includes(search)
+        );
+      }
+      return true;
+    });
+  }, [changes, dateRange, filters]);
+
+  // Memoize date range counts
+  const dateRangeCounts = useMemo(() => {
+    const now = Date.now();
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+    return {
+      all: changes.length,
+      last24h: changes.filter(c => now - c.timestamp <= millisecondsPerDay).length,
+      last7d: changes.filter(c => now - c.timestamp <= 7 * millisecondsPerDay).length,
+      last30d: changes.filter(c => now - c.timestamp <= 30 * millisecondsPerDay).length
+    };
+  }, [changes]);
+
+  // Memoize sorted changes
+  const sortedChanges = useMemo(() => {
+    return [...filteredChanges].sort((a, b) => {
+      const direction = sortDirection === "asc" ? 1 : -1;
+
+      const getValue = (change: DataChange) => {
+        switch (sortField) {
+          case "timestamp": return change.timestamp;
+          case "map": return change.map;
+          case "boss": return change.boss;
+          case "field": return change.field;
+          case "oldValue": return change.oldValue;
+          case "newValue": return change.newValue;
+          case "gameMode": return change.gameMode;
+          default: return change.timestamp;
+        }
+      }
+
+      const aValue = getValue(a);
+      const bValue = getValue(b);
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        const comparison = aValue.localeCompare(bValue);
+        return comparison === 0 ? b.timestamp - a.timestamp : comparison * direction;
+      }
+
+      const comparison = (aValue as number) - (bValue as number);
+      return comparison === 0 ?
+        (a.map.localeCompare(b.map) || a.boss.localeCompare(b.boss)) :
+        comparison * direction;
+    });
+  }, [filteredChanges, sortField, sortDirection]);
+
+  // Group changes if needed
+  const groupedChanges = useMemo(() => {
+    return groupBy === "none" ? null : groupChangesByDate(sortedChanges, groupBy);
+  }, [sortedChanges, groupBy]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -55,97 +184,41 @@ export function ChangesTable({ changes, filters, onChangesUpdate }: ChangesTable
       <div className="flex items-center gap-2">
         {children}
         <ArrowUpDown
-          className={`h-4 w-4 transition-colors ${
-            sortField === field ? "text-purple-400" : "text-gray-500"
-          }`}
+          className={`h-4 w-4 transition-colors ${sortField === field ? "text-purple-400" : "text-gray-500"
+            }`}
         />
       </div>
     </th>
   )
 
-  // Apply filters
-  let filteredChanges = changes.filter(change => {
-    if (filters.map && !change.map.toLowerCase().includes(filters.map.toLowerCase()))
-      return false
-    if (filters.boss && !change.boss.toLowerCase().includes(filters.boss.toLowerCase()))
-      return false
-    if (filters.search) {
-      const search = filters.search.toLowerCase()
-      return (
-        change.map.toLowerCase().includes(search) ||
-        change.boss.toLowerCase().includes(search) ||
-        change.oldValue.toLowerCase().includes(search) ||
-        change.newValue.toLowerCase().includes(search)
-      )
-    }
-    return true
-  })
-
-  // Apply sorting
-  filteredChanges.sort((a, b) => {
-    const direction = sortDirection === "asc" ? 1 : -1
-    switch (sortField) {
-      case "map":
-        return a.map.localeCompare(b.map) * direction
-      case "boss":
-        return a.boss.localeCompare(b.boss) * direction
-      case "field":
-        return a.field.localeCompare(b.field) * direction
-      case "oldValue":
-        return a.oldValue.localeCompare(b.oldValue) * direction
-      case "newValue":
-        return a.newValue.localeCompare(b.newValue) * direction
-      case "timestamp":
-        return (a.timestamp - b.timestamp) * direction
-      case "gameMode":
-        return a.gameMode.localeCompare(b.gameMode) * direction
-      default:
-        return 0
-    }
-  })
-
-  // Apply date range filter
-  filteredChanges = filteredChanges.filter(change => {
-    const now = Date.now()
-    const changeTime = change.timestamp
-    const diff = now - changeTime
-
-    switch (dateRange) {
-      case "24h":
-        return diff <= 24 * 60 * 60 * 1000
-      case "7d":
-        return diff <= 7 * 24 * 60 * 60 * 1000
-      case "30d":
-        return diff <= 30 * 24 * 60 * 60 * 1000
-      default:
-        return true
-    }
-  })
-
-  // Group changes if needed
-  const groupedChanges = groupBy === "none" ? null : groupChangesByDate(filteredChanges, groupBy)
-
-  // Handle file import
-  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    try {
-      await importChanges(file)
-      onChangesUpdate()
-    } catch (error) {
-      console.error("Failed to import changes:", error)
-      // You might want to add proper error handling/notification here
-    }
-  }
-
   function renderTable(changes: DataChange[]) {
     if (!changes.length) {
+      // Check if we have filters applied
+      const hasFilters = filters.map || filters.boss || filters.search;
+      const message = hasFilters
+        ? "No changes match your current filters"
+        : "No changes have been detected yet";
+      const suggestion = hasFilters
+        ? "Try adjusting your filters or changing the date range"
+        : "Changes will appear here when boss spawns are updated";
+
       return (
-        <div className="text-center py-12 text-gray-400">
-          No changes detected in the current dataset
+        <div className="text-center py-12 space-y-2">
+          <div className="text-gray-400">{message}</div>
+          <div className="text-gray-500 text-sm">{suggestion}</div>
+          {hasFilters && (
+            <button
+              onClick={() => {
+                // Reset filters through parent component
+                onChangesUpdate();
+              }}
+              className="px-3 py-1 text-sm bg-gray-800 rounded-md hover:bg-gray-700 mt-4"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
-      )
+      );
     }
 
     return (
@@ -168,9 +241,7 @@ export function ChangesTable({ changes, filters, onChangesUpdate }: ChangesTable
                 key={`${change.map}-${change.boss}-${change.field}-${index}`}
                 className="border-t border-gray-800 hover:bg-gray-800/50 transition-colors duration-200"
               >
-                <td className="px-6 py-4 whitespace-nowrap text-gray-400">
-                  {getRelativeTime(change.timestamp)}
-                </td>
+                <TimestampCell timestamp={change.timestamp} />
                 <td className="px-6 py-4 whitespace-nowrap text-orange-300">
                   {change.gameMode}
                 </td>
@@ -197,31 +268,127 @@ export function ChangesTable({ changes, filters, onChangesUpdate }: ChangesTable
     )
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="space-y-4">
+          <div className="text-red-400">{error}</div>
+          <div className="text-gray-400 text-sm">
+            {changes.length > 0 ?
+              "Showing previously loaded changes. Click retry to fetch latest updates." :
+              "Unable to load changes. Please try again."
+            }
+          </div>
+          <button
+            onClick={handleManualRefresh}
+            className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 mx-auto"
+          >
+            <RefreshCcw className="w-4 h-4" />
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If we have no changes data, show an appropriate message
+  if (!changes.length) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <AlertTriangle className="w-12 h-12 text-yellow-500" />
+        <div className="text-center space-y-2">
+          <p className="text-gray-400">No changes have been detected yet</p>
+          <p className="text-gray-500 text-sm">Changes will appear here when boss spawns are updated</p>
+          <button
+            onClick={handleManualRefresh}
+            disabled={isRefreshing}
+            className="px-4 py-2 mt-4 text-sm bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRefreshing ? (
+              <>
+                <RefreshCcw className="inline w-4 h-4 mr-2 animate-spin" />
+                Checking for changes...
+              </>
+            ) : (
+              'Check for changes'
+            )}
+          </button>
+          {error && (
+            <p className="text-red-400 text-sm mt-2">{error}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const formatGroupDate = (dateStr: string): string => {
+    if (dateStr.includes(' to ')) {
+      const [start, end] = dateStr.split(' to ');
+      return `Week of ${new Date(start).toLocaleDateString()} - ${new Date(end).toLocaleDateString()}`;
+    }
+    return new Date(dateStr).toLocaleDateString();
+  };
+
+  // Update the refresh button in the UI
+  const getRefreshButtonTooltip = () => {
+    if (isRefreshing) return 'Refreshing...';
+    if (!canRefresh) {
+      const minutes = Math.floor(timeUntilRefresh / 60000);
+      const seconds = Math.floor((timeUntilRefresh % 60000) / 1000);
+      return `Next refresh available in ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return 'Refresh changes';
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4 p-4 bg-gray-800/50 rounded-lg">
-        {/* Date Range Filter */}
-        <select
-          value={dateRange}
-          onChange={(e) => setDateRange(e.target.value as DateRange)}
-          className="px-3 py-2 text-sm bg-gray-800 rounded-md border border-gray-700"
-        >
-          <option value="all">All Time</option>
-          <option value="24h">Last 24 Hours</option>
-          <option value="7d">Last 7 Days</option>
-          <option value="30d">Last 30 Days</option>
-        </select>
+        <div className="flex items-center gap-4">
+          {/* Date Range Filter */}
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value as DateRange)}
+            className="px-3 py-2 text-sm bg-gray-800 rounded-md border border-gray-700"
+          >
+            <option value="all">All Time ({dateRangeCounts.all})</option>
+            <option value="24h">Last 24 Hours ({dateRangeCounts.last24h})</option>
+            <option value="7d">Last 7 Days ({dateRangeCounts.last7d})</option>
+            <option value="30d">Last 30 Days ({dateRangeCounts.last30d})</option>
+          </select>
 
-        {/* Grouping Options */}
-        <select
-          value={groupBy}
-          onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-          className="px-3 py-2 text-sm bg-gray-800 rounded-md border border-gray-700"
-        >
-          <option value="none">No Grouping</option>
-          <option value="day">Group by Day</option>
-          <option value="week">Group by Week</option>
-        </select>
+          {/* Grouping Options */}
+          <select
+            value={groupBy}
+            onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+            className="px-3 py-2 text-sm bg-gray-800 rounded-md border border-gray-700"
+          >
+            <option value="none">No Grouping</option>
+            <option value="day">Group by Day</option>
+            <option value="week">Group by Week</option>
+          </select>
+
+          <div className="flex items-center gap-2 text-sm">
+            <span className={`text-gray-400 ${isRefreshing ? 'opacity-50' : ''}`}>
+              Last updated: {lastRefreshedTimeDisplay || 'just now'}
+            </span>
+            <button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing || !canRefresh}
+              className={`p-1 rounded-full hover:bg-gray-700/50 transition-colors 
+                ${(isRefreshing || !canRefresh) ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+              title={getRefreshButtonTooltip()}
+            >
+              <RefreshCcw
+                className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-purple-400' : 'text-gray-400'}`}
+              />
+            </button>
+            {!canRefresh && (
+              <span className="text-xs text-gray-500">
+                {Math.floor(timeUntilRefresh / 60000)}:{Math.floor((timeUntilRefresh % 60000) / 1000).toString().padStart(2, '0')}
+              </span>
+            )}
+          </div>
+        </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2 ml-auto">
@@ -231,43 +398,40 @@ export function ChangesTable({ changes, filters, onChangesUpdate }: ChangesTable
           >
             <Download className="w-4 h-4" /> Export
           </button>
-          <label className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-800 rounded-md hover:bg-gray-700 cursor-pointer">
-            <Upload className="w-4 h-4" /> Import
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleImport}
-              className="hidden"
-            />
-          </label>
-          <button
-            onClick={() => {
-              if (confirm("Are you sure you want to clear all change history?")) {
-                clearChangesHistory()
-                onChangesUpdate()
-              }
-            }}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-red-900/50 rounded-md hover:bg-red-900/75"
-          >
-            <Trash2 className="w-4 h-4" /> Clear History
-          </button>
         </div>
       </div>
 
-      {/* Existing table code... */}
       {groupedChanges ? (
-        Object.entries(groupedChanges).map(([date, changes]) => (
-          <div key={date} className="mb-6">
-            <h3 className="mb-2 text-lg font-semibold text-gray-300">{date}</h3>
-            {renderTable(changes)}
-          </div>
-        ))
+        Object.entries(groupedChanges)
+          // Sort groups by date key
+          .sort(([a], [b]) => b.localeCompare(a))
+          .map(([date, groupChanges]) => (
+            <div key={date} className="mb-6">
+              <h3 className="mb-2 text-lg font-semibold text-gray-300 flex items-center gap-2">
+                {formatGroupDate(date)}
+                <span className="text-sm text-gray-500 font-normal">
+                  ({groupChanges.length} change{groupChanges.length !== 1 ? 's' : ''})
+                </span>
+              </h3>
+              {renderTable(groupChanges)}
+            </div>
+          ))
       ) : (
-        renderTable(filteredChanges)
+        renderTable(sortedChanges)
       )}
     </div>
   )
 }
+
+// Simplified TimestampCell component within the same file
+const TimestampCell = ({ timestamp }: { timestamp: number }) => {
+  const time = useRelativeTime(timestamp);
+  return (
+    <td className="px-6 py-4 whitespace-nowrap text-gray-400">
+      {time || 'unknown'}
+    </td>
+  );
+};
 
 function groupChangesByDate(changes: DataChange[], grouping: "day" | "week"): Record<string, DataChange[]> {
   const grouped: Record<string, DataChange[]> = {}
@@ -277,14 +441,16 @@ function groupChangesByDate(changes: DataChange[], grouping: "day" | "week"): Re
     let key: string
 
     if (grouping === "day") {
-      key = date.toLocaleDateString()
+      // Format date as YYYY-MM-DD for proper sorting
+      key = date.toISOString().split('T')[0]
     } else {
       // Get start of week
       const startOfWeek = new Date(date)
       startOfWeek.setDate(date.getDate() - date.getDay())
       const endOfWeek = new Date(startOfWeek)
       endOfWeek.setDate(startOfWeek.getDate() + 6)
-      key = `${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`
+      // Format as YYYY-MM-DD for sorting
+      key = `${startOfWeek.toISOString().split('T')[0]} to ${endOfWeek.toISOString().split('T')[0]}`
     }
 
     if (!grouped[key]) {
@@ -293,5 +459,10 @@ function groupChangesByDate(changes: DataChange[], grouping: "day" | "week"): Re
     grouped[key].push(change)
   })
 
+  // Sort changes within each group by timestamp
+  Object.values(grouped).forEach(group => {
+    group.sort((a, b) => b.timestamp - a.timestamp)
+  })
+
   return grouped
-} 
+}

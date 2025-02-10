@@ -6,9 +6,9 @@ import { Header } from "@/components/Header";
 import { FilterBar } from "@/components/FilterBar";
 import { ModeToggle } from "@/components/ModeToggle";
 import { CacheStatus } from "@/components/CacheStatus";
-import { diffData, DataChange } from "@/lib/diff";
+import { DataChange } from "@/lib/diff";
 import { ChangesTable } from "@/components/ChangesTable";
-import { saveChanges, getStoredChanges } from "@/lib/changes";
+import { exportChanges, getStoredChanges } from "@/lib/changes";
 import { VersionLabel } from "@/components/VersionLabel";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -125,35 +125,41 @@ export default function App() {
     };
   }, [loadData, loading]);
 
+  // Single effect for loading changes data when mode switches to changes
   useEffect(() => {
     if (mode === "changes") {
-      setChanges(getStoredChanges())
+      setLoading(true);
+      getStoredChanges()
+        .then(changesData => {
+          setChanges(changesData);
+        })
+        .catch(error => {
+          console.error('Failed to fetch changes:', error);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
-  }, [mode])
+  }, [mode]);
 
-  useEffect(() => {
-    if (mode === "changes" && regularData && pveData) {
-      const regularPrevious = JSON.parse(
-        localStorage.getItem("maps_regular_previous") || "{}"
-      )?.data?.maps || [];
-
-      const pvePrevious = JSON.parse(
-        localStorage.getItem("maps_pve_previous") || "{}"
-      )?.data?.maps || [];
-
-      const regularChanges = diffData(regularPrevious, regularData, "PvP");
-      const pveChanges = diffData(pvePrevious, pveData, "PvE");
-
-      // Save new changes to persistent storage
-      if (regularChanges.length > 0 || pveChanges.length > 0) {
-        const newChanges = [...regularChanges, ...pveChanges]
-        saveChanges(newChanges)
-        setChanges(getStoredChanges())
-      }
+  const handleChangesUpdate = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getStoredChanges();
+      setChanges(data);
+    } catch (error) {
+      console.error('Failed to update changes:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [mode, regularData, pveData]);
+  }, []);
 
   const handleExport = () => {
+    if (mode === "changes") {
+      exportChanges();
+      return;
+    }
+
     const data = mode === "regular" ? regularData : pveData;
     if (!data) return;
 
@@ -184,10 +190,6 @@ export default function App() {
     link.click();
     document.body.removeChild(link);
   };
-
-  const handleChangesUpdate = useCallback(() => {
-    setChanges(getStoredChanges())
-  }, [])
 
   return (
     <div className="min-h-screen text-gray-100 bg-gray-900 flex flex-col">
