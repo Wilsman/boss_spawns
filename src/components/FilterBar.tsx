@@ -94,7 +94,7 @@ export function FilterBar({
         className="hidden w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-purple-600 rounded-lg sm:flex sm:items-center sm:gap-2 hover:bg-purple-700 sm:w-auto"
       >
         <FileDown className="hidden w-4 h-4 sm:block" />
-        Export CSV
+        Export
       </button>
     </div>
   );

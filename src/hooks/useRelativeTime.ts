@@ -1,8 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
-import { getRelativeTime } from '@/lib/utils';
+
+function formatRelativeTime(timestamp: number): string {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const minutes = Math.floor(diff / 60000);
+  
+  if (minutes < 1) return 'just now';
+  if (minutes === 1) return '1 minute ago';
+  if (minutes < 60) return `${minutes} minutes ago`;
+  
+  const hours = Math.floor(minutes / 60);
+  if (hours === 1) return '1 hour ago';
+  if (hours < 24) return `${hours} hours ago`;
+  
+  const days = Math.floor(hours / 24);
+  if (days === 1) return '1 day ago';
+  return `${days} days ago`;
+}
 
 export function useRelativeTime(timestamp: number) {
-    const [relativeTime, setRelativeTime] = useState(() => getRelativeTime(timestamp));
+    const [relativeTime, setRelativeTime] = useState(() => formatRelativeTime(timestamp));
     const timerRef = useRef<NodeJS.Timeout>();
 
     useEffect(() => {
@@ -16,12 +33,12 @@ export function useRelativeTime(timestamp: number) {
 
         // Don't set up timer for old timestamps
         if (age > 30 * 24 * 60 * 60 * 1000) { // > 30 days
-            setRelativeTime(getRelativeTime(timestamp));
+            setRelativeTime(formatRelativeTime(timestamp));
             return;
         }
 
         // Set initial value
-        setRelativeTime(getRelativeTime(timestamp));
+        setRelativeTime(formatRelativeTime(timestamp));
 
         // Determine update interval based on age
         let interval: number;
@@ -35,14 +52,14 @@ export function useRelativeTime(timestamp: number) {
 
         // Set up new timer
         timerRef.current = setInterval(() => {
-            setRelativeTime(getRelativeTime(timestamp));
+            setRelativeTime(formatRelativeTime(timestamp));
             // Check if we need to adjust the interval
             const newAge = Date.now() - timestamp;
             if (newAge >= 60 * 1000 && interval === 1000) { // Just passed 1 minute
                 // Clear current interval and set up new one
                 clearInterval(timerRef.current);
                 timerRef.current = setInterval(() => {
-                    setRelativeTime(getRelativeTime(timestamp));
+                    setRelativeTime(formatRelativeTime(timestamp));
                 }, 30 * 1000); // Switch to 30-second updates
             }
         }, interval);

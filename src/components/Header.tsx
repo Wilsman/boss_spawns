@@ -6,19 +6,9 @@ export function Header() {
       {/* Title Section */}
       <div className="flex flex-col items-center space-y-6">
         <div className="flex items-center space-x-4">
-          <img
-            src="https://static-cdn.jtvnw.net/jtv_user_pictures/ca020585-dce5-46bd-a952-cac963a2aff4-profile_image-70x70.png"
-            alt="Profile"
-            className="hidden w-12 h-12 rounded-full shadow-lg sm:block shadow-purple-500/20"
-          />
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
             Tarkov Boss Spawns
           </h1>
-          <img
-            src="https://static-cdn.jtvnw.net/jtv_user_pictures/ca020585-dce5-46bd-a952-cac963a2aff4-profile_image-70x70.png"
-            alt="Profile"
-            className="hidden w-12 h-12 rounded-full shadow-lg sm:block shadow-purple-500/20"
-          />
         </div>
 
         {/* Links Section */}
@@ -28,7 +18,7 @@ export function Header() {
             href="https://www.cultistcircle.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg 
+            className="group flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg
                      hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.02]
                      border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
           >

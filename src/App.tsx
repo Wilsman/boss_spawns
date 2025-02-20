@@ -1,20 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { DataTable } from "@/components/DataTable";
-import { DataMode, SpawnData } from "@/types";
+import { SpawnData } from "@/types";
 import { fetchSpawnData } from "@/lib/api";
 import { Header } from "@/components/Header";
 import { FilterBar } from "@/components/FilterBar";
-import { ModeToggle } from "@/components/ModeToggle";
 import { CacheStatus } from "@/components/CacheStatus";
 import { DataChange } from "@/lib/diff";
 import { ChangesTable } from "@/components/ChangesTable";
 import { exportChanges, getStoredChanges } from "@/lib/changes";
 import { VersionLabel } from "@/components/VersionLabel";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { NavBar } from "@/components/ui/navbar";
+import { Swords, Crosshair, Scale, History } from "lucide-react";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-export default function App() {
-  const [mode, setMode] = useState<DataMode>("regular");
+function MainApp() {
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
   const [pveData, setPveData] = useState<SpawnData[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,6 +23,17 @@ export default function App() {
   const [bossFilter, setBossFilter] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [changes, setChanges] = useState<DataChange[]>([]);
+  const location = useLocation();
+
+  // Determine the current mode based on URL
+  const mode =
+    location.pathname === "/pve"
+      ? "pve"
+      : location.pathname === "/compare"
+      ? "compare"
+      : location.pathname === "/changes"
+      ? "changes"
+      : "regular";
 
   const loadData = useCallback(
     async (gameMode?: "regular" | "pve" | "both") => {
@@ -95,7 +107,10 @@ export default function App() {
       }
 
       // Check for expired caches
-      if (now - regularTimestamp >= CACHE_EXPIRY_TIME && now - pveTimestamp >= CACHE_EXPIRY_TIME) {
+      if (
+        now - regularTimestamp >= CACHE_EXPIRY_TIME &&
+        now - pveTimestamp >= CACHE_EXPIRY_TIME
+      ) {
         loadData("both");
       } else if (now - regularTimestamp >= CACHE_EXPIRY_TIME) {
         loadData("regular");
@@ -130,11 +145,11 @@ export default function App() {
     if (mode === "changes") {
       setLoading(true);
       getStoredChanges()
-        .then(changesData => {
+        .then((changesData) => {
           setChanges(changesData);
         })
-        .catch(error => {
-          console.error('Failed to fetch changes:', error);
+        .catch((error) => {
+          console.error("Failed to fetch changes:", error);
         })
         .finally(() => {
           setLoading(false);
@@ -148,7 +163,7 @@ export default function App() {
       const data = await getStoredChanges();
       setChanges(data);
     } catch (error) {
-      console.error('Failed to update changes:', error);
+      console.error("Failed to update changes:", error);
     } finally {
       setLoading(false);
     }
@@ -184,55 +199,50 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `tarkov_spawns_${mode === "regular" ? "pvp" : mode}_${new Date().toISOString().split("T")[0]
-      }.csv`;
+    link.download = `tarkov_spawns_${mode === "regular" ? "pvp" : mode}_${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <div className="min-h-screen text-gray-100 bg-gray-900 flex flex-col">
-      <div className="flex-1 px-2 py-4 mx-auto w-full max-w-7xl sm:px-4 sm:py-8">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
         <Header />
+        
+        <div className="flex justify-center gap-4">
+          <CacheStatus mode="regular" onExpired={() => loadData("regular")} />
+          <CacheStatus mode="pve" onExpired={() => loadData("pve")} />
+        </div>
+        
+        <NavBar
+          items={[
+            { name: "PVP", url: "/", icon: Swords },
+            { name: "PVE", url: "/pve", icon: Crosshair },
+            { name: "Compare", url: "/compare", icon: Scale },
+            { name: "Changes", url: "/changes", icon: History },
+          ]}
+        />
 
-        <div className="mb-4 space-y-4 sm:space-y-6 sm:mb-8">
-          <div className="flex flex-row justify-center gap-2 sm:gap-4">
-            <div className="px-2 py-1 border rounded-lg sm:px-4 bg-gray-800/50 border-gray-700/50">
-              <CacheStatus
-                mode="regular"
-                onExpired={() => loadData("regular")}
-              />
-            </div>
-            <div className="px-2 py-1 border rounded-lg sm:px-4 bg-gray-800/50 border-gray-700/50">
-              <CacheStatus mode="pve" onExpired={() => loadData("pve")} />
-            </div>
-          </div>
-
-          <div className="flex justify-center">
-            <div className="w-full p-1 rounded-lg bg-gray-800/30 sm:w-auto">
-              <ModeToggle mode={mode} onChange={setMode} />
-            </div>
-          </div>
-
-          <div className="p-2 rounded-lg bg-gray-800/30 sm:p-4">
-            <FilterBar
-              mapFilter={mapFilter}
-              bossFilter={bossFilter}
-              searchQuery={searchQuery}
-              onMapFilterChange={setMapFilter}
-              onBossFilterChange={setBossFilter}
-              onSearchQueryChange={setSearchQuery}
-              onExport={handleExport}
-              data={mode === "regular" ? regularData : pveData}
-            />
-          </div>
+        <div className="p-4 rounded-lg bg-black/30">
+          <FilterBar
+            mapFilter={mapFilter}
+            bossFilter={bossFilter}
+            searchQuery={searchQuery}
+            onMapFilterChange={setMapFilter}
+            onBossFilterChange={setBossFilter}
+            onSearchQueryChange={setSearchQuery}
+            onExport={handleExport}
+            data={mode === "regular" ? regularData : pveData}
+          />
         </div>
 
-        <div className="p-2 rounded-lg bg-gray-800/30 sm:p-4">
+        <div className="flex flex-col gap-4">
           {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="w-12 h-12 border-t-2 border-b-2 border-purple-500 rounded-full animate-spin"></div>
+            <div className="flex justify-center items-center h-[200px]">
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : mode === "changes" ? (
             <ChangesTable
@@ -261,3 +271,18 @@ export default function App() {
     </div>
   );
 }
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MainApp />} />
+        <Route path="/pve" element={<MainApp />} />
+        <Route path="/compare" element={<MainApp />} />
+        <Route path="/changes" element={<MainApp />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
