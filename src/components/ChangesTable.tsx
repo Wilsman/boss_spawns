@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useEffect, useState } from "react";
 import { DataChange } from "@/lib/diff";
-import { ArrowUpDown, RefreshCcw, AlertTriangle } from "lucide-react";
+import { ArrowUpDown, RefreshCcw, AlertTriangle, BellPlus, BellOff } from "lucide-react";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 
 interface ChangesTableProps {
@@ -36,8 +36,15 @@ export function ChangesTable({
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
   const [dateRange, setDateRange] = useState<DateRange>("all");
+  const [modeFilter, setModeFilter] = useState<string>(""); // Add mode filter state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
+    return localStorage.getItem("notifications_enabled") === "true";
+  });
+  const [lastSeenChangeCount, setLastSeenChangeCount] = useState<number>(() => {
+    return parseInt(localStorage.getItem("last_seen_change_count") || "0", 10);
+  });
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(() => {
     return parseInt(
       localStorage.getItem("changes_timestamp") || Date.now().toString(),
@@ -57,6 +64,30 @@ export function ChangesTable({
   const lastRefreshedTimeDisplay = useRelativeTime(lastRefreshTime);
   const canRefresh = timeUntilRefresh === 0;
 
+  const toggleNotifications = useCallback(async () => {
+    if (notificationsEnabled) {
+      // Turn off notifications
+      setNotificationsEnabled(false);
+      localStorage.setItem("notifications_enabled", "false");
+      return;
+    }
+    
+    // Request permission if not granted
+    if (Notification.permission !== "granted") {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        // User denied permission
+        return;
+      }
+    }
+    
+    // Enable notifications and store current change count
+    setNotificationsEnabled(true);
+    localStorage.setItem("notifications_enabled", "true");
+    setLastSeenChangeCount(changes.length);
+    localStorage.setItem("last_seen_change_count", changes.length.toString());
+  }, [notificationsEnabled, changes.length]);
+
   const handleManualRefresh = useCallback(async () => {
     const now = Date.now();
     if (isRefreshing || now < nextRefreshAllowed) return;
@@ -69,12 +100,25 @@ export function ChangesTable({
       const currentTime = Date.now();
       setLastRefreshTime(currentTime);
       setNextRefreshAllowed(currentTime + CACHE_DURATION);
+      
+      // Check for new changes and notify if enabled
+      if (notificationsEnabled && changes.length > lastSeenChangeCount) {
+        const newChangesCount = changes.length - lastSeenChangeCount;
+        // Show browser notification
+        new Notification("New Changes Detected", {
+          body: `${newChangesCount} new change${newChangesCount !== 1 ? 's' : ''} detected.`,
+          icon: "/favicon.ico"
+        });
+        // Update last seen count
+        setLastSeenChangeCount(changes.length);
+        localStorage.setItem("last_seen_change_count", changes.length.toString());
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch changes");
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing, onChangesUpdate, nextRefreshAllowed]);
+  }, [isRefreshing, onChangesUpdate, nextRefreshAllowed, notificationsEnabled, changes.length, lastSeenChangeCount]);
 
   // Calculate time until next refresh
   useEffect(() => {
@@ -110,6 +154,11 @@ export function ChangesTable({
           break;
       }
 
+      // Apply mode filter
+      if (modeFilter && change.gameMode.toLowerCase() !== modeFilter.toLowerCase()) {
+        return false;
+      }
+
       // Apply text filters
       if (
         filters.map &&
@@ -132,7 +181,7 @@ export function ChangesTable({
       }
       return true;
     });
-  }, [changes, dateRange, filters]);
+  }, [changes, dateRange, filters, modeFilter]);
 
   // Memoize date range counts
   const dateRangeCounts = useMemo(() => {
@@ -235,7 +284,7 @@ export function ChangesTable({
   function renderTable(changes: DataChange[]) {
     if (!changes.length) {
       // Check if we have filters applied
-      const hasFilters = filters.map || filters.boss || filters.search;
+      const hasFilters = filters.map || filters.boss || filters.search || modeFilter;
       const message = hasFilters
         ? "No changes match your current filters"
         : "No changes have been detected yet";
@@ -327,6 +376,45 @@ export function ChangesTable({
             Retry
           </button>
         </div>
+        <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
+          <span className="text-sm text-gray-400">
+            {notificationsEnabled ? "Notifications enabled" : "Get notified of changes"}
+          </span>
+          <button
+            onClick={toggleNotifications}
+            className="p-1 rounded-full hover:bg-gray-700/50 transition-colors"
+            title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
+          >
+            {notificationsEnabled ? (
+              <BellPlus className="w-4 h-4 text-purple-400" />
+            ) : (
+              <BellOff className="w-4 h-4 text-gray-400" />
+            )}
+          </button>
+          <button
+            onClick={() => {
+              if (Notification.permission === "granted") {
+                new Notification("Test Notification", {
+                  body: "This is a test notification for developers",
+                  icon: "/favicon.ico"
+                });
+              } else {
+                Notification.requestPermission().then(permission => {
+                  if (permission === "granted") {
+                    new Notification("Test Notification", {
+                      body: "This is a test notification for developers",
+                      icon: "/favicon.ico"
+                    });
+                  }
+                });
+              }
+            }}
+            className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 ml-2"
+            title="Test notification (for developers)"
+          >
+            Test
+          </button>
+        </div>
       </div>
     );
   }
@@ -357,6 +445,45 @@ export function ChangesTable({
           </button>
           {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
         </div>
+        <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
+          <span className="text-sm text-gray-400">
+            {notificationsEnabled ? "Notifications enabled" : "Get notified of changes"}
+          </span>
+          <button
+            onClick={toggleNotifications}
+            className="p-1 rounded-full hover:bg-gray-700/50 transition-colors"
+            title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
+          >
+            {notificationsEnabled ? (
+              <BellPlus className="w-4 h-4 text-purple-400" />
+            ) : (
+              <BellOff className="w-4 h-4 text-gray-400" />
+            )}
+          </button>
+          <button
+            onClick={() => {
+              if (Notification.permission === "granted") {
+                new Notification("Test Notification", {
+                  body: "This is a test notification for developers",
+                  icon: "/favicon.ico"
+                });
+              } else {
+                Notification.requestPermission().then(permission => {
+                  if (permission === "granted") {
+                    new Notification("Test Notification", {
+                      body: "This is a test notification for developers",
+                      icon: "/favicon.ico"
+                    });
+                  }
+                });
+              }
+            }}
+            className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 ml-2"
+            title="Test notification (for developers)"
+          >
+            Test
+          </button>
+        </div>
       </div>
     );
   }
@@ -386,7 +513,7 @@ export function ChangesTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-4 p-4 bg-gray-800/50 rounded-lg">
+      <div className="flex flex-wrap justify-between p-4 bg-gray-800/50 rounded-lg">
         <div className="flex items-center gap-4">
           {/* Date Range Filter */}
           <select
@@ -402,6 +529,17 @@ export function ChangesTable({
             <option value="30d">
               Last 30 Days ({dateRangeCounts.last30d})
             </option>
+          </select>
+
+          {/* Mode Filter */}
+          <select
+            value={modeFilter}
+            onChange={(e) => setModeFilter(e.target.value)}
+            className="px-3 py-2 text-sm bg-gray-800 rounded-md border border-gray-700"
+          >
+            <option value="">All Modes</option>
+            <option value="PvP">PvP</option>
+            <option value="PvE">PvE</option>
           </select>
 
           {/* Grouping Options */}
@@ -448,7 +586,47 @@ export function ChangesTable({
                   .padStart(2, "0")}
               </span>
             )}
+
           </div>
+        </div>
+        <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
+          <span className="text-sm text-gray-400">
+            {notificationsEnabled ? "Notifications enabled" : "Get notified of changes"}
+          </span>
+          <button
+            onClick={toggleNotifications}
+            className="p-1 rounded-full hover:bg-gray-700/50 transition-colors"
+            title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
+          >
+            {notificationsEnabled ? (
+              <BellOff className="w-4 h-4 text-purple-400" />
+            ) : (
+              <BellPlus className="w-4 h-4 text-gray-400" />
+            )}
+          </button>
+          <button
+            onClick={() => {
+              if (Notification.permission === "granted") {
+                new Notification("Test Notification", {
+                  body: "Parmesan is a great cheese",
+                  icon: "/favicon.ico"
+                });
+              } else {
+                Notification.requestPermission().then(permission => {
+                  if (permission === "granted") {
+                    new Notification("Test Notification", {
+                      body: "Parmesan is a bad cheese",
+                      icon: "/favicon.ico"
+                    });
+                  }
+                });
+              }
+            }}
+            className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 ml-2"
+            title="Test notification (for developers)"
+          >
+            Test
+          </button>
         </div>
       </div>
 
