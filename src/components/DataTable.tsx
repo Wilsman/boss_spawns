@@ -199,24 +199,6 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
 
     return (
       <>
-        <div className="mb-4 p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg">
-          <p className="text-yellow-300 text-sm flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="w-5 h-5 flex-shrink-0"
-            >
-              <path
-                fillRule="evenodd"
-                d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Note: Infected boss spawn rates may not be accurate due to their
-            dynamic spawn behavior
-          </p>
-        </div>
         <div className="overflow-x-auto rounded-lg border border-gray-700">
           <table className="w-full">
             <thead>
