@@ -466,9 +466,9 @@ export function ChangesTable({
             title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
           >
             {notificationsEnabled ? (
-              <BellPlus className="w-4 h-4 text-purple-400" />
+              <BellOff className="w-4 h-4 text-purple-400" />
             ) : (
-              <BellOff className="w-4 h-4 text-gray-400" />
+              <BellPlus className="w-4 h-4 text-gray-400" />
             )}
           </button>
           <button
@@ -535,9 +535,9 @@ export function ChangesTable({
             title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
           >
             {notificationsEnabled ? (
-              <BellPlus className="w-4 h-4 text-purple-400" />
+              <BellOff className="w-4 h-4 text-purple-400" />
             ) : (
-              <BellOff className="w-4 h-4 text-gray-400" />
+              <BellPlus className="w-4 h-4 text-gray-400" />
             )}
           </button>
           <button
@@ -593,8 +593,8 @@ export function ChangesTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap justify-between p-4 bg-gray-800/50 rounded-lg">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row p-4 bg-gray-800/50 rounded-lg gap-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
           {/* Date Range Filter */}
           <select
             value={dateRange}
@@ -633,41 +633,43 @@ export function ChangesTable({
             <option value="week">Group by Week</option>
           </select>
 
-          <div className="flex items-center gap-2 text-sm">
-            <span
-              className={`text-gray-400 ${isRefreshing ? "opacity-50" : ""}`}
-            >
-              Last updated: {lastRefreshedTimeDisplay || "just now"}
-            </span>
-            <button
-              onClick={handleManualRefresh}
-              disabled={isRefreshing || !canRefresh}
-              className={`p-1 rounded-full hover:bg-gray-700/50 transition-colors 
-                ${
-                  isRefreshing || !canRefresh
-                    ? "cursor-not-allowed opacity-50"
-                    : "cursor-pointer"
-                }`}
-              title={getRefreshButtonTooltip()}
-            >
-              <RefreshCcw
-                className={`w-4 h-4 ${
-                  isRefreshing
-                    ? "animate-spin text-purple-400"
-                    : "text-gray-400"
-                }`}
-              />
-            </button>
-            {!canRefresh && (
-              <span className="text-xs text-gray-500">
-                {Math.floor(timeUntilRefresh / 60000)}:
-                {Math.floor((timeUntilRefresh % 60000) / 1000)
-                  .toString()
-                  .padStart(2, "0")}
+          <div className="flex flex-col md:flex-row md:items-center gap-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-gray-400 ${isRefreshing ? "opacity-50" : ""}`}
+              >
+                Last updated: {lastRefreshedTimeDisplay || "just now"}
               </span>
-            )}
+              <button
+                onClick={handleManualRefresh}
+                disabled={isRefreshing || !canRefresh}
+                className={`p-1 rounded-full hover:bg-gray-700/50 transition-colors 
+                  ${
+                    isRefreshing || !canRefresh
+                      ? "cursor-not-allowed opacity-50"
+                      : "cursor-pointer"
+                  }`}
+                title={getRefreshButtonTooltip()}
+              >
+                <RefreshCcw
+                  className={`w-4 h-4 ${
+                    isRefreshing
+                      ? "animate-spin text-purple-400"
+                      : "text-gray-400"
+                  }`}
+                />
+              </button>
+              {!canRefresh && (
+                <span className="text-xs text-gray-500">
+                  {Math.floor(timeUntilRefresh / 60000)}:
+                  {Math.floor((timeUntilRefresh % 60000) / 1000)
+                    .toString()
+                    .padStart(2, "0")}
+                </span>
+              )}
+            </div>
             
-            <div className="ml-4 flex items-center gap-2 border-l border-gray-700 pl-4">
+            <div className="flex items-center gap-2 md:ml-4 md:border-l md:border-gray-700 md:pl-4">
               <span className="text-xs text-gray-400">Auto-refresh:</span>
               <button
                 onClick={toggleAutoRefresh}
@@ -679,7 +681,7 @@ export function ChangesTable({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
+        <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30 md:flex-wrap">
           <span className="text-sm text-gray-400">
             {notificationsEnabled ? "Notifications enabled" : "Get notified of changes"}
           </span>
