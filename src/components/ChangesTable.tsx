@@ -187,6 +187,10 @@ export function ChangesTable({
     const interval = setInterval(() => {
       if (canRefresh && !isRefreshing) {
         handleManualRefresh();
+        // Ensure timestamp is updated even if no new changes
+        const currentTime = Date.now();
+        setLastRefreshTime(currentTime);
+        localStorage.setItem("changes_timestamp", currentTime.toString());
       }
     }, autoRefreshInterval);
     
