@@ -117,12 +117,16 @@ export function ChangesTable({
     const newSoundState = !soundEnabled;
     setSoundEnabled(newSoundState);
     localStorage.setItem("sound_enabled", newSoundState.toString());
-    
-    // Play a test sound when enabling
-    if (newSoundState && notificationSound.current) {
+    // No longer automatically play sound when toggling
+  }, [soundEnabled]);
+  
+  // Test sound function
+  const testSound = useCallback(() => {
+    if (notificationSound.current) {
+      notificationSound.current.currentTime = 0;
       notificationSound.current.play().catch(err => console.error("Error playing notification sound:", err));
     }
-  }, [soundEnabled]);
+  }, []);
 
   const handleManualRefresh = useCallback(async () => {
     const now = Date.now();
@@ -715,6 +719,10 @@ export function ChangesTable({
           )}
           <button
             onClick={() => {
+              // Play the sound notification
+              testSound();
+              
+              // Also show a browser notification if permission is granted
               if (Notification.permission === "granted") {
                 new Notification("Test Notification", {
                   body: "Parmesan is a great cheese",
