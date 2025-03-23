@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useEffect, useState } from "react";
+import { useCallback, useMemo, useEffect, useState, useRef } from "react";
 import { DataChange } from "@/lib/diff";
 import { ArrowUpDown, RefreshCcw, AlertTriangle, BellPlus, BellOff } from "lucide-react";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
@@ -42,6 +42,15 @@ export function ChangesTable({
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
     return localStorage.getItem("notifications_enabled") === "true";
   });
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    return localStorage.getItem("sound_enabled") === "true";
+  });
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState<boolean>(() => {
+    return localStorage.getItem("auto_refresh_enabled") === "true";
+  });
+  // Fixed 5-minute auto-refresh interval
+  const autoRefreshInterval = 300000; // 5 minutes in milliseconds
+  const notificationSound = useRef<HTMLAudioElement | null>(null);
   const [lastSeenChangeCount, setLastSeenChangeCount] = useState<number>(() => {
     return parseInt(localStorage.getItem("last_seen_change_count") || "0", 10);
   });
@@ -64,11 +73,23 @@ export function ChangesTable({
   const lastRefreshedTimeDisplay = useRelativeTime(lastRefreshTime);
   const canRefresh = timeUntilRefresh === 0;
 
+  // Toggle auto-refresh
+  const toggleAutoRefresh = useCallback(() => {
+    const newState = !autoRefreshEnabled;
+    setAutoRefreshEnabled(newState);
+    localStorage.setItem("auto_refresh_enabled", newState.toString());
+  }, [autoRefreshEnabled]);
+  
+  // Using fixed 5-minute interval, no need for change handler
+  
   const toggleNotifications = useCallback(async () => {
     if (notificationsEnabled) {
       // Turn off notifications
       setNotificationsEnabled(false);
       localStorage.setItem("notifications_enabled", "false");
+      // Also turn off sound when notifications are disabled
+      setSoundEnabled(false);
+      localStorage.setItem("sound_enabled", "false");
       return;
     }
     
@@ -84,9 +105,24 @@ export function ChangesTable({
     // Enable notifications and store current change count
     setNotificationsEnabled(true);
     localStorage.setItem("notifications_enabled", "true");
+    // Enable sound by default when notifications are enabled
+    setSoundEnabled(true);
+    localStorage.setItem("sound_enabled", "true");
     setLastSeenChangeCount(changes.length);
     localStorage.setItem("last_seen_change_count", changes.length.toString());
   }, [notificationsEnabled, changes.length]);
+
+  // Toggle sound notifications separately
+  const toggleSound = useCallback(() => {
+    const newSoundState = !soundEnabled;
+    setSoundEnabled(newSoundState);
+    localStorage.setItem("sound_enabled", newSoundState.toString());
+    
+    // Play a test sound when enabling
+    if (newSoundState && notificationSound.current) {
+      notificationSound.current.play().catch(err => console.error("Error playing notification sound:", err));
+    }
+  }, [soundEnabled]);
 
   const handleManualRefresh = useCallback(async () => {
     const now = Date.now();
@@ -102,13 +138,26 @@ export function ChangesTable({
       setNextRefreshAllowed(currentTime + CACHE_DURATION);
       
       // Check for new changes and notify if enabled
-      if (notificationsEnabled && changes.length > lastSeenChangeCount) {
+      if (changes.length > lastSeenChangeCount) {
         const newChangesCount = changes.length - lastSeenChangeCount;
-        // Show browser notification
-        new Notification("New Changes Detected", {
-          body: `${newChangesCount} new change${newChangesCount !== 1 ? 's' : ''} detected.`,
-          icon: "/favicon.ico"
-        });
+        
+        // Show browser notification if enabled
+        if (notificationsEnabled) {
+          new Notification("New Changes Detected", {
+            body: `${newChangesCount} new change${newChangesCount !== 1 ? 's' : ''} detected.`,
+            icon: "/favicon.ico"
+          });
+        }
+        
+        // Play sound notification if enabled
+        if (soundEnabled && notificationSound.current) {
+          // Reset the audio to the beginning if it's already playing
+          notificationSound.current.currentTime = 0;
+          notificationSound.current.play().catch(err => {
+            console.error("Error playing notification sound:", err);
+          });
+        }
+        
         // Update last seen count
         setLastSeenChangeCount(changes.length);
         localStorage.setItem("last_seen_change_count", changes.length.toString());
@@ -118,7 +167,7 @@ export function ChangesTable({
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing, onChangesUpdate, nextRefreshAllowed, notificationsEnabled, changes.length, lastSeenChangeCount]);
+  }, [isRefreshing, onChangesUpdate, nextRefreshAllowed, notificationsEnabled, soundEnabled, changes.length, lastSeenChangeCount]);
 
   // Calculate time until next refresh
   useEffect(() => {
@@ -130,6 +179,29 @@ export function ChangesTable({
       return () => clearInterval(interval);
     }
   }, [nextRefreshAllowed, canRefresh]);
+  
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!autoRefreshEnabled || !canRefresh) return;
+    
+    const interval = setInterval(() => {
+      if (canRefresh && !isRefreshing) {
+        handleManualRefresh();
+      }
+    }, autoRefreshInterval);
+    
+    return () => clearInterval(interval);
+  }, [autoRefreshEnabled, canRefresh, isRefreshing, autoRefreshInterval]);
+
+  // Initialize notification sound
+  useEffect(() => {
+    notificationSound.current = new Audio("/notification2.wav");
+    return () => {
+      if (notificationSound.current) {
+        notificationSound.current = null;
+      }
+    };
+  }, []);
 
   // Apply date range filter before other filters
   const filteredChanges = useMemo(() => {
@@ -586,7 +658,17 @@ export function ChangesTable({
                   .padStart(2, "0")}
               </span>
             )}
-
+            
+            <div className="ml-4 flex items-center gap-2 border-l border-gray-700 pl-4">
+              <span className="text-xs text-gray-400">Auto-refresh:</span>
+              <button
+                onClick={toggleAutoRefresh}
+                className={`px-2 py-1 text-xs rounded ${autoRefreshEnabled ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+                title={autoRefreshEnabled ? "Disable auto-refresh (5 min)" : "Enable auto-refresh (5 min)"}
+              >
+                {autoRefreshEnabled ? "ON (5m)" : "OFF"}
+              </button>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
@@ -604,6 +686,29 @@ export function ChangesTable({
               <BellPlus className="w-4 h-4 text-gray-400" />
             )}
           </button>
+          {notificationsEnabled && (
+            <button
+              onClick={toggleSound}
+              className={`p-1 rounded-full hover:bg-gray-700/50 transition-colors ${soundEnabled ? 'text-purple-400' : 'text-gray-400'}`}
+              title={soundEnabled ? "Disable sound" : "Enable sound"}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                {soundEnabled ? (
+                  <>
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                  </>
+                ) : (
+                  <>
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <line x1="23" y1="9" x2="17" y2="15" />
+                    <line x1="17" y1="9" x2="23" y2="15" />
+                  </>
+                )}
+              </svg>
+            </button>
+          )}
           <button
             onClick={() => {
               if (Notification.permission === "granted") {
