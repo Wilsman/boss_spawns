@@ -65,11 +65,11 @@ export async function fetchSpawnData(
               boss {
                 name
               }
+              spawnChance
               spawnLocations {
                 name
                 chance
               }
-              spawnChance
             }
           }
         }
