@@ -1,7 +1,7 @@
 import { SpawnData } from "@/types";
 import { DataChange } from "./diff";
 
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 4;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Change to use the cultistcircle API
