@@ -12,6 +12,8 @@ import { VersionLabel } from "@/components/VersionLabel";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { NavBar } from "@/components/ui/navbar";
 import { Swords, Crosshair, Scale, History } from "lucide-react";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -24,6 +26,7 @@ function MainApp() {
   const [searchQuery, setSearchQuery] = useState("");
   const [changes, setChanges] = useState<DataChange[]>([]);
   const location = useLocation();
+  const { toast } = useToast();
 
   // Determine the current mode based on URL
   const mode =
@@ -157,6 +160,14 @@ function MainApp() {
     }
   }, [mode]);
 
+  useEffect(() => {
+    console.log("Toast effect triggered!"); // Add console log for debugging
+    toast({
+      title: "Update",
+      description: "The Labyrinth bosses and chances have been added.",
+    });
+  }, [toast]);
+
   const handleChangesUpdate = useCallback(async () => {
     try {
       setLoading(true);
@@ -281,6 +292,7 @@ function App() {
         <Route path="/compare" element={<MainApp />} />
         <Route path="/changes" element={<MainApp />} />
       </Routes>
+      <Toaster />
     </BrowserRouter>
   );
 }

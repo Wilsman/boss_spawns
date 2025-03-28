@@ -11,11 +11,11 @@ export function VersionLabel() {
               className="text-purple-400 hover:text-purple-300 transition-colors duration-200"
             >
               Wilsman77
-            </a>
-            {' '}updated on 26/03/2025
+            </a>{" "}
+            updated on 28/03/2025
           </span>
         </div>
       </div>
     </footer>
-  )
+  );
 }

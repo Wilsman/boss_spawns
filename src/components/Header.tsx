@@ -1,4 +1,10 @@
 import { Calculator, Database } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export function Header() {
   return (
@@ -44,6 +50,18 @@ export function Header() {
             </span>
             <Database className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
           </a>
+
+          {/* Collapsible Update Message */}
+          <Accordion type="single" collapsible className="w-full max-w-xs mx-auto">
+            <AccordionItem value="item-1" className="border-b-0">
+              <AccordionTrigger className="text-xs text-gray-500 hover:text-gray-300 justify-center py-1 font-normal hover:no-underline data-[state=open]:text-gray-300"> 
+                Recent Updates
+              </AccordionTrigger>
+              <AccordionContent className="text-center text-xs text-gray-400 pb-2"> 
+                (28/03/2025): The Labyrinth bosses and chances have been added.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </div>
     </div>
