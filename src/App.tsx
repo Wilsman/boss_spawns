@@ -220,7 +220,7 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
+      <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-10">
         <Header />
         
         <div className="flex justify-center gap-4">
@@ -237,7 +237,7 @@ function MainApp() {
           ]}
         />
 
-        <div className="p-4 rounded-lg bg-black/30">
+        <div className="p-2 rounded-lg bg-black/30">
           <FilterBar
             mapFilter={mapFilter}
             bossFilter={bossFilter}

@@ -8,13 +8,18 @@ import {
 
 export function Header() {
   return (
-    <div className="mb-12">
+    <div className="">
       {/* Title Section */}
       <div className="flex flex-col items-center space-y-6">
         <div className="flex items-center space-x-4">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">
-            Tarkov Boss Spawns
-          </h1>
+          <a href="/">
+            <img
+              src="/eft_boss.webp"
+              alt="EFT Boss Spawns Logo"
+              width={300}
+              height={100}
+            />
+          </a>
         </div>
 
         {/* Links Section */}

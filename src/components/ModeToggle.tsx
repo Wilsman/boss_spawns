@@ -7,7 +7,7 @@ interface ModeToggleProps {
 
 export function ModeToggle({ mode, onChange }: ModeToggleProps) {
   return (
-    <div className="flex gap-1 p-1 bg-gray-800/50 rounded-lg w-full sm:w-auto">
+    <div className="flex gap-1 p- bg-gray-800/50 rounded-lg w-full sm:w-auto">
       <button
         onClick={() => onChange('regular')}
         className={`
@@ -23,7 +23,7 @@ export function ModeToggle({ mode, onChange }: ModeToggleProps) {
       <button
         onClick={() => onChange('pve')}
         className={`
-          px-3 sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex-1 sm:flex-none
+          px- sm:px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 flex-1 sm:flex-none
           ${mode === 'pve' 
             ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25' 
             : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
