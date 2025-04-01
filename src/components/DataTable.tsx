@@ -1,6 +1,5 @@
-import { SpawnData, Boss, DataMode, Health } from "@/types";
-import { useState } from "react";
-import { ArrowUpDown } from "lucide-react";
+import { SpawnData, Boss, DataMode, Health, SpawnLocation } from "@/types";
+import { useMemo } from "react";
 import {
   HoverCard,
   HoverCardContent,
@@ -17,18 +16,6 @@ interface DataTableProps {
   };
 }
 
-type SortField =
-  | "map"
-  | "boss"
-  | "regularChance"
-  | "pveChance"
-  | "spawnChance"
-  | "location"
-  | "locationChance";
-type SortDirection = "asc" | "desc";
-
-type GroupBy = "none" | "map" | "boss" | "location";
-
 function getLocationClasses(location: string, chance: number) {
   if (location === "Unknown" || chance === 0) {
     return "text-gray-500 italic opacity-75";
@@ -36,491 +23,447 @@ function getLocationClasses(location: string, chance: number) {
   return "text-gray-400";
 }
 
+function groupData(data: any[], key: string) {
+  return data.reduce((acc: Record<string, any[]>, item) => {
+    const groupKey = item[key];
+    if (!acc[groupKey]) {
+      acc[groupKey] = [];
+    }
+    acc[groupKey].push(item);
+    return acc;
+  }, {});
+}
+
+interface Location {
+  name: string;
+  chance: number;
+  regularChance?: number;
+  pveChance?: number;
+  hasDifference?: boolean;
+}
+
+interface BossEntry {
+  map: string;
+  boss: string;
+  spawnChance: number;
+  locations: Location[];
+  health: Health[] | null;
+  imagePortraitLink: string | null;
+}
+
 export function DataTable({ data, mode, filters }: DataTableProps) {
-  const [sortField, setSortField] = useState<SortField>("map");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [groupBy, setGroupBy] = useState<GroupBy>("map");
+  const normalizedData = data;
+
+  const { processedData, groupedByMap } = useMemo(() => {
+    if (!normalizedData) return { processedData: [], groupedByMap: {} };
+
+    let processedData = [];
+
+    if (mode === "compare") {
+      const regularData =
+        JSON.parse(localStorage.getItem("maps_regular") || "{}").data?.maps ||
+        [];
+      const pveData =
+        JSON.parse(localStorage.getItem("maps_pve") || "{}").data?.maps || [];
+
+      const uniqueComparisons = new Map<string, BossEntry>();
+
+      regularData.forEach((regularMap: SpawnData) => {
+        const pveMap = pveData.find(
+          (m: SpawnData) => m.name === regularMap.name
+        );
+        if (!pveMap) return;
+
+        regularMap.bosses.forEach((regularBoss: Boss) => {
+          const pveBoss = pveMap.bosses.find(
+            (b: Boss) => b.boss.name === regularBoss.boss.name
+          );
+          if (!pveBoss) return;
+
+          const regularChance = regularBoss.spawnChance;
+          const pveChance = pveBoss.spawnChance;
+
+          if (regularChance !== pveChance) {
+            const bossName =
+              regularBoss.boss.name === "infected"
+                ? "Infected(Zombie)"
+                : regularBoss.boss.name;
+            const key = `${regularMap.name}-${bossName}`;
+
+            const locations: Location[] = [
+              {
+                name: regularMap.name,
+                chance: 0,
+                regularChance,
+                pveChance,
+                hasDifference: true,
+              },
+            ];
+
+            uniqueComparisons.set(key, {
+              map: regularMap.name,
+              boss: bossName,
+              spawnChance: 0,
+              locations,
+              health: regularBoss.boss.health || null,
+              imagePortraitLink: regularBoss.boss.imagePortraitLink || null,
+            });
+          }
+        });
+      });
+
+      processedData = Array.from(uniqueComparisons.values()).filter((entry) => {
+        if (
+          filters.map &&
+          entry.map.toLowerCase() !== filters.map.toLowerCase()
+        )
+          return false;
+        if (
+          filters.boss &&
+          entry.boss.toLowerCase() !== filters.boss.toLowerCase()
+        )
+          return false;
+        if (filters.search) {
+          const search = filters.search.toLowerCase();
+          return (
+            entry.map.toLowerCase().includes(search) ||
+            entry.boss.toLowerCase().includes(search)
+          );
+        }
+        return true;
+      });
+    } else {
+      processedData = normalizedData.flatMap((map) => {
+        if (
+          filters.map &&
+          !map.name.toLowerCase().includes(filters.map.toLowerCase())
+        )
+          return [];
+
+        const uniqueBossEntries = new Map<string, BossEntry>();
+
+        map.bosses.forEach((bossEntry) => {
+          const bossData = bossEntry.boss;
+          const bossName = bossData.name;
+
+          if (filters.boss) {
+            const filterLower = filters.boss.toLowerCase();
+            const bossLower = bossName.toLowerCase();
+            if (!bossLower.includes(filterLower)) return;
+          }
+
+          if (filters.search) {
+            const search = filters.search.toLowerCase();
+            const matchesMap = map.name.toLowerCase().includes(search);
+            const matchesBoss = bossName.toLowerCase().includes(search);
+            if (!matchesMap && !matchesBoss) return;
+          }
+
+          const key = `${map.name}-${bossName}`;
+          const existingEntry = uniqueBossEntries.get(key);
+
+          const validLocations =
+            bossEntry.spawnLocations?.filter(
+              (location: SpawnLocation) =>
+                location.name !== "Unknown" || location.chance > 0
+            ) || [];
+
+          if (!existingEntry) {
+            uniqueBossEntries.set(key, {
+              map: map.name,
+              boss: bossName,
+              spawnChance: bossEntry.spawnChance,
+              locations: validLocations.map((loc: SpawnLocation) => ({
+                name: loc.name,
+                chance: loc.chance,
+                ...(mode === "regular"
+                  ? { regularChance: bossEntry.spawnChance }
+                  : {}),
+                ...(mode === "pve" ? { pveChance: bossEntry.spawnChance } : {}),
+              })),
+              health: bossData.health ?? null,
+              imagePortraitLink: bossData.imagePortraitLink ?? null,
+            });
+          } else {
+            const updatedLocations = existingEntry.locations.map(
+              (loc: Location) => {
+                const matchingNewLoc = validLocations.find(
+                  (newLoc: SpawnLocation) => newLoc.name === loc.name
+                );
+                if (matchingNewLoc) {
+                  return {
+                    ...loc,
+                    pveChance: bossEntry.spawnChance,
+                    regularChance: loc.regularChance || 0,
+                    hasDifference:
+                      Math.abs(
+                        (loc.regularChance || 0) - bossEntry.spawnChance
+                      ) > 0.001,
+                  };
+                }
+                return loc;
+              }
+            );
+
+            validLocations.forEach((newLoc: SpawnLocation) => {
+              if (
+                !existingEntry.locations.some(
+                  (loc: Location) => loc.name === newLoc.name
+                )
+              ) {
+                updatedLocations.push({
+                  name: newLoc.name,
+                  chance: newLoc.chance,
+                  pveChance: bossEntry.spawnChance,
+                  regularChance: 0,
+                  hasDifference: true,
+                });
+              }
+            });
+
+            uniqueBossEntries.set(key, {
+              ...existingEntry,
+              locations: updatedLocations,
+            });
+          }
+        });
+
+        return Array.from(uniqueBossEntries.values());
+      });
+    }
+
+    if (mode === "compare") {
+      processedData = processedData.filter((entry) =>
+        entry.locations.some((loc: Location) => loc.hasDifference)
+      );
+    }
+
+    const groupedByMap = groupData(processedData, "map");
+
+    return { processedData, groupedByMap };
+  }, [normalizedData, mode, filters]);
+
+  const sortedMapNames = useMemo(
+    () => Object.keys(groupedByMap).sort(),
+    [groupedByMap]
+  );
 
   if (!data) return null;
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const SortHeader = ({
-    field,
-    children,
-    className = "",
-  }: {
-    field: SortField;
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <th
-      onClick={() => handleSort(field)}
-      className={`px-6 py-3 text-left text-sm font-semibold text-gray-300 cursor-pointer hover:bg-gray-700/50 select-none ${className}`}
-    >
-      <div className="flex items-center gap-2">
-        {children}
-        <ArrowUpDown
-          className={`h-4 w-4 transition-colors ${
-            sortField === field ? "text-purple-400" : "text-gray-500"
-          }`}
-        />
-      </div>
-    </th>
-  );
-
-  const isNewSection = (currentRow: any, previousRow: any | null) => {
-    if (!previousRow) return false;
-
-    switch (sortField) {
-      case "map":
-        return currentRow.map !== previousRow.map;
-      case "boss":
-        return currentRow.boss !== previousRow.boss;
-      case "location":
-        return currentRow.location !== previousRow.location;
-      case "spawnChance":
-        return (
-          Math.round(currentRow.spawnChance * 100) !==
-          Math.round(previousRow.spawnChance * 100)
-        );
-      case "locationChance":
-        return (
-          Math.round(currentRow.locationChance * 100) !==
-          Math.round(previousRow.locationChance * 100)
-        );
-      case "regularChance":
-        return currentRow.regularChance !== previousRow.regularChance;
-      case "pveChance":
-        return currentRow.pveChance !== previousRow.pveChance;
-      default:
-        return false;
-    }
-  };
-
-  function groupData(data: any[], grouping: GroupBy) {
-    if (grouping === "none") return { "": data };
-
-    const grouped: Record<string, any[]> = {};
-
-    data.forEach((item) => {
-      const key = item[grouping];
-      if (!grouped[key]) {
-        grouped[key] = [];
-      }
-      grouped[key].push(item);
-    });
-
-    return grouped;
-  }
-
-  if (mode === "compare") {
-    const regularData = JSON.parse(localStorage.getItem("maps_regular") || "{}").data?.maps || ([] as SpawnData[]);
-    const pveData = JSON.parse(localStorage.getItem("maps_pve") || "{}").data?.maps || ([] as SpawnData[]);
-
-    const uniqueComparisons = new Map<
-      string,
-      {
-        map: string;
-        boss: string;
-        regularChance: number;
-        pveChance: number;
-      }
-    >();
-
-    regularData.forEach((regularMap: SpawnData) => {
-      const pveMap = pveData.find(
-        (m: SpawnData) => m.name === regularMap.name
-      );
-      if (!pveMap) return;
-
-      regularMap.bosses.forEach((regularBoss: Boss) => {
-        const pveBoss = pveMap.bosses.find(
-          (b: Boss) => b.boss.name === regularBoss.boss.name
-        );
-        if (!pveBoss) return;
-
-        const regularChance = Math.round(regularBoss.spawnChance * 100);
-        const pveChance = Math.round(pveBoss.spawnChance * 100);
-
-        if (regularChance !== pveChance) {
-          const bossName =
-            regularBoss.boss.name === "infected"
-              ? "Infected(Zombie)"
-              : regularBoss.boss.name;
-
-          const key = `${regularMap.name}-${bossName}`;
-          uniqueComparisons.set(key, {
-            map: regularMap.name,
-            boss: bossName,
-            regularChance,
-            pveChance,
-          });
-        }
-      });
-    });
-
-    let differences = Array.from(uniqueComparisons.values()).filter((entry) => {
-      if (filters.map && entry.map.toLowerCase() !== filters.map.toLowerCase())
-        return false;
-      if (
-        filters.boss &&
-        entry.boss.toLowerCase() !== filters.boss.toLowerCase()
-      )
-        return false;
-      if (filters.search) {
-        const search = filters.search.toLowerCase();
-        return (
-          entry.map.toLowerCase().includes(search) ||
-          entry.boss.toLowerCase().includes(search)
-        );
-      }
-      return true;
-    });
-
-    // Apply sorting
-    differences.sort((a, b) => {
-      const direction = sortDirection === "asc" ? 1 : -1;
-      switch (sortField) {
-        case "map":
-          return a.map.localeCompare(b.map) * direction;
-        case "boss":
-          return a.boss.localeCompare(b.boss) * direction;
-        case "regularChance":
-          return (a.regularChance - b.regularChance) * direction;
-        case "pveChance":
-          return (a.pveChance - b.pveChance) * direction;
-        default:
-          return 0;
-      }
-    });
-
+  if (processedData.length === 0) {
     return (
-      <>
-        <div className="overflow-x-auto rounded-lg border border-gray-700">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-800">
-                <SortHeader field="map" className="w-1/4">
-                  <span className="text-purple-300">Map</span>
-                </SortHeader>
-                <SortHeader field="boss" className="w-1/4">
-                  <span className="text-blue-300">Boss</span>
-                </SortHeader>
-                <SortHeader field="regularChance" className="w-1/4">
-                  <span className="text-amber-300">PvP %</span>
-                </SortHeader>
-                <SortHeader field="pveChance" className="w-1/4">
-                  <span className="text-amber-300">PvE %</span>
-                </SortHeader>
-              </tr>
-            </thead>
-            <tbody>
-              {differences.map((row, index) => {
-                const prevRow = index > 0 ? differences[index - 1] : null;
-
-                return (
-                  <tr
-                    key={`${row.map}-${row.boss}-${index}`}
-                    className={`
-                      hover:bg-gray-800/50 transition-colors duration-200
-                      ${
-                        index > 0 && isNewSection(row, prevRow)
-                          ? "border-t-2 border-gray-600"
-                          : index === 0
-                          ? ""
-                          : "border-t border-gray-800"
-                      }
-                    `}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">{row.map}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{row.boss}</td>
-                    <td className="px-6 py-4 text-center whitespace-nowrap">
-                      {row.regularChance}%
-                    </td>
-                    <td
-                      className={`px-6 py-4 text-center whitespace-nowrap ${
-                        row.pveChance > row.regularChance
-                          ? "text-green-400"
-                          : "text-red-400"
-                      }`}
-                    >
-                      {row.pveChance}%
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </>
+      <div className="text-center text-gray-500 py-8">
+        {mode === "compare"
+          ? "No differences found between PVP and PVE modes."
+          : `No results found for "${filters.search}".`}
+      </div>
     );
   }
 
-  const normalizedData = data;
-
-  let filteredData = normalizedData.flatMap((map) => {
-    if (
-      filters.map &&
-      !map.name.toLowerCase().includes(filters.map.toLowerCase())
-    )
-      return [];
-
-    const uniqueBossEntries = new Map<
-      string,
-      {
-        map: string;
-        boss: string;
-        spawnChance: number;
-        location: string;
-        locationChance: number;
-        health: Health[] | null;
-        imagePortraitLink: string | null;
-      }
-    >();
-
-    map.bosses.forEach((bossEntry) => {
-      const bossData = bossEntry.boss;
-      const bossName = bossData.name;
-
-      if (filters.boss) {
-        const filterLower = filters.boss.toLowerCase();
-        const bossLower = bossName.toLowerCase();
-        if (!bossLower.includes(filterLower)) return;
-      }
-
-      if (filters.search) {
-        const search = filters.search.toLowerCase();
-        const matchesMap = map.name.toLowerCase().includes(search);
-        const matchesBoss = bossName.toLowerCase().includes(search);
-        if (!matchesMap && !matchesBoss) return;
-      }
-
-      const validLocations = bossEntry.spawnLocations?.filter(
-        (location) => location.name !== "Unknown" || location.chance > 0
-      );
-
-      if (validLocations?.length) {
-        validLocations.forEach((location) => {
-          const key = `${map.name}-${bossName}-${bossEntry.spawnChance}-${location.name}`;
-          uniqueBossEntries.set(key, {
-            map: map.name,
-            boss: bossName,
-            spawnChance: bossEntry.spawnChance,
-            location: location.name,
-            locationChance: location.chance,
-            health: bossData.health ?? null,
-            imagePortraitLink: bossData.imagePortraitLink ?? null,
-          });
-        });
-      } else if (bossEntry.spawnChance > 0) {
-        const key = `${map.name}-${bossName}-${bossEntry.spawnChance}-Unknown`;
-        uniqueBossEntries.set(key, {
-          map: map.name,
-          boss: bossName,
-          spawnChance: bossEntry.spawnChance,
-          location: "Unknown",
-          locationChance: 0,
-          health: bossData.health ?? null,
-          imagePortraitLink: bossData.imagePortraitLink ?? null,
-        });
-      }
-    });
-
-    return Array.from(uniqueBossEntries.values());
-  });
-
-  console.log("Final filtered data:", filteredData);
-
-  filteredData.sort((a, b) => {
-    const direction = sortDirection === "asc" ? 1 : -1;
-    switch (sortField) {
-      case "map":
-        return a.map.localeCompare(b.map) * direction;
-      case "boss":
-        return a.boss.localeCompare(b.boss) * direction;
-      case "spawnChance":
-        return (a.spawnChance - b.spawnChance) * direction;
-      case "location":
-        return a.location.localeCompare(b.location) * direction;
-      case "locationChance":
-        return (a.locationChance - b.locationChance) * direction;
-      default:
-        return 0;
-    }
-  });
-
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-4 p-4 bg-gray-800/50 rounded-lg">
-        <select
-          value={groupBy}
-          onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-          className="px-3 py-2 text-sm bg-gray-800 rounded-md border border-gray-700"
-        >
-          <option value="map">Group by Map</option>
-          <option value="boss">Group by Boss</option>
-          <option value="location">Group by Location</option>
-          <option value="none">No Grouping</option>
-        </select>
-      </div>
+    <div className="space-y-6">
+      {sortedMapNames.map((mapName) => {
+        const items = groupedByMap[mapName];
 
-      {Object.entries(groupData(filteredData, groupBy)).map(([group, items]) => (
-        <div key={group} className="space-y-2">
-          {group && (
-            <h3 className="text-lg font-semibold text-gray-300 px-2">
-              {group}
+        return (
+          <div key={mapName} className="space-y-2">
+            {/* Map Name Header center and stands out */}
+            <h3 className="text-lg font-bold text-white text-center px-2 capitalize bg-gray-900 py-2 rounded-lg ">
+              {mapName}
             </h3>
-          )}
-          <div className="overflow-x-auto rounded-lg border border-gray-700 -mx-2 sm:mx-0">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-gray-800">
-                  {groupBy !== "map" && (
-                    <SortHeader field="map" className="w-1/4">
-                      <span className="text-purple-300 text-xs sm:text-sm">Map</span>
-                    </SortHeader>
-                  )}
-                  {groupBy !== "boss" && (
-                    <SortHeader field="boss" className="w-1/4">
-                      <span className="text-blue-300 text-xs sm:text-sm">Boss</span>
-                    </SortHeader>
-                  )}
-                  <SortHeader field="spawnChance" className="w-1/4">
-                    <span className="text-amber-300 text-xs sm:text-sm">
-                      Spawn Chance
-                    </span>
-                  </SortHeader>
-                  {groupBy !== "location" && (
-                    <SortHeader field="location" className="w-1/6">
-                      <span className="text-gray-400 text-xs sm:text-sm">Location</span>
-                    </SortHeader>
-                  )}
-                  <SortHeader field="locationChance" className="w-1/6">
-                    <span className="text-gray-400 text-xs sm:text-sm">
-                      Location Chance
-                    </span>
-                  </SortHeader>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((row, index) => {
-                  const prevRow = index > 0 ? items[index - 1] : null;
-
-                  return (
-                    <tr
-                      key={`${row.map}-${row.boss}-${row.location}-${index}`}
-                      className={`
-                        hover:bg-gray-800/50 transition-colors duration-200
-                        ${
-                          index > 0 && isNewSection(row, prevRow)
-                            ? "border-t-2 border-gray-600"
-                            : index === 0
-                            ? ""
-                            : "border-t border-gray-800"
-                        }
-                      `}
-                    >
-                      {groupBy !== "map" && (
-                        <td className="px-4 py-2 whitespace-nowrap text-xs sm:text-sm">
-                          {row.map}
-                        </td>
-                      )}
-                      {groupBy !== "boss" && (
-                        <td className="px-4 py-2 whitespace-nowrap text-xs sm:text-sm">
-                          <HoverCard openDelay={200}>
-                            <HoverCardTrigger asChild>
-                              <span className="border-b border-dotted border-gray-500 cursor-help">
-                                {row.boss}
-                              </span>
-                            </HoverCardTrigger>
-                            <HoverCardContent className="w-auto p-2 bg-gray-900 border-gray-700 text-white">
-                              <div className="flex items-center space-x-4">
-                                {row.imagePortraitLink && (
-                                  <img
-                                    src={row.imagePortraitLink}
-                                    alt={`${row.boss} Portrait`}
-                                    width={128}
-                                    height={128}
-                                    className="rounded object-cover"
-                                  />
-                                )}
-                                <div className="flex-grow space-y-1 text-xs">
-                                  <h4 className="font-semibold">{row.boss}</h4>
-                                  <p className="text-gray-300">
-                                    <span className="font-medium">Spawn Chance:</span> {Math.round(row.spawnChance * 100)}%
-                                  </p>
-                                  {row.health && row.health.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-gray-700">
-                                      <h5 className="text-xs font-semibold mb-1">Health Points:</h5>
-                                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                                        {row.health.map((part: Health) => (
-                                          <div key={part.bodyPart} className="flex justify-between">
-                                            <span className="capitalize text-gray-400">
-                                              {part.bodyPart}:
-                                            </span>
-                                            <span className="font-medium text-gray-200">
-                                              {part.max}
-                                            </span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                  {row.location !== "Unknown" && (
-                                    <p className="text-gray-300">
-                                      <span className="font-medium">Location:</span> {row.location}
-                                    </p>
-                                  )}
-                                  {row.locationChance > 0 && (
-                                    <p className="text-gray-300">
-                                      <span className="font-medium">Location Chance:</span> {Math.round(row.locationChance * 100)}%
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </HoverCardContent>
-                          </HoverCard>
-                        </td>
-                      )}
-                      <td className="px-4 py-2 text-center whitespace-nowrap text-xs sm:text-sm">
-                        {Math.round(row.spawnChance * 100)}%
-                      </td>
-                      {groupBy !== "location" && (
-                        <td
-                          className={`px-4 py-2 whitespace-nowrap text-xs sm:text-sm ${getLocationClasses(
-                            row.location,
-                            row.locationChance
-                          )}`}
-                        >
-                          {row.location}
-                        </td>
-                      )}
+            <div className="overflow-x-auto rounded-lg border border-gray-700 -mx-2 sm:mx-0">
+              <table className="w-full min-w-[600px]">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-gray-800">
+                    <th className="px-4 py-2 text-left text-sm font-semibold text-gray-300 w-1/4">
+                      Boss
+                    </th>
+                    {mode === "compare" ? (
+                      <>
+                        <th className="px-4 py-2 text-center text-sm font-semibold text-red-300 w-1/2">
+                          PVP Chance
+                        </th>
+                        <th className="px-4 py-2 text-center text-sm font-semibold text-green-300 w-1/2">
+                          PVE Chance
+                        </th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-300 w-1/6">
+                          Spawn Chance
+                        </th>
+                        <th className="px-4 py-2 text-left text-sm font-semibold text-gray-300 w-1/3">
+                          Location
+                        </th>
+                        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-300 w-1/6">
+                          Location Chance
+                        </th>
+                      </>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {items.length === 0 && (
+                    <tr>
                       <td
-                        className={`px-4 py-2 text-center whitespace-nowrap text-xs sm:text-sm ${getLocationClasses(
-                          row.location,
-                          row.locationChance
-                        )}`}
+                        colSpan={mode === "compare" ? 3 : 4}
+                        className="text-center text-gray-500 py-4"
                       >
-                        {row.locationChance > 0
-                          ? `${Math.round(row.locationChance * 100)}%`
-                          : "-"}
+                        No bosses found for this map with the current filter.
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  )}
+                  {items.map((bossGroup) => {
+                    if (mode === "compare") {
+                      const hasDifferences = bossGroup.locations.some(
+                        (loc: Location) => loc.hasDifference
+                      );
+                      if (!hasDifferences) return null;
+
+                      const regularChance = Math.max(
+                        ...bossGroup.locations.map(
+                          (loc: Location) => loc.regularChance || 0
+                        )
+                      );
+                      const pveChance = Math.max(
+                        ...bossGroup.locations.map(
+                          (loc: Location) => loc.pveChance || 0
+                        )
+                      );
+
+                      return (
+                        <tr
+                          key={bossGroup.boss}
+                          className="hover:bg-gray-800/50 transition-colors"
+                        >
+                          <td className="px-4 py-2">
+                            <BossCell boss={bossGroup} />
+                          </td>
+                          <td className="px-4 py-2 text-center bg-red-700/20">
+                            <span className="text-red-300 font-medium">
+                              {(regularChance * 100).toFixed(0)}%
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 text-center bg-green-700/20">
+                            <span className="text-green-300 font-medium">
+                              {(pveChance * 100).toFixed(0)}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    const sortedLocations = [...bossGroup.locations].sort(
+                      (a: Location, b: Location) => a.name.localeCompare(b.name)
+                    );
+                    const rowCount = Math.max(sortedLocations.length, 1);
+
+                    if (sortedLocations.length === 0) {
+                      return (
+                        <tr key={`${bossGroup.boss}-no-location`}>
+                          <td className="px-4 py-2">
+                            <BossCell boss={bossGroup} />
+                          </td>
+                          <td className="px-4 py-2 text-center text-gray-400">
+                            {(bossGroup.spawnChance * 100).toFixed(0)}%
+                          </td>
+                          <td className="px-4 py-2 italic text-gray-500">
+                            (No specific location)
+                          </td>
+                          <td className="px-4 py-2 text-center text-gray-400">
+                            -
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return sortedLocations.map((location, locIndex) => {
+                      const isFirstRow = locIndex === 0;
+
+                      return (
+                        <tr
+                          key={`${bossGroup.boss}-${location.name}`}
+                          className="hover:bg-gray-800/50 transition-colors"
+                        >
+                          {isFirstRow && (
+                            <td
+                              rowSpan={rowCount}
+                              className="px-4 py-2 align-top border-r border-gray-700"
+                            >
+                              <BossCell boss={bossGroup} />
+                            </td>
+                          )}
+                          {isFirstRow && (
+                            <td
+                              rowSpan={rowCount}
+                              className="px-4 py-2 text-center align-top border-r border-gray-700 text-gray-400"
+                            >
+                              {(bossGroup.spawnChance * 100).toFixed(0)}%
+                            </td>
+                          )}
+                          <td
+                            className={`px-4 py-2 ${getLocationClasses(
+                              location.name,
+                              location.chance
+                            )}`}
+                          >
+                            {location.name}
+                          </td>
+                          <td className="px-4 py-2 text-center text-gray-400">
+                            {location.chance > 0
+                              ? `${(location.chance * 100).toFixed(0)}%`
+                              : "-"}
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
+
+const BossCell = ({ boss }: { boss: any }) => (
+  <HoverCard>
+    <HoverCardTrigger>
+      <span className="font-medium text-gray-200 hover:text-purple-400 cursor-pointer border-b border-dotted">
+        {boss.boss}
+      </span>
+    </HoverCardTrigger>
+    <HoverCardContent
+      align="start"
+      className="w-[300px] bg-gray-800 border-gray-700"
+    >
+      <div className="flex flex-col gap-2">
+        <h1 className="font-semibold text-gray-200">{boss.boss}</h1>
+        {boss.imagePortraitLink && (
+          <img
+            src={boss.imagePortraitLink}
+            alt={boss.boss}
+            className="w-full h-32 object-cover rounded-lg"
+          />
+        )}
+        <div className="space-y-1">
+          {boss.health && (
+            <div className="text-sm text-gray-400">
+              <div className="font-bold text-gray-200 mb-1">Health:</div>
+              <ul className="space-y-1">
+                {boss.health.map((part: any) => (
+                  <li key={part.bodyPart} className="flex justify-between">
+                    <span className="capitalize">{part.bodyPart}</span>
+                    <span>{part.max}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </HoverCardContent>
+  </HoverCard>
+);

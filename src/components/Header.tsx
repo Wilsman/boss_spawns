@@ -57,16 +57,19 @@ export function Header() {
           </a>
 
           {/* Collapsible Update Message */}
-          <Accordion type="single" collapsible className="w-full max-w-xs mx-auto">
+          <Accordion
+            type="single"
+            collapsible
+            className="w-full max-w-xs mx-auto"
+          >
             <AccordionItem value="item-1" className="border-b-0">
-              <AccordionTrigger className="text-xs text-gray-500 hover:text-gray-300 justify-center py-1 font-normal hover:no-underline data-[state=open]:text-gray-300"> 
+              <AccordionTrigger className="text-xs text-gray-500 hover:text-gray-300 justify-center py-1 font-normal hover:no-underline data-[state=open]:text-gray-300">
                 Recent Updates
               </AccordionTrigger>
-              <AccordionContent className="text-center text-xs text-gray-400 pb-2"> 
-                {/* with seperators */}
-                (01/04/2025): Added hover cards for boss names.
+              <AccordionContent className="text-center text-xs text-gray-400 pb-2">
+                (01/04/2025): Reworked table layouts and added hover cards when
+                hovering boss names.
                 <br />
-                <hr className="my-2" />
                 (28/03/2025): The Labyrinth bosses and chances have been added.
               </AccordionContent>
             </AccordionItem>
