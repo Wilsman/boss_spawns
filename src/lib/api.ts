@@ -64,6 +64,12 @@ export async function fetchSpawnData(
             bosses {
               boss {
                 name
+                health
+                {
+                  bodyPart
+                  max
+                }
+                imagePortraitLink
               }
               spawnChance
               spawnLocations {
