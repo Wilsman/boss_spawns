@@ -437,7 +437,9 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                         <td className="px-4 py-2 whitespace-nowrap text-xs sm:text-sm">
                           <HoverCard openDelay={200}>
                             <HoverCardTrigger asChild>
-                              <span className="cursor-default">{row.boss}</span>
+                              <span className="border-b border-dotted border-gray-500 cursor-help">
+                                {row.boss}
+                              </span>
                             </HoverCardTrigger>
                             <HoverCardContent className="w-auto p-2 bg-gray-900 border-gray-700 text-white">
                               <div className="flex items-center space-x-4">
