@@ -447,8 +447,8 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                                   <img
                                     src={row.imagePortraitLink}
                                     alt={`${row.boss} Portrait`}
-                                    width={64}
-                                    height={64}
+                                    width={128}
+                                    height={128}
                                     className="rounded object-cover"
                                   />
                                 )}
