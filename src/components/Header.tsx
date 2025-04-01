@@ -63,6 +63,10 @@ export function Header() {
                 Recent Updates
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2"> 
+                {/* with seperators */}
+                (01/04/2025): Added hover cards for boss names.
+                <br />
+                <hr className="my-2" />
                 (28/03/2025): The Labyrinth bosses and chances have been added.
               </AccordionContent>
             </AccordionItem>
