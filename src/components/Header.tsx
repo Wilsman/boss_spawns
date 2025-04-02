@@ -67,10 +67,17 @@ export function Header() {
                 Recent Updates
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
-                (01/04/2025): Reworked table layouts and added hover cards when
-                hovering boss names.
-                <br />
-                (28/03/2025): The Labyrinth bosses and chances have been added.
+                <span className="block mb-1">
+                  (02/04/2025): Added Bender font.
+                </span>
+                <span className="block mb-1">
+                  (01/04/2025): Reworked table layouts and added hover cards
+                  when hovering boss names.
+                </span>
+                <span className="block">
+                  (28/03/2025): The Labyrinth bosses and chances have been
+                  added.
+                </span>
               </AccordionContent>
             </AccordionItem>
           </Accordion>

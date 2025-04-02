@@ -268,7 +268,7 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
         return (
           <div key={mapName} className="space-y-2">
             {/* Map Name Header center and stands out */}
-            <h3 className="text-lg font-bold text-white text-center px-2 capitalize bg-gray-900 py-2 rounded-lg ">
+            <h3 className="text-lg font-bold text-white text-center px-2 capitalize bg-gray-800 py-2 rounded-lg">
               {mapName}
             </h3>
             <div className="overflow-x-auto rounded-lg border border-gray-700 -mx-2 sm:mx-0">

@@ -219,7 +219,7 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen text-foreground flex flex-col">
       <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-10">
         <Header />
         
