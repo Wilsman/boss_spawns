@@ -440,13 +440,14 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                                 }
                                 setExpandedBosses(newExpanded);
                               }}
-                              className="p-1 rounded hover:bg-gray-700 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                              className="flex items-center gap-1 p-1 rounded hover:bg-gray-700 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                             >
                               {isExpanded ? (
                                 <ChevronDown className="h-4 w-4" />
                               ) : (
                                 <ChevronRight className="h-4 w-4" />
                               )}
+                              <span className="text-xs text-gray-400">Spawn Locations</span>
                             </button>
                           </td>
                           <td className="px-4 py-2">
