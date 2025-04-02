@@ -304,7 +304,9 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
       {sortedMapNames.map((mapName) => {
         const items = groupedByMap[mapName];
         const mapBossKeys = items.map((item) => `${mapName}-${item.boss}`);
-        const allMapBossesExpanded = mapBossKeys.every((key) => expandedBosses.has(key));
+        const allMapBossesExpanded = mapBossKeys.every((key) =>
+          expandedBosses.has(key)
+        );
 
         const toggleMapBosses = () => {
           const newExpanded = new Set(expandedBosses);
@@ -321,7 +323,7 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
         return (
           <div key={mapName} className="space-y-2">
             <div className="flex items-center justify-between px-2">
-              <h3 className="text-lg font-bold text-white capitalize bg-gray-900 py-2 px-4 rounded-lg">
+              <h3 className="text-lg font-bold text-white capitalize bg-gray-800 py-2 px-4 rounded-lg">
                 {mapName}
               </h3>
               <button
@@ -345,7 +347,8 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
               <table className="w-full min-w-[500px]">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-gray-800">
-                    <th className="w-8 px-2 py-2" /> {/* Expand/collapse column */}
+                    <th className="w-8 px-2 py-2" />{" "}
+                    {/* Expand/collapse column */}
                     <th className="px-4 py-2 text-left text-sm font-semibold text-gray-300 w-[200px]">
                       Boss
                     </th>
@@ -447,7 +450,9 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                               ) : (
                                 <ChevronRight className="h-4 w-4" />
                               )}
-                              <span className="text-xs text-gray-400">Spawn Locations</span>
+                              <span className="text-xs text-gray-400">
+                                Spawn Locations
+                              </span>
                             </button>
                           </td>
                           <td className="px-4 py-2">
