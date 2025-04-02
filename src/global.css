@@ -2,11 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Bender';
+  src: url('/fonts/Jovanny Lemonad - Bender.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bender';
+  src: url('/fonts/Jovanny Lemonad - Bender-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bender';
+  src: url('/fonts/Jovanny Lemonad - Bender-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bender';
+  src: url('/fonts/Jovanny Lemonad - Bender-Black.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bender';
+  src: url('/fonts/Jovanny Lemonad - Bender-Italic.woff') format('woff');
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bender';
+  src: url('/fonts/Jovanny Lemonad - Bender-BoldItalic.woff') format('woff');
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bender';
+  src: url('/fonts/Jovanny Lemonad - Bender-LightItalic.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bender';
+  src: url('/fonts/Jovanny Lemonad - Bender-BlackItalic.woff') format('woff');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 body {
   margin: 0;
   padding: 0;
   background-color: #1a1a1a;
-  color: white;
+  color: #ffffff;
+  font-family: 'Bender', sans-serif;
 }
 
 #root {
