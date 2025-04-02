@@ -4,7 +4,6 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-    background-color: #1e1e1e;
     color: #ffffff;
 }
 
@@ -71,7 +70,6 @@ h1 {
 table {
     width: 100%;
     border-collapse: collapse;
-    background-color: #2e2e2e;
 }
 
 th, td {
@@ -81,7 +79,6 @@ th, td {
 }
 
 th {
-    background-color: #3a3a3a;
     cursor: pointer;
 }
 
@@ -102,7 +99,6 @@ tr:hover {
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #444444;
     color: #ffffff;
     padding: 10px 20px;
     border-radius: 5px;
