@@ -431,9 +431,18 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
 const BossCell = ({ boss }: { boss: any }) => (
   <HoverCard>
     <HoverCardTrigger>
-      <span className="font-medium text-gray-200 hover:text-purple-400 cursor-pointer border-b border-dotted">
-        {boss.boss}
-      </span>
+      <div className="flex items-center gap-2">
+        {boss.imagePortraitLink && (
+          <img
+            src={boss.imagePortraitLink}
+            alt={boss.boss}
+            className="w-8 h-8 rounded-full object-cover"
+          />
+        )}
+        <span className="font-medium text-gray-200 hover:text-purple-400 cursor-pointer border-b border-dotted">
+          {boss.boss}
+        </span>
+      </div>
     </HoverCardTrigger>
     <HoverCardContent
       align="start"
