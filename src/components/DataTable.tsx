@@ -428,51 +428,76 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
   );
 }
 
-const BossCell = ({ boss }: { boss: any }) => (
-  <HoverCard>
-    <HoverCardTrigger>
-      <div className="flex items-center gap-2">
-        {boss.imagePortraitLink && (
-          <img
-            src={boss.imagePortraitLink}
-            alt={boss.boss}
-            className="w-8 h-8 rounded-full object-cover"
-          />
-        )}
-        <span className="font-medium text-gray-200 hover:text-purple-400 cursor-pointer border-b border-dotted">
-          {boss.boss}
-        </span>
-      </div>
-    </HoverCardTrigger>
-    <HoverCardContent
-      align="start"
-      className="w-[300px] bg-gray-800 border-gray-700"
-    >
-      <div className="flex flex-col gap-2">
-        <h1 className="font-semibold text-gray-200">{boss.boss}</h1>
-        {boss.imagePortraitLink && (
-          <img
-            src={boss.imagePortraitLink}
-            alt={boss.boss}
-            className="w-full h-32 object-cover rounded-lg"
-          />
-        )}
-        <div className="space-y-1">
-          {boss.health && (
-            <div className="text-sm text-gray-400">
-              <div className="font-bold text-gray-200 mb-1">Health:</div>
-              <ul className="space-y-1">
-                {boss.health.map((part: any) => (
-                  <li key={part.bodyPart} className="flex justify-between">
-                    <span className="capitalize">{part.bodyPart}</span>
-                    <span>{part.max}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+// TODO: Remove this after API returns correct images
+const BossCell = ({ boss }: { boss: any }) => {
+  const getImageUrl = (boss: any) => {
+    // Temporary fix for specific boss images
+    if (boss.boss === "Shadow of Tagilla") {
+      return "/Shadow_Tagilla_Long_crop.webp";
+    }
+    if (boss.boss === "Vengeful Killa") {
+      return "/killa-portrait.webp";
+    }
+    if (boss.boss === "BEAR") {
+      return "/BEAR.webp";
+    }
+    if (boss.boss === "USEC") {
+      return "/USEC.webp";
+    }
+    if (boss.boss === "Shadow of Tagilla Disciple") {
+      return "/SCAV.webp";
+    }
+    return boss.imagePortraitLink;
+  };
+
+  const imageUrl = getImageUrl(boss);
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger>
+        <div className="flex items-center gap-2">
+          {boss.imagePortraitLink && (
+            <img
+              src={imageUrl}
+              alt={boss.boss}
+              className="w-8 h-8 rounded-full object-cover"
+            />
           )}
+          <span className="font-medium text-gray-200 hover:text-purple-400 cursor-pointer border-b border-dotted">
+            {boss.boss}
+          </span>
         </div>
-      </div>
-    </HoverCardContent>
-  </HoverCard>
-);
+      </HoverCardTrigger>
+      <HoverCardContent
+        align="start"
+        className="w-[300px] bg-gray-800 border-gray-700"
+      >
+        <div className="flex flex-col gap-2">
+          <h1 className="font-semibold text-gray-200">{boss.boss}</h1>
+          {boss.imagePortraitLink && (
+            <img
+              src={imageUrl}
+              alt={boss.boss}
+              className="w-full h-32 object-cover rounded-lg"
+            />
+          )}
+          <div className="space-y-1">
+            {boss.health && (
+              <div className="text-sm text-gray-400">
+                <div className="font-bold text-gray-200 mb-1">Health:</div>
+                <ul className="space-y-1">
+                  {boss.health.map((part: any) => (
+                    <li key={part.bodyPart} className="flex justify-between">
+                      <span className="capitalize">{part.bodyPart}</span>
+                      <span>{part.max}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
