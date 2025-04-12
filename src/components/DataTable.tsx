@@ -444,7 +444,7 @@ const BossCell = ({ boss }: { boss: any }) => {
     if (boss.boss === "USEC") {
       return "/USEC.webp";
     }
-    if (boss.boss === "Shadow of Tagilla Disciple") {
+    if (boss.boss === "Labyrinthian") {
       return "/SCAV.webp";
     }
     return boss.imagePortraitLink;

@@ -68,6 +68,10 @@ export function Header() {
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
+                  (12/04/2025): shadow-of-tagilla-disciple renamed to
+                  labyrinthian.
+                </span>
+                <span className="block mb-1">
                   (02/04/2025): Added Bender font.
                 </span>
                 <span className="block mb-1">
