@@ -484,7 +484,12 @@ const BossCell = ({ boss }: { boss: any }) => {
           <div className="space-y-1">
             {boss.health && (
               <div className="text-sm text-gray-400">
-                <div className="font-bold text-gray-200 mb-1">Health:</div>
+                <div className="flex justify-between">
+                  <span className="font-bold text-gray-200 mb-1">Health:</span>
+                  <span className="font-bold text-gray-200">
+                    Total: {boss.health.reduce((acc: number, part: any) => acc + part.max, 0)}
+                  </span>
+                </div>
                 <ul className="space-y-1">
                   {boss.health.map((part: any) => (
                     <li key={part.bodyPart} className="flex justify-between">
