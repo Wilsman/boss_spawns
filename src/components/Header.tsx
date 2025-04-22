@@ -6,6 +6,22 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+const BOSS_IMAGES = [
+  "/eft_boss_jaeger.webp",
+  "/eft_boss_goons.webp",
+  "/eft_boss_keban.webp",
+  "/eft_boss_killer.webp",
+  "/eft_boss_tagilla.webp",
+  "/eft_boss_parasan.webp",
+  "/eft_boss_reshala.webp",
+  "/eft_boss_sanny.webp",
+  "/eft_boss_shturman.webp",
+];
+
+function getRandomBossImage(): string {
+  return BOSS_IMAGES[Math.floor(Math.random() * BOSS_IMAGES.length)];
+}
+
 export function Header() {
   return (
     <div className="">
@@ -14,7 +30,7 @@ export function Header() {
         <div className="flex items-center space-x-4">
           <a href="/">
             <img
-              src="/eft_boss.webp"
+              src={getRandomBossImage()}
               alt="EFT Boss Spawns Logo"
               width={300}
               height={100}
