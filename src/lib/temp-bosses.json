@@ -1,0 +1,29 @@
+[
+  {
+    "name": "The Labyrinth",
+    "bosses": [
+      {
+        "boss": {
+          "name": "Labyrinthian",
+          "health": [
+            { "bodyPart": "Head", "max": 30 },
+            { "bodyPart": "Thorax", "max": 80 },
+            { "bodyPart": "Stomach", "max": 70 },
+            { "bodyPart": "LeftArm", "max": 60 },
+            { "bodyPart": "RightArm", "max": 60 },
+            { "bodyPart": "LeftLeg", "max": 60 },
+            { "bodyPart": "RightLeg", "max": 60 }
+          ],
+          "imagePortraitLink": "https://assets.tarkov.dev/raider-portrait.webp"
+        },
+        "spawnLocations": [
+          {
+            "name": "(No specific location)",
+            "chance": 1
+          }
+        ],
+        "spawnChance": 1
+      }
+    ]
+  }
+]

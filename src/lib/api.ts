@@ -1,5 +1,6 @@
 import { SpawnData } from "@/types";
 import { DataChange } from "./diff";
+import tempBossDataFromFile from "./temp-bosses.json"; // Added import for temp bosses
 
 const CACHE_VERSION = 4;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -11,6 +12,32 @@ const CHANGES_API_URL = "https://bossdata.cultistcircle.workers.dev/changes";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || CHANGES_API_URL;
 
 // Type for the cultistcircle API response
+
+// Cast the imported JSON to the correct type
+const tempBossData: SpawnData[] = tempBossDataFromFile as SpawnData[];
+
+// Helper function to merge spawn data with temporary boss data
+function mergeWithTempData(currentData: SpawnData[]): SpawnData[] {
+  if (!tempBossData || tempBossData.length === 0) {
+    return currentData;
+  }
+
+  const mergedData = JSON.parse(JSON.stringify(currentData)); // Deep copy to avoid mutating original cache/API data
+
+  tempBossData.forEach(tempMap => {
+    const existingMap = mergedData.find((map: SpawnData) => map.name === tempMap.name);
+    if (existingMap) {
+      // Map exists, merge bosses
+      // Simple concatenation for now. Consider de-duplication or more complex merging if needed.
+      existingMap.bosses = existingMap.bosses.concat(tempMap.bosses);
+    } else {
+      // Map doesn't exist, add it
+      mergedData.push(tempMap);
+    }
+  });
+
+  return mergedData;
+}
 
 export async function fetchSpawnData(
   gameMode: "regular" | "pve"
@@ -36,7 +63,7 @@ export async function fetchSpawnData(
     try {
       const { data, timestamp } = JSON.parse(cached);
       if (data?.maps && new Date().getTime() - timestamp < CACHE_DURATION) {
-        return data.maps;
+        return mergeWithTempData(data.maps); // Merge with temp data
       }
     } catch (error) {
       console.error("Error parsing cached data:", error);
@@ -91,7 +118,7 @@ export async function fetchSpawnData(
       try {
         const { data } = JSON.parse(cached);
         if (data?.maps) {
-          return data.maps;
+          return mergeWithTempData(data.maps); // Merge with temp data
         }
       } catch (error) {
         console.error("Error parsing cached data:", error);
@@ -115,16 +142,18 @@ export async function fetchSpawnData(
     })),
   };
 
+  const finalData = mergeWithTempData(transformedData.maps); // Merge with temp data
+
   // Update cache with transformed data
   localStorage.setItem(
     CACHE_KEY,
     JSON.stringify({
-      data: transformedData,
+      data: { maps: finalData }, // Store the merged data in cache
       timestamp: new Date().getTime(),
     })
   );
 
-  return transformedData.maps;
+  return finalData; // Return merged data
 }
 
 export async function fetchChanges(): Promise<DataChange[]> {
