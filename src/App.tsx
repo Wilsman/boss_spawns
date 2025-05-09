@@ -9,11 +9,11 @@ import { DataChange } from "@/lib/diff";
 import { ChangesTable } from "@/components/ChangesTable";
 import { exportChanges, getStoredChanges } from "@/lib/changes";
 import { VersionLabel } from "@/components/VersionLabel";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
 import { NavBar } from "@/components/ui/navbar";
 import { Swords, Crosshair, Scale, History } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
-import { useToast } from "@/hooks/use-toast";
+import type { DataMode } from "@/types";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -21,22 +21,22 @@ function MainApp() {
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
   const [pveData, setPveData] = useState<SpawnData[] | null>(null);
   const [loading, setLoading] = useState(false);
-  const [mapFilter, setMapFilter] = useState("");
-  const [bossFilter, setBossFilter] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [changes, setChanges] = useState<DataChange[]>([]);
-  const location = useLocation();
-  const { toast } = useToast();
 
-  // Determine the current mode based on URL
-  const mode =
-    location.pathname === "/pve"
-      ? "pve"
-      : location.pathname === "/compare"
-      ? "compare"
-      : location.pathname === "/changes"
-      ? "changes"
-      : "regular";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const mode = searchParams.get('mode') ?? 'regular';
+  const mapFilter = searchParams.get('map') ?? '';
+  const bossFilter = searchParams.get('boss') ?? '';
+  const searchQuery = searchParams.get('search') ?? '';
+  const updateParam = (key: string, value: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (value) params.set(key, value);
+    else params.delete(key);
+    setSearchParams(params);
+  };
+  const setMapFilter = (v: string) => updateParam('map', v);
+  const setBossFilter = (v: string) => updateParam('boss', v);
+  const setSearchQuery = (v: string) => updateParam('search', v);
 
   const loadData = useCallback(
     async (gameMode?: "regular" | "pve" | "both") => {
@@ -160,14 +160,6 @@ function MainApp() {
     }
   }, [mode]);
 
-  useEffect(() => {
-    console.log("Toast effect triggered!"); // Add console log for debugging
-    toast({
-      title: "Update",
-      description: "The Labyrinth bosses and chances have been added.",
-    });
-  }, [toast]);
-
   const handleChangesUpdate = useCallback(async () => {
     try {
       setLoading(true);
@@ -196,7 +188,7 @@ function MainApp() {
           boss.spawnLocations.map((location) =>
             [
               map.name,
-              boss.boss.name,
+              boss.boss.name === "infected" && boss.spawnChance < 1 ? "Infected(Tagilla)" : boss.boss.name === "infected" ? "Infected(Zombie)" : boss.boss.name,
               `${Math.round(boss.spawnChance * 100)}%`,
               location.name,
               `${Math.round(location.chance * 100)}%`,
@@ -230,10 +222,10 @@ function MainApp() {
         
         <NavBar
           items={[
-            { name: "PVP", url: "/", icon: Swords },
-            { name: "PVE", url: "/pve", icon: Crosshair },
-            { name: "Compare", url: "/compare", icon: Scale },
-            { name: "Changes", url: "/changes", icon: History },
+            { name: "Regular", url: "/?mode=regular", icon: Swords },
+            { name: "PVE", url: "/?mode=pve", icon: Crosshair },
+            { name: "Compare", url: "/?mode=compare", icon: Scale },
+            { name: "Changes", url: "/?mode=changes", icon: History },
           ]}
         />
 
@@ -268,12 +260,8 @@ function MainApp() {
           ) : (
             <DataTable
               data={mode === "regular" ? regularData : pveData}
-              mode={mode}
-              filters={{
-                map: mapFilter,
-                boss: bossFilter,
-                search: searchQuery,
-              }}
+              mode={mode as DataMode}
+              filters={{ map: mapFilter, boss: bossFilter, search: searchQuery }}
             />
           )}
         </div>
@@ -286,13 +274,16 @@ function MainApp() {
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainApp />} />
-        <Route path="/pve" element={<MainApp />} />
-        <Route path="/compare" element={<MainApp />} />
-        <Route path="/changes" element={<MainApp />} />
-      </Routes>
-      <Toaster />
+      <div className="flex flex-col min-h-screen">
+        {/* <NavBar items={navItems} className="pt-4" /> */}
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <Routes>
+            <Route path="*" element={<MainApp />} />
+          </Routes>
+        </main>
+        <Toaster />
+        <VersionLabel />
+      </div>
     </BrowserRouter>
   );
 }

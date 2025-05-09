@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,20 +15,18 @@ interface NavBarProps {
 }
 
 export function NavBar({ items, className }: NavBarProps) {
-  const [activeTab, setActiveTab] = useState(items[0].name);
+  const [searchParams] = useSearchParams();
+  const modeParam = searchParams.get('mode')?.toLowerCase() ?? 'regular';
 
   return (
     <div className={cn("flex justify-center w-full", className)}>
       <div className="flex items-center gap-1 sm:gap-3 bg-background/5 border border-border backdrop-blur-lg py-1 px-1 rounded-full shadow-lg">
         {items.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.name;
+          const isActive = item.name.toLowerCase() === modeParam;
 
           return (
-            <Link
-              key={item.name}
-              to={item.url}
-              onClick={() => setActiveTab(item.name)}
+            <Link key={item.name} to={item.url}
               className={cn(
                 "relative cursor-pointer text-sm font-semibold px-3 sm:px-6 py-2 rounded-full transition-colors",
                 "text-foreground/80 hover:text-primary",
