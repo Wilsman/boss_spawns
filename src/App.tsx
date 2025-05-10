@@ -114,6 +114,53 @@ function MainApp() {
     loadInitialData();
   }, []); // Only run once on mount
 
+  // Process data when mode changes
+  useEffect(() => {
+    async function processData() {
+      if (mode === "regular" && regularData) {
+        const regular = regularData;
+        let foundBossUrl: string | undefined = undefined;
+        let foundMapName: string | undefined = undefined;
+
+        for (const map of regular) {
+          if (map.bosses) {
+            for (const bossEncounter of map.bosses) {
+              if (bossEncounter.boss.name === CURRENT_BOSS_NAME) {
+                foundBossUrl = bossEncounter.boss.imagePortraitLink ?? undefined;
+                foundMapName = map.name;
+                break;
+              }
+            }
+          }
+          if (foundBossUrl && foundMapName) break;
+        }
+        setCurrentBossImageUrl(foundBossUrl);
+        setCurrentBossMapName(foundMapName);
+
+      } else if (mode === "pve" && pveData) {
+        const pve = pveData;
+        let foundBossUrl: string | undefined = undefined;
+        let foundMapName: string | undefined = undefined;
+
+        for (const map of pve) {
+          if (map.bosses) {
+            for (const bossEncounter of map.bosses) {
+              if (bossEncounter.boss.name === CURRENT_BOSS_NAME) {
+                foundBossUrl = bossEncounter.boss.imagePortraitLink ?? undefined;
+                foundMapName = map.name;
+                break;
+              }
+            }
+          }
+          if (foundBossUrl && foundMapName) break;
+        }
+        setCurrentBossImageUrl(foundBossUrl);
+        setCurrentBossMapName(foundMapName);
+      }
+    }
+    processData();
+  }, [regularData, pveData, mode]);
+
   // Check cache and refresh data when needed
   useEffect(() => {
     const checkCacheAndRefresh = () => {
