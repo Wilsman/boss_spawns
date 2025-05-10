@@ -2,7 +2,7 @@ import { SpawnData } from "@/types";
 import { DataChange } from "./diff";
 import tempBossDataFromFile from "./temp-bosses.json"; // Added import for temp bosses
 
-const CACHE_VERSION = 4;
+const CACHE_VERSION = 5;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Change to use the cultistcircle API

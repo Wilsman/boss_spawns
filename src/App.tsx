@@ -17,11 +17,19 @@ import type { DataMode } from "@/types";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+// == Weekly Boss Configuration ==
+const CURRENT_BOSS_NAME = "Reshala";
+const CURRENT_BOSS_START_DATE = "2025-05-10T14:00:00+01:00"; // BST
+const CURRENT_BOSS_DURATION_SECONDS = 7 * 24 * 60 * 60; // 1 week
+// =============================
+
 function MainApp() {
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
   const [pveData, setPveData] = useState<SpawnData[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [changes, setChanges] = useState<DataChange[]>([]);
+  const [currentBossImageUrl, setCurrentBossImageUrl] = useState<string | undefined>(undefined);
+  const [currentBossMapName, setCurrentBossMapName] = useState<string | undefined>(undefined);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const mode = searchParams.get('mode') ?? 'regular';
@@ -46,6 +54,22 @@ function MainApp() {
           const regular = await fetchSpawnData("regular");
           setRegularData(regular);
           localStorage.setItem("maps_regular_timestamp", Date.now().toString());
+
+          // Find Reshala and set image URL
+          if (regular) {
+            for (const map of regular) {
+              if (map.bosses) {
+                for (const bossEncounter of map.bosses) {
+                  if (bossEncounter.boss.name === CURRENT_BOSS_NAME) {
+                    setCurrentBossImageUrl(bossEncounter.boss.imagePortraitLink ?? undefined);
+                    setCurrentBossMapName(map.name);
+                    break;
+                  }
+                }
+              }
+              if (currentBossImageUrl && currentBossMapName) break;
+            }
+          }
         }
         if (gameMode === "pve" || gameMode === "both") {
           const pve = await fetchSpawnData("pve");
@@ -213,7 +237,13 @@ function MainApp() {
   return (
     <div className="min-h-screen text-foreground flex flex-col">
       <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-10">
-        <Header />
+        <Header
+          bossName={CURRENT_BOSS_NAME}
+          bossStartDate={new Date(CURRENT_BOSS_START_DATE)}
+          bossDurationSeconds={CURRENT_BOSS_DURATION_SECONDS}
+          bossImageUrl={currentBossImageUrl}
+          bossMapName={currentBossMapName}
+        />
         
         <div className="flex justify-center gap-4">
           <CacheStatus mode="regular" onExpired={() => loadData("regular")} />
@@ -222,7 +252,7 @@ function MainApp() {
         
         <NavBar
           items={[
-            { name: "Regular", url: "/?mode=regular", icon: Swords },
+            { name: "PVP", url: "/?mode=regular", icon: Swords },
             { name: "PVE", url: "/?mode=pve", icon: Crosshair },
             { name: "Compare", url: "/?mode=compare", icon: Scale },
             { name: "Changes", url: "/?mode=changes", icon: History },

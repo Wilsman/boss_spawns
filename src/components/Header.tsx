@@ -5,6 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { BossNotice } from "./BossNotice";
 
 const BOSS_IMAGES = [
   "/eft_boss_jaeger.webp",
@@ -22,7 +23,15 @@ function getRandomBossImage(): string {
   return BOSS_IMAGES[Math.floor(Math.random() * BOSS_IMAGES.length)];
 }
 
-export function Header() {
+interface HeaderProps {
+  bossImageUrl?: string;
+  bossName: string;
+  bossStartDate: Date;
+  bossDurationSeconds: number;
+  bossMapName?: string;
+}
+
+export function Header({ bossImageUrl, bossName, bossStartDate, bossDurationSeconds, bossMapName }: HeaderProps) {
   return (
     <div className="">
       {/* Title Section */}
@@ -72,6 +81,15 @@ export function Header() {
             <Database className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
           </a>
 
+          {/* Weekly Boss Notice (small, below attribution) */}
+          <BossNotice
+            boss={bossName}
+            start={bossStartDate}
+            durationSeconds={bossDurationSeconds}
+            bossImageUrl={bossImageUrl}
+            bossMapName={bossMapName}
+          />
+
           {/* Collapsible Update Message */}
           <Accordion
             type="single"
@@ -84,6 +102,9 @@ export function Header() {
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
+                  (10/05/2025): Added weekly boss rotation notice.
+                </span>
+                <span className="block mb-1">
                   (13/04/2025): (hover card) Added total health.
                 </span>
                 <span className="block mb-1">
@@ -93,10 +114,6 @@ export function Header() {
                 <span className="block mb-1">
                   (01/04/2025): Reworked table layouts and added hover cards
                   when hovering boss names.
-                </span>
-                <span className="block">
-                  (28/03/2025): The Labyrinth bosses and chances have been
-                  added.
                 </span>
               </AccordionContent>
             </AccordionItem>
