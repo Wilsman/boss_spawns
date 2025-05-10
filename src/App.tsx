@@ -214,12 +214,12 @@ function MainApp() {
     <div className="min-h-screen text-foreground flex flex-col">
       <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-10">
         <Header />
-        
+
         <div className="flex justify-center gap-4">
           <CacheStatus mode="regular" onExpired={() => loadData("regular")} />
           <CacheStatus mode="pve" onExpired={() => loadData("pve")} />
         </div>
-        
+
         <NavBar
           items={[
             { name: "Regular", url: "/?mode=regular", icon: Swords },
