@@ -13,7 +13,9 @@ import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom"
 import { NavBar } from "@/components/ui/navbar";
 import { Swords, Crosshair, Scale, History } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
+import { PatchToast } from "@/components/patch-toast";
 import type { DataMode } from "@/types";
+import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -291,12 +293,12 @@ function MainApp() {
           bossImageUrl={currentBossImageUrl}
           bossMapName={currentBossMapName}
         />
-        
+
         <div className="flex justify-center gap-4">
           <CacheStatus mode="regular" onExpired={() => loadData("regular")} />
           <CacheStatus mode="pve" onExpired={() => loadData("pve")} />
         </div>
-        
+
         <NavBar
           items={[
             { name: "PVP", url: "/?mode=regular", icon: Swords },
@@ -305,6 +307,30 @@ function MainApp() {
             { name: "Changes", url: "/?mode=changes", icon: History },
           ]}
         />
+        <Alert
+          variant="default"
+          className="w-full max-w-3xl mx-auto bg-gradient-to-r from-yellow-400/70 to-orange-500/70 border border-yellow-500/30 rounded-md px-2.5 py-1.5 flex items-center justify-center shadow-sm text-xs text-orange-950 tracking-wide"
+        >
+          <div className="flex flex-col w-full">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-green-700 text-xs">✅</span>
+              <AlertTitle className="font-bold text-xs m-0 p-0">
+                Completed
+              </AlertTitle>
+              <span className="ml-auto text-xs text-orange-900">
+                📅 <span className="italic">May 14, 2025</span>
+              </span>
+            </div>
+            <AlertDescription className="text-xs mt-0.5">
+              Removed silent walking for <b>BirdEye</b>, <b>Shturman</b>,{" "}
+              <b>Partizan</b>, and <b>Cultists</b>. They should now walk about{" "}
+              <b>20–35% quieter</b> than the rest.
+            </AlertDescription>
+            <div className="text-xs text-right italic text-orange-900 text-[10px] mt-0.5">
+              — YOWA, Lead of Game Design, Battlestate Games
+            </div>
+          </div>
+        </Alert>
 
         <div className="p-2 rounded-lg bg-black/30">
           <FilterBar
@@ -338,7 +364,11 @@ function MainApp() {
             <DataTable
               data={mode === "regular" ? regularData : pveData}
               mode={mode as DataMode}
-              filters={{ map: mapFilter, boss: bossFilter, search: searchQuery }}
+              filters={{
+                map: mapFilter,
+                boss: bossFilter,
+                search: searchQuery,
+              }}
             />
           )}
         </div>
@@ -358,8 +388,9 @@ function App() {
             <Route path="*" element={<MainApp />} />
           </Routes>
         </main>
-        <Toaster />
-        <VersionLabel />
+         <PatchToast />
+         <Toaster />
+         <VersionLabel />
       </div>
     </BrowserRouter>
   );
