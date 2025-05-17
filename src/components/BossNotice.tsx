@@ -25,9 +25,13 @@ interface BossNoticeProps {
   durationSeconds: number;
   bossImageUrl?: string;
   bossMapName?: string;
+  spawnLocations?: Array<{
+    name: string;
+    chance: number;
+  }>;
 }
 
-export function BossNotice({ boss, start, durationSeconds, bossImageUrl, bossMapName }: BossNoticeProps) {
+export function BossNotice({ boss, start, durationSeconds, bossImageUrl, bossMapName, spawnLocations = [] }: BossNoticeProps) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -68,11 +72,12 @@ export function BossNotice({ boss, start, durationSeconds, bossImageUrl, bossMap
           : formatPaddedDuration(duration)
         }
       </span>
-      {bossMapName && (
-        <span className="text-xs text-purple-400 mt-1">
-          on {bossMapName}
-        </span>
-      )}
+      <div className="text-xs text-purple-400 mt-1 text-center space-y-1">
+        {bossMapName && <div>on <span className="font-bold">{bossMapName}</span></div>}
+        {spawnLocations.length > 0 && (
+          <div>at <span className="font-bold">{spawnLocations.map(loc => loc.name).join(", ")}</span></div>
+        )}
+      </div>
     </div>
   );
 }

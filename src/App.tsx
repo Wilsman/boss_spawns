@@ -32,6 +32,7 @@ function MainApp() {
   const [changes, setChanges] = useState<DataChange[]>([]);
   const [currentBossImageUrl, setCurrentBossImageUrl] = useState<string | undefined>(undefined);
   const [currentBossMapName, setCurrentBossMapName] = useState<string | undefined>(undefined);
+  const [currentBossSpawnLocations, setCurrentBossSpawnLocations] = useState<Array<{name: string, chance: number}>>([]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const mode = searchParams.get('mode') ?? 'regular';
@@ -65,6 +66,7 @@ function MainApp() {
                   if (bossEncounter.boss.name === CURRENT_BOSS_NAME) {
                     setCurrentBossImageUrl(bossEncounter.boss.imagePortraitLink ?? undefined);
                     setCurrentBossMapName(map.name);
+                    setCurrentBossSpawnLocations(bossEncounter.spawnLocations || []);
                     break;
                   }
                 }
@@ -292,6 +294,7 @@ function MainApp() {
           bossDurationSeconds={CURRENT_BOSS_DURATION_SECONDS}
           bossImageUrl={currentBossImageUrl}
           bossMapName={currentBossMapName}
+          spawnLocations={currentBossSpawnLocations}
         />
 
         <div className="flex justify-center gap-4">

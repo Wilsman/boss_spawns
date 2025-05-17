@@ -29,9 +29,13 @@ interface HeaderProps {
   bossStartDate: Date;
   bossDurationSeconds: number;
   bossMapName?: string;
+  spawnLocations?: Array<{
+    name: string;
+    chance: number;
+  }>;
 }
 
-export function Header({ bossImageUrl, bossName, bossStartDate, bossDurationSeconds, bossMapName }: HeaderProps) {
+export function Header({ bossImageUrl, bossName, bossStartDate, bossDurationSeconds, bossMapName, spawnLocations }: HeaderProps) {
   return (
     <div className="">
       {/* Title Section */}
@@ -88,6 +92,7 @@ export function Header({ bossImageUrl, bossName, bossStartDate, bossDurationSeco
             durationSeconds={bossDurationSeconds}
             bossImageUrl={bossImageUrl}
             bossMapName={bossMapName}
+            spawnLocations={spawnLocations}
           />
 
           {/* Collapsible Update Message */}
