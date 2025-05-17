@@ -2,7 +2,7 @@ import { SpawnData } from "@/types";
 import { DataChange } from "./diff";
 import tempBossDataFromFile from "./temp-bosses.json"; // Added import for temp bosses
 
-const CACHE_VERSION = 6;
+const CACHE_VERSION = 7;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Change to use the cultistcircle API
@@ -88,6 +88,7 @@ export async function fetchSpawnData(
         query {
           maps(gameMode: ${gameMode}) {
             name
+            wiki
             bosses {
               boss {
                 name

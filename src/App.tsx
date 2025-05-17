@@ -30,8 +30,7 @@ function MainApp() {
   const [pveData, setPveData] = useState<SpawnData[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [changes, setChanges] = useState<DataChange[]>([]);
-  const [currentBossImageUrl, setCurrentBossImageUrl] = useState<string | undefined>(undefined);
-  const [currentBossMapName, setCurrentBossMapName] = useState<string | undefined>(undefined);
+
 
   const [searchParams, setSearchParams] = useSearchParams();
   const mode = searchParams.get('mode') ?? 'regular';
@@ -57,21 +56,7 @@ function MainApp() {
           setRegularData(regular);
           localStorage.setItem("maps_regular_timestamp", Date.now().toString());
 
-          // Find Reshala and set image URL
-          if (regular) {
-            for (const map of regular) {
-              if (map.bosses) {
-                for (const bossEncounter of map.bosses) {
-                  if (bossEncounter.boss.name === CURRENT_BOSS_NAME) {
-                    setCurrentBossImageUrl(bossEncounter.boss.imagePortraitLink ?? undefined);
-                    setCurrentBossMapName(map.name);
-                    break;
-                  }
-                }
-              }
-              if (currentBossImageUrl && currentBossMapName) break;
-            }
-          }
+
         }
         if (gameMode === "pve" || gameMode === "both") {
           const pve = await fetchSpawnData("pve");
@@ -136,8 +121,6 @@ function MainApp() {
           }
           if (foundBossUrl && foundMapName) break;
         }
-        setCurrentBossImageUrl(foundBossUrl);
-        setCurrentBossMapName(foundMapName);
 
       } else if (mode === "pve" && pveData) {
         const pve = pveData;
@@ -156,8 +139,6 @@ function MainApp() {
           }
           if (foundBossUrl && foundMapName) break;
         }
-        setCurrentBossImageUrl(foundBossUrl);
-        setCurrentBossMapName(foundMapName);
       }
     }
     processData();
@@ -290,8 +271,6 @@ function MainApp() {
           bossName={CURRENT_BOSS_NAME}
           bossStartDate={new Date(CURRENT_BOSS_START_DATE)}
           bossDurationSeconds={CURRENT_BOSS_DURATION_SECONDS}
-          bossImageUrl={currentBossImageUrl}
-          bossMapName={currentBossMapName}
         />
 
         <div className="flex justify-center gap-4">

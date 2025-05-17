@@ -24,14 +24,12 @@ function getRandomBossImage(): string {
 }
 
 interface HeaderProps {
-  bossImageUrl?: string;
   bossName: string;
   bossStartDate: Date;
   bossDurationSeconds: number;
-  bossMapName?: string;
 }
 
-export function Header({ bossImageUrl, bossName, bossStartDate, bossDurationSeconds, bossMapName }: HeaderProps) {
+export function Header({ bossName, bossStartDate, bossDurationSeconds }: HeaderProps) {
   return (
     <div className="">
       {/* Title Section */}
@@ -86,8 +84,6 @@ export function Header({ bossImageUrl, bossName, bossStartDate, bossDurationSeco
             boss={bossName}
             start={bossStartDate}
             durationSeconds={bossDurationSeconds}
-            bossImageUrl={bossImageUrl}
-            bossMapName={bossMapName}
           />
 
           {/* Collapsible Update Message */}

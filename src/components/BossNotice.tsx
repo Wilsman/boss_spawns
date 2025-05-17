@@ -23,12 +23,43 @@ interface BossNoticeProps {
   boss: string;
   start: Date;
   durationSeconds: number;
-  bossImageUrl?: string;
-  bossMapName?: string;
 }
 
-export function BossNotice({ boss, start, durationSeconds, bossImageUrl, bossMapName }: BossNoticeProps) {
+export function BossNotice({ boss, start, durationSeconds }: BossNoticeProps) {
   const [now, setNow] = useState(new Date());
+  const [bossImageUrl, setBossImageUrl] = useState<string | undefined>(undefined);
+  const [bossMapName, setBossMapName] = useState<string | undefined>(undefined);
+  const [bossMapWiki, setBossMapWiki] = useState<string | undefined>(undefined);
+  const [spawnLocations, setSpawnLocations] = useState<Array<{ name: string; chance: number }>>([]);
+
+  // On mount or when boss changes, fetch from maps_regular
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("maps_regular");
+      if (cached) {
+        const { data } = JSON.parse(cached);
+        if (data?.maps) {
+          for (const map of data.maps) {
+            if (map.bosses) {
+              for (const bossEncounter of map.bosses) {
+                if (bossEncounter.boss.name === boss) {
+                  setBossImageUrl(bossEncounter.boss.imagePortraitLink ?? undefined);
+                  setBossMapName(map.name);
+                  setBossMapWiki(map.wiki);
+                  setSpawnLocations(bossEncounter.spawnLocations || []);
+                  return;
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      setBossImageUrl(undefined);
+      setBossMapName(undefined);
+      setSpawnLocations([]);
+    }
+  }, [boss]);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
@@ -68,11 +99,29 @@ export function BossNotice({ boss, start, durationSeconds, bossImageUrl, bossMap
           : formatPaddedDuration(duration)
         }
       </span>
-      {bossMapName && (
-        <span className="text-xs text-purple-400 mt-1">
-          on {bossMapName}
-        </span>
-      )}
+      <div className="text-xs text-purple-400 mt-1 text-center space-y-1">
+        {bossMapName && bossMapWiki && (
+          <div>
+            on{" "}
+            <a
+              href={bossMapWiki + "#Maps"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-purple-300 underline hover:text-purple-400"
+            >
+              {bossMapName}
+            </a>
+          </div>
+        )}
+        {bossMapName && !bossMapWiki && (
+          <div>
+            on <span className="font-bold">{bossMapName}</span>
+          </div>
+        )}
+        {spawnLocations.length > 0 && (
+          <div>at <span className="font-bold">{spawnLocations.map(loc => loc.name).join(", ")}</span></div>
+        )}
+      </div>
     </div>
   );
 }
