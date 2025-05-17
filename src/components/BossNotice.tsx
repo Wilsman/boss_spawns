@@ -64,7 +64,7 @@ export function BossNotice({ boss, start, durationSeconds, bossImageUrl, bossMap
       </span>
       <span className="text-base text-gray-200 tracking-wider mt-1">
         {isExpired
-          ? "Rotation ended"
+          ? "Rotation ending, boss switching soon™️"
           : formatPaddedDuration(duration)
         }
       </span>
