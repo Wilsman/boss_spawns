@@ -47,7 +47,7 @@ export function mergeWithTempData(currentData: SpawnData[]): SpawnData[] {
   return mergedData;
 }
 
-export async function fetchAllSpawnData(): Promise<{
+export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): Promise<{
   regular: SpawnData[];
   pve: SpawnData[];
 }> {
@@ -69,23 +69,26 @@ export async function fetchAllSpawnData(): Promise<{
     localStorage.setItem("cache_version", CACHE_VERSION.toString());
   }
 
-  // Check cache first
-  const cached = localStorage.getItem(CACHE_KEY);
-  if (cached) {
-    try {
-      const { data, timestamp } = JSON.parse(cached);
-      const now = new Date().getTime();
-      const next5Min = new Date(timestamp);
-      next5Min.setMinutes(Math.ceil(next5Min.getMinutes() / 5) * 5, 0, 0);
-      
-      if (data?.regular && data?.pve && now < next5Min.getTime()) {
-        return {
-          regular: mergeWithTempData(data.regular),
-          pve: mergeWithTempData(data.pve),
-        };
+  const cached = localStorage.getItem(CACHE_KEY); // Moved declaration here
+  if (!options?.forceRefresh) {
+    // Check cache first
+    if (cached) {
+      try {
+        const { data, timestamp } = JSON.parse(cached);
+        const now = new Date().getTime();
+        const cacheAge = now - timestamp;
+        const FIVE_MINUTES = 5 * 60 * 1000;
+        
+        // Return cached data only if it's less than 5 minutes old
+        if (data?.regular && data?.pve && cacheAge < FIVE_MINUTES) {
+          return {
+            regular: mergeWithTempData(data.regular),
+            pve: mergeWithTempData(data.pve),
+          };
+        }
+      } catch (error) {
+        console.error("Error parsing cached data:", error);
       }
-    } catch (error) {
-      console.error("Error parsing cached data:", error);
     }
   }
 

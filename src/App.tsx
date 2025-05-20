@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
-import { SpawnData, fetchAllSpawnData, mergeWithTempData } from "./lib/api";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useSearchParams,
+} from "react-router-dom";
+import { SpawnData, fetchAllSpawnData } from "./lib/api";
 import { DataTable } from "@/components/DataTable";
 import { Header } from "@/components/Header";
 import { FilterBar } from "@/components/FilterBar";
@@ -30,28 +35,32 @@ function MainApp() {
   const [loading, setLoading] = useState(false);
   const [changes, setChanges] = useState<DataChange[]>([]);
 
-
   const [searchParams, setSearchParams] = useSearchParams();
-  const mode = searchParams.get('mode') ?? 'regular';
-  const mapFilter = searchParams.get('map') ?? '';
-  const bossFilter = searchParams.get('boss') ?? '';
-  const searchQuery = searchParams.get('search') ?? '';
+  const mode = searchParams.get("mode") ?? "regular";
+  const mapFilter = searchParams.get("map") ?? "";
+  const bossFilter = searchParams.get("boss") ?? "";
+  const searchQuery = searchParams.get("search") ?? "";
   const updateParam = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
     if (value) params.set(key, value);
     else params.delete(key);
     setSearchParams(params);
   };
-  const setMapFilter = (v: string) => updateParam('map', v);
-  const setBossFilter = (v: string) => updateParam('boss', v);
-  const setSearchQuery = (v: string) => updateParam('search', v);
+  const setMapFilter = (v: string) => updateParam("map", v);
+  const setBossFilter = (v: string) => updateParam("boss", v);
+  const setSearchQuery = (v: string) => updateParam("search", v);
 
-    const loadData = useCallback(
-    async (gameMode: "regular" | "pve" | "both" = "both") => {
+  const loadData = useCallback(
+    async (
+      gameMode: "regular" | "pve" | "both" = "both",
+      options?: { forceRefresh?: boolean }
+    ) => {
       setLoading(true);
       try {
-        const { regular, pve } = await fetchAllSpawnData();
-        
+        const { regular, pve } = await fetchAllSpawnData({
+          forceRefresh: options?.forceRefresh,
+        });
+
         if (gameMode === "regular" || gameMode === "both") {
           setRegularData(regular);
         }
@@ -67,32 +76,19 @@ function MainApp() {
     []
   );
 
-  // Initial data load - load from cache first
+  // Initial data load - fetch fresh data immediately
   useEffect(() => {
-    const loadInitialData = () => {
-      try {
-        const combinedCached = localStorage.getItem("maps_combined") || 
-                             localStorage.getItem("maps_regular"); // Fallback to regular cache
+    loadData("both");
 
-        if (combinedCached) {
-          const { data } = JSON.parse(combinedCached);
-          if (data?.regular) {
-            setRegularData(mergeWithTempData(data.regular));
-          }
-          if (data?.pve) {
-            setPveData(mergeWithTempData(data.pve));
-          } else if (data?.maps) {
-            // Handle old cache format
-            setRegularData(mergeWithTempData(data.maps));
-          }
-        }
-      } catch (error) {
-        console.error("Error loading cached data:", error);
+    // Set up interval to refresh data every 5 minutes
+    const intervalId = setInterval(() => {
+      if (!loading) {
+        loadData("both");
       }
-    };
+    }, 5 * 60 * 1000);
 
-    loadInitialData();
-  }, []);
+    return () => clearInterval(intervalId);
+  }, [loadData]);
 
   // Process data when mode changes
   useEffect(() => {
@@ -106,7 +102,8 @@ function MainApp() {
           if (map.bosses) {
             for (const bossEncounter of map.bosses) {
               if (bossEncounter.boss.name === CURRENT_BOSS_NAME) {
-                foundBossUrl = bossEncounter.boss.imagePortraitLink ?? undefined;
+                foundBossUrl =
+                  bossEncounter.boss.imagePortraitLink ?? undefined;
                 foundMapName = map.name;
                 break;
               }
@@ -114,7 +111,6 @@ function MainApp() {
           }
           if (foundBossUrl && foundMapName) break;
         }
-
       } else if (mode === "pve" && pveData) {
         const pve = pveData;
         let foundBossUrl: string | undefined = undefined;
@@ -124,7 +120,8 @@ function MainApp() {
           if (map.bosses) {
             for (const bossEncounter of map.bosses) {
               if (bossEncounter.boss.name === CURRENT_BOSS_NAME) {
-                foundBossUrl = bossEncounter.boss.imagePortraitLink ?? undefined;
+                foundBossUrl =
+                  bossEncounter.boss.imagePortraitLink ?? undefined;
                 foundMapName = map.name;
                 break;
               }
@@ -141,7 +138,7 @@ function MainApp() {
   useEffect(() => {
     const checkCacheAndRefresh = () => {
       if (loading) return; // Prevent multiple simultaneous requests
-      
+
       const combinedCache = localStorage.getItem("maps_combined");
       if (!combinedCache) {
         loadData("both");
@@ -151,7 +148,7 @@ function MainApp() {
       try {
         const { timestamp } = JSON.parse(combinedCache);
         const now = Date.now();
-        
+
         if (now - timestamp >= CACHE_EXPIRY_TIME) {
           loadData("both");
         }
@@ -227,7 +224,11 @@ function MainApp() {
           boss.spawnLocations.map((location) =>
             [
               map.name,
-              boss.boss.name === "infected" && boss.spawnChance < 1 ? "Infected(Tagilla)" : boss.boss.name === "infected" ? "Infected(Zombie)" : boss.boss.name,
+              boss.boss.name === "infected" && boss.spawnChance < 1
+                ? "Infected(Tagilla)"
+                : boss.boss.name === "infected"
+                ? "Infected(Zombie)"
+                : boss.boss.name,
               `${Math.round(boss.spawnChance * 100)}%`,
               location.name,
               `${Math.round(location.chance * 100)}%`,
@@ -259,7 +260,9 @@ function MainApp() {
         />
 
         <div className="flex justify-center">
-          <CacheStatus onExpired={() => loadData("both")} />
+          <CacheStatus
+            onExpired={() => loadData("both", { forceRefresh: true })}
+          />
         </div>
 
         <NavBar
@@ -357,9 +360,9 @@ function App() {
             <Route path="*" element={<MainApp />} />
           </Routes>
         </main>
-         <PatchToast />
-         <Toaster />
-         <VersionLabel />
+        <PatchToast />
+        <Toaster />
+        <VersionLabel />
       </div>
     </BrowserRouter>
   );

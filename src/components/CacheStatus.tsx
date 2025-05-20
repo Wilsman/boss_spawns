@@ -1,54 +1,44 @@
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 
 interface CacheStatusProps {
   onExpired?: () => void
 }
 
 export function CacheStatus({ onExpired }: CacheStatusProps) {
-  const [nextRefreshTime, setNextRefreshTime] = useState<Date>(new Date())
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [nextRefreshTime, setNextRefreshTime] = useState<Date>(() => {
+    const now = new Date();
+    const nextRefresh = new Date(now);
+    const minutes = now.getMinutes();
+    // Set to next 5-minute mark
+    nextRefresh.setMinutes(Math.floor(minutes / 5) * 5 + 5, 0, 0);
+    return nextRefresh;
+  });
 
-  const calculateNextRefresh = useCallback((currentTime: Date): Date => {
-    const nextRefresh = new Date(currentTime)
-    const currentMinutes = currentTime.getMinutes()
-    const minutesToAdd = 5 - (currentMinutes % 5)
-    nextRefresh.setMinutes(currentMinutes + minutesToAdd, 0, 0)
-    return nextRefresh
-  }, [])
-
-  const handleExpiredTimer = useCallback((currentTime: Date) => {
-    const newNextRefresh = calculateNextRefresh(currentTime)
-    setNextRefreshTime(newNextRefresh)
-    onExpired?.()
-  }, [onExpired, calculateNextRefresh])
-
-  const updateTimerState = useCallback((nextRefresh: Date) => {
-    setNextRefreshTime(nextRefresh)
-  }, [])
-
+  // Update time left every second
   useEffect(() => {
-    const updateTimer = () => {
-      const now = new Date()
-      const nextRefresh = calculateNextRefresh(now)
-      const timeUntilNextRefresh = nextRefresh.getTime() - now.getTime()
-      
-      if (timeUntilNextRefresh <= 0) {
-        handleExpiredTimer(now)
-      } else {
-        updateTimerState(nextRefresh)
+    const updateTimeLeft = () => {
+      const now = new Date();
+      const newTimeLeft = Math.max(0, nextRefreshTime.getTime() - now.getTime());
+      setTimeLeft(newTimeLeft);
+
+      // Check if it's time to refresh
+      if (newTimeLeft <= 0) {
+        const newNextRefresh = new Date(nextRefreshTime);
+        newNextRefresh.setMinutes(newNextRefresh.getMinutes() + 5);
+        setNextRefreshTime(newNextRefresh);
+        onExpired?.();
       }
-    }
+    };
 
-    updateTimer()
-    const interval = setInterval(updateTimer, 1000)
+    updateTimeLeft(); // Update immediately
+    const intervalId = setInterval(updateTimeLeft, 1000);
+    return () => clearInterval(intervalId);
+  }, [nextRefreshTime, onExpired]);
 
-    return () => clearInterval(interval)
-  }, [calculateNextRefresh, handleExpiredTimer, updateTimerState])
-
-  // Calculate time left based on current time and next refresh time
-  const now = new Date()
-  const timeUntilRefresh = nextRefreshTime.getTime() - now.getTime()
-  const minutes = Math.max(0, Math.floor(timeUntilRefresh / 60000))
-  const seconds = Math.max(0, Math.floor((timeUntilRefresh % 60000) / 1000))
+  // Calculate minutes and seconds from timeLeft
+  const minutes = Math.floor(timeLeft / 60000);
+  const seconds = Math.floor((timeLeft % 60000) / 1000);
 
   return (
     <div className="text-xs text-gray-400">
