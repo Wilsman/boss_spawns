@@ -98,6 +98,11 @@ export function Header({ bossName, bossStartDate, bossDurationSeconds }: HeaderP
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
+                  (20/05/2025): refactor: reduced API calls by combining regular
+                  and PVE data; changed refresh interval to every 5 minutes in
+                  real-time
+                </span>
+                <span className="block mb-1">
                   (10/05/2025): Added weekly boss rotation notice.
                 </span>
                 <span className="block mb-1">

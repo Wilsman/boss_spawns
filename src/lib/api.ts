@@ -5,7 +5,7 @@ import tempBossDataFromFile from "./temp-bosses.json"; // Added import for temp 
 export type { SpawnData };
 
 const CACHE_VERSION = 8;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CHANGES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for changes data (can be adjusted independently)
 
 // Change to use the cultistcircle API
 const CHANGES_API_URL = "https://bossdata.cultistcircle.workers.dev/changes";
@@ -74,11 +74,11 @@ export async function fetchAllSpawnData(): Promise<{
   if (cached) {
     try {
       const { data, timestamp } = JSON.parse(cached);
-      if (
-        data?.regular &&
-        data?.pve &&
-        new Date().getTime() - timestamp < CACHE_DURATION
-      ) {
+      const now = new Date().getTime();
+      const next5Min = new Date(timestamp);
+      next5Min.setMinutes(Math.ceil(next5Min.getMinutes() / 5) * 5, 0, 0);
+      
+      if (data?.regular && data?.pve && now < next5Min.getTime()) {
         return {
           regular: mergeWithTempData(data.regular),
           pve: mergeWithTempData(data.pve),
@@ -151,11 +151,13 @@ export async function fetchAllSpawnData(): Promise<{
   const result = await response.json();
 
   if (!result.data) {
+    console.log("API fetch failed");
     // If API fails, try to use cached data even if expired
     if (cached) {
       try {
         const { data } = JSON.parse(cached);
         if (data?.regular && data?.pve) {
+          console.log("Using cached data");
           return {
             regular: mergeWithTempData(data.regular),
             pve: mergeWithTempData(data.pve),
@@ -167,6 +169,7 @@ export async function fetchAllSpawnData(): Promise<{
     }
     throw new Error("Failed to fetch data");
   }
+  console.log("API fetch successful");
 
   // Process regular and PVE data
   const processMaps = (maps: any[]) =>
@@ -211,7 +214,7 @@ export async function fetchChanges(): Promise<DataChange[]> {
     );
     const now = Date.now();
 
-    if (cached && now - timestamp < CACHE_DURATION) {
+    if (cached && now - timestamp < CHANGES_CACHE_DURATION) {
       return JSON.parse(cached);
     }
 

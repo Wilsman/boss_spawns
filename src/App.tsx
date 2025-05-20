@@ -54,11 +54,9 @@ function MainApp() {
         
         if (gameMode === "regular" || gameMode === "both") {
           setRegularData(regular);
-          localStorage.setItem("maps_regular_timestamp", Date.now().toString());
         }
         if (gameMode === "pve" || gameMode === "both") {
           setPveData(pve);
-          localStorage.setItem("maps_pve_timestamp", Date.now().toString());
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -143,31 +141,23 @@ function MainApp() {
   useEffect(() => {
     const checkCacheAndRefresh = () => {
       if (loading) return; // Prevent multiple simultaneous requests
-
-      const regularTimestamp = parseInt(
-        localStorage.getItem("maps_regular_timestamp") || "0"
-      );
-      const pveTimestamp = parseInt(
-        localStorage.getItem("maps_pve_timestamp") || "0"
-      );
-      const now = Date.now();
-
-      // If no cache exists at all, load both
-      if (regularTimestamp === 0 && pveTimestamp === 0) {
+      
+      const combinedCache = localStorage.getItem("maps_combined");
+      if (!combinedCache) {
         loadData("both");
         return;
       }
 
-      // Check for expired caches
-      if (
-        now - regularTimestamp >= CACHE_EXPIRY_TIME &&
-        now - pveTimestamp >= CACHE_EXPIRY_TIME
-      ) {
+      try {
+        const { timestamp } = JSON.parse(combinedCache);
+        const now = Date.now();
+        
+        if (now - timestamp >= CACHE_EXPIRY_TIME) {
+          loadData("both");
+        }
+      } catch (error) {
+        console.error("Error checking cache:", error);
         loadData("both");
-      } else if (now - regularTimestamp >= CACHE_EXPIRY_TIME) {
-        loadData("regular");
-      } else if (now - pveTimestamp >= CACHE_EXPIRY_TIME) {
-        loadData("pve");
       }
     };
 
@@ -269,7 +259,7 @@ function MainApp() {
         />
 
         <div className="flex justify-center">
-          <CacheStatus onExpired={() => loadData("regular")} />
+          <CacheStatus onExpired={() => loadData("both")} />
         </div>
 
         <NavBar
