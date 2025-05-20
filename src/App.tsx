@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
+import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
+import { SpawnData, fetchAllSpawnData, mergeWithTempData } from "./lib/api";
 import { DataTable } from "@/components/DataTable";
-import { SpawnData } from "@/types";
-import { fetchSpawnData } from "@/lib/api";
 import { Header } from "@/components/Header";
 import { FilterBar } from "@/components/FilterBar";
 import { CacheStatus } from "@/components/CacheStatus";
@@ -9,7 +9,6 @@ import { DataChange } from "@/lib/diff";
 import { ChangesTable } from "@/components/ChangesTable";
 import { exportChanges, getStoredChanges } from "@/lib/changes";
 import { VersionLabel } from "@/components/VersionLabel";
-import { BrowserRouter, Routes, Route, useSearchParams } from "react-router-dom";
 import { NavBar } from "@/components/ui/navbar";
 import { Swords, Crosshair, Scale, History } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
@@ -47,19 +46,17 @@ function MainApp() {
   const setBossFilter = (v: string) => updateParam('boss', v);
   const setSearchQuery = (v: string) => updateParam('search', v);
 
-  const loadData = useCallback(
-    async (gameMode?: "regular" | "pve" | "both") => {
+    const loadData = useCallback(
+    async (gameMode: "regular" | "pve" | "both" = "both") => {
       setLoading(true);
       try {
+        const { regular, pve } = await fetchAllSpawnData();
+        
         if (gameMode === "regular" || gameMode === "both") {
-          const regular = await fetchSpawnData("regular");
           setRegularData(regular);
           localStorage.setItem("maps_regular_timestamp", Date.now().toString());
-
-
         }
         if (gameMode === "pve" || gameMode === "both") {
-          const pve = await fetchSpawnData("pve");
           setPveData(pve);
           localStorage.setItem("maps_pve_timestamp", Date.now().toString());
         }
@@ -75,22 +72,20 @@ function MainApp() {
   // Initial data load - load from cache first
   useEffect(() => {
     const loadInitialData = () => {
-      // Try to load data from cache first
       try {
-        const regularCached = localStorage.getItem("maps_regular");
-        const pveCached = localStorage.getItem("maps_pve");
+        const combinedCached = localStorage.getItem("maps_combined") || 
+                             localStorage.getItem("maps_regular"); // Fallback to regular cache
 
-        if (regularCached) {
-          const { data } = JSON.parse(regularCached);
-          if (data?.maps) {
-            setRegularData(data.maps);
+        if (combinedCached) {
+          const { data } = JSON.parse(combinedCached);
+          if (data?.regular) {
+            setRegularData(mergeWithTempData(data.regular));
           }
-        }
-
-        if (pveCached) {
-          const { data } = JSON.parse(pveCached);
-          if (data?.maps) {
-            setPveData(data.maps);
+          if (data?.pve) {
+            setPveData(mergeWithTempData(data.pve));
+          } else if (data?.maps) {
+            // Handle old cache format
+            setRegularData(mergeWithTempData(data.maps));
           }
         }
       } catch (error) {
@@ -99,7 +94,7 @@ function MainApp() {
     };
 
     loadInitialData();
-  }, []); // Only run once on mount
+  }, []);
 
   // Process data when mode changes
   useEffect(() => {
@@ -273,9 +268,8 @@ function MainApp() {
           bossDurationSeconds={CURRENT_BOSS_DURATION_SECONDS}
         />
 
-        <div className="flex justify-center gap-4">
-          <CacheStatus mode="regular" onExpired={() => loadData("regular")} />
-          <CacheStatus mode="pve" onExpired={() => loadData("pve")} />
+        <div className="flex justify-center">
+          <CacheStatus onExpired={() => loadData("regular")} />
         </div>
 
         <NavBar
@@ -341,7 +335,13 @@ function MainApp() {
             />
           ) : (
             <DataTable
-              data={mode === "regular" ? regularData : pveData}
+              data={
+                mode === "compare"
+                  ? { regular: regularData || [], pve: pveData || [] }
+                  : mode === "regular"
+                  ? regularData
+                  : pveData
+              }
               mode={mode as DataMode}
               filters={{
                 map: mapFilter,

@@ -35,11 +35,12 @@ export function BossNotice({ boss, start, durationSeconds }: BossNoticeProps) {
   // On mount or when boss changes, fetch from maps_regular
   useEffect(() => {
     try {
-      const cached = localStorage.getItem("maps_regular");
+      const cached = localStorage.getItem("maps_combined");
       if (cached) {
         const { data } = JSON.parse(cached);
-        if (data?.maps) {
-          for (const map of data.maps) {
+        if (data?.regular && data?.pve) {
+          const maps = [...data.regular, ...data.pve];
+          for (const map of maps) {
             if (map.bosses) {
               for (const bossEncounter of map.bosses) {
                 if (bossEncounter.boss.name === boss) {

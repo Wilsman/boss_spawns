@@ -1,5 +1,12 @@
 import { SpawnData, Boss, DataMode, Health, SpawnLocation } from "@/types";
 import { useMemo } from "react";
+
+type CompareData = {
+  regular: SpawnData[];
+  pve: SpawnData[];
+};
+
+type NormalizedData = SpawnData[] | CompareData;
 import {
   HoverCard,
   HoverCardContent,
@@ -7,7 +14,7 @@ import {
 } from "@/components/ui/hover-card";
 
 interface DataTableProps {
-  data: SpawnData[] | null;
+  data: NormalizedData | null;
   mode: DataMode;
   filters: {
     map: string;
@@ -23,9 +30,12 @@ function getLocationClasses(location: string, chance: number) {
   return "text-gray-400";
 }
 
-function groupData(data: any[], key: string) {
-  return data.reduce((acc: Record<string, any[]>, item) => {
-    const groupKey = item[key];
+function groupData<T extends Record<string, any>>(
+  data: T[],
+  key: keyof T
+): Record<string, T[]> {
+  return data.reduce((acc: Record<string, T[]>, item) => {
+    const groupKey = String(item[key]);
     if (!acc[groupKey]) {
       acc[groupKey] = [];
     }
@@ -52,19 +62,41 @@ interface BossEntry {
 }
 
 export function DataTable({ data, mode, filters }: DataTableProps) {
-  const normalizedData = data;
+  const normalizedData = useMemo<NormalizedData | null>(() => {
+    if (!data) return null;
 
-  const { processedData, groupedByMap } = useMemo(() => {
+    // If we're in compare mode, ensure we have the correct data structure
+    if (mode === "compare" && (!("regular" in data) || !("pve" in data))) {
+      console.error("Invalid data structure for compare mode");
+      return null;
+    }
+
+    return data;
+  }, [data, mode]);
+
+  const { processedData, groupedByMap } = useMemo<{
+    processedData: BossEntry[];
+    groupedByMap: Record<string, BossEntry[]>;
+  }>(() => {
     if (!normalizedData) return { processedData: [], groupedByMap: {} };
 
-    let processedData = [];
+    let processedData: BossEntry[] = [];
 
     if (mode === "compare") {
-      const regularData =
-        JSON.parse(localStorage.getItem("maps_regular") || "{}").data?.maps ||
-        [];
-      const pveData =
-        JSON.parse(localStorage.getItem("maps_pve") || "{}").data?.maps || [];
+      if (
+        !normalizedData ||
+        !("regular" in normalizedData) ||
+        !("pve" in normalizedData)
+      ) {
+        console.error("Invalid data structure for compare mode");
+        return { processedData: [], groupedByMap: {} };
+      }
+
+      const compareData = normalizedData as CompareData;
+      const regularData = Array.isArray(compareData.regular)
+        ? compareData.regular
+        : [];
+      const pveData = Array.isArray(compareData.pve) ? compareData.pve : [];
 
       const uniqueComparisons = new Map<string, BossEntry>();
 
@@ -132,17 +164,20 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
         }
         return true;
       });
-    } else {
-      processedData = normalizedData.flatMap((map) => {
+    } else if (Array.isArray(normalizedData)) {
+      processedData = normalizedData.flatMap((map: SpawnData) => {
+        // Skip if no bosses or map filter doesn't match
         if (
-          filters.map &&
-          !map.name.toLowerCase().includes(filters.map.toLowerCase())
-        )
+          !map.bosses ||
+          (filters.map &&
+            !map.name.toLowerCase().includes(filters.map.toLowerCase()))
+        ) {
           return [];
+        }
 
         const uniqueBossEntries = new Map<string, BossEntry>();
 
-        map.bosses.forEach((bossEntry) => {
+        map.bosses.forEach((bossEntry: Boss) => {
           const bossData = bossEntry.boss;
           const bossName = bossData.name;
 
@@ -186,7 +221,7 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
             });
           } else {
             const updatedLocations = existingEntry.locations.map(
-              (loc: Location) => {
+              (loc: Location): Location => {
                 const matchingNewLoc = validLocations.find(
                   (newLoc: SpawnLocation) => newLoc.name === loc.name
                 );
@@ -487,7 +522,11 @@ const BossCell = ({ boss }: { boss: any }) => {
                 <div className="flex justify-between">
                   <span className="font-bold text-gray-200 mb-1">Health:</span>
                   <span className="font-bold text-gray-200">
-                    Total: {boss.health.reduce((acc: number, part: any) => acc + part.max, 0)}
+                    Total:{" "}
+                    {boss.health.reduce(
+                      (acc: number, part: any) => acc + part.max,
+                      0
+                    )}
                   </span>
                 </div>
                 <ul className="space-y-1">
