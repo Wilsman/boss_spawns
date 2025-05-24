@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { differenceInSeconds, intervalToDuration } from "date-fns";
 import type { Duration } from "date-fns"; // Ensure Duration type is imported correctly
 import { cn } from "@/lib/utils";
+import { HelpCircle } from "lucide-react";
 
 // Helper function to format duration with leading zeros
 function formatPaddedDuration(duration: Duration): string {
@@ -81,9 +82,11 @@ export function BossNotice({ boss, start, durationSeconds }: BossNoticeProps) {
       role="status"
       aria-live="polite"
     >
-      <span className="text-xs text-purple-300 font-semibold uppercase tracking-wider mb-2">
-        Current 100% Boss Spawn
-      </span>
+      <div className="flex flex-col items-center gap-2 mb-2">
+        <span className="text-xs text-purple-300 font-semibold uppercase tracking-wider">
+          Current 100% Boss Spawn
+        </span>
+      </div>
       {bossImageUrl && (
         <img
           src={bossImageUrl}
@@ -94,12 +97,20 @@ export function BossNotice({ boss, start, durationSeconds }: BossNoticeProps) {
       <span className="text-3xl font-extrabold text-purple-200 drop-shadow-sm mb-1 text-center">
         {boss}
       </span>
-      <span className="text-base text-gray-200 tracking-wider mt-1">
-        {isExpired
-          ? "Rotation ending, boss switching soon™️"
-          : formatPaddedDuration(duration)
-        }
-      </span>
+      <div className="flex items-center gap-2">
+        <div className="group relative">
+          <HelpCircle className="w-4 h-4 text-purple-400 hover:text-purple-300 cursor-help" />
+          <div className="hidden group-hover:block absolute z-10 w-64 p-2 -left-32 -top-20 bg-gray-900 border border-purple-700 rounded-md text-xs text-gray-200">
+            The countdown is an estimate. BSG may change the boss at a random point during the day.
+          </div>
+        </div>
+        <span className="text-base text-gray-200 tracking-wider">
+          {isExpired
+            ? "Rotation ending, boss switching soon™️"
+            : `~${formatPaddedDuration(duration)}`
+          }
+        </span>
+      </div>
       <div className="text-xs text-purple-400 mt-1 text-center space-y-1">
         {bossMapName && bossMapWiki && (
           <div>
