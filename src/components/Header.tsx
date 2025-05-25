@@ -1,4 +1,4 @@
-import { Calculator, Database, MessageCircle } from "lucide-react";
+import { Calculator, Database } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
