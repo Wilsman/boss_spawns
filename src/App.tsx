@@ -24,8 +24,8 @@ import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 // == Weekly Boss Configuration ==
-const CURRENT_BOSS_NAME = "Shturman";
-const CURRENT_BOSS_START_DATE = "2025-05-24T10:10:00+01:00"; // BST
+const CURRENT_BOSS_NAME = "Killa";
+const CURRENT_BOSS_START_DATE = "2025-05-31T12:20:00+01:00"; // BST
 const CURRENT_BOSS_DURATION_SECONDS = 7 * 24 * 60 * 60; // 1 week
 // =============================
 
