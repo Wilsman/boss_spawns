@@ -23,11 +23,44 @@ import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-// == Weekly Boss Configuration ==
-const CURRENT_BOSS_NAME = "Killa";
-const CURRENT_BOSS_START_DATE = "2025-05-31T12:20:00+01:00"; // BST
-const CURRENT_BOSS_DURATION_SECONDS = 7 * 24 * 60 * 60; // 1 week
-// =============================
+// == Boss Event Configuration ==
+export interface BossEventConfig { // Exporting for potential use in Header/BossNotice if types were shared
+  id: string; // Unique ID for React keys, etc.
+  bossNames: string[];
+  startDate: string; // ISO Date string
+  durationSeconds: number;
+  isWeeklyRotation?: boolean;
+  eventTitle?: string; // e.g., "Current 100% Boss Spawn" or "Tournament Special"
+  eventDescription?: string; // Detailed text for the event
+  mapName?: string; // Optional: Specific map for the event
+  mapWiki?: string; // Optional: Wiki link for the event map
+  spawnLocationsText?: string; // Optional: Text describing spawn locations for the event
+}
+
+const CURRENT_BOSS_CONFIGS: BossEventConfig[] = [
+  // {
+  //   id: "weekly_killa_ended",
+  //   bossNames: ["Killa"],
+  //   startDate: "2025-05-31T12:20:00Z", // Past event for testing expired state
+  //   durationSeconds: 7 * 24 * 60 * 60, // 1 week
+  //   isWeeklyRotation: true,
+  //   eventTitle: "Weekly Boss: Killa",
+  // },
+  {
+    id: "tournament_killa_tagilla_jun8",
+    bossNames: ["Killa", "Tagilla"],
+    startDate: "2025-06-08T09:00:00Z", // June 8th, 12:00 MSK (UTC+3) -> 09:00 UTC
+    durationSeconds: 5 * 60 * 60, // 5 hours (until 14:00 UTC / 17:00 MSK)
+    isWeeklyRotation: false,
+    eventTitle: "Tournament: Killa & Tagilla 100%",
+    eventDescription: "Killa and Tagilla might spawn 100% for a special tournament event!",
+    mapName: "Interchange",
+    mapWiki: "https://escapefromtarkov.fandom.com/wiki/Interchange", // Example
+    // spawnLocationsText: "Center, OLI, IDEA, Goshan",
+  },
+  // Add more events here if needed
+];
+// ============================
 
 function MainApp() {
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
@@ -90,46 +123,37 @@ function MainApp() {
     return () => clearInterval(intervalId);
   }, [loadData]);
 
-  // Process data when mode changes
+  // Process data when mode changes (currently unused for boss notice, BossNotice handles its own data fetching)
+  // This useEffect can be repurposed or removed if not needed for other functionalities
   useEffect(() => {
     async function processData() {
-      if (mode === "regular" && regularData) {
-        const regular = regularData;
-        let foundBossUrl: string | undefined = undefined;
-        let foundMapName: string | undefined = undefined;
-
-        for (const map of regular) {
-          if (map.bosses) {
-            for (const bossEncounter of map.bosses) {
-              if (bossEncounter.boss.name === CURRENT_BOSS_NAME) {
-                foundBossUrl =
-                  bossEncounter.boss.imagePortraitLink ?? undefined;
-                foundMapName = map.name;
-                break;
-              }
-            }
-          }
-          if (foundBossUrl && foundMapName) break;
-        }
-      } else if (mode === "pve" && pveData) {
-        const pve = pveData;
-        let foundBossUrl: string | undefined = undefined;
-        let foundMapName: string | undefined = undefined;
-
-        for (const map of pve) {
-          if (map.bosses) {
-            for (const bossEncounter of map.bosses) {
-              if (bossEncounter.boss.name === CURRENT_BOSS_NAME) {
-                foundBossUrl =
-                  bossEncounter.boss.imagePortraitLink ?? undefined;
-                foundMapName = map.name;
-                break;
-              }
-            }
-          }
-          if (foundBossUrl && foundMapName) break;
-        }
-      }
+      // console.log("Processing data for mode:", mode, regularData, pveData);
+      // Example: if you needed to extract specific boss data here for other components
+      // const activeBossesDetails = [];
+      // const currentData = mode === "regular" ? regularData : pveData;
+      // if (currentData) {
+      //   for (const config of CURRENT_BOSS_CONFIGS) {
+      //     if (new Date(config.startDate).getTime() + config.durationSeconds * 1000 > Date.now()) {
+      //       for (const map of currentData) {
+      //         if (map.bosses) {
+      //           for (const bossEncounter of map.bosses) {
+      //             if (bossEncounter.boss.name === config.name) {
+      //               activeBossesDetails.push({
+      //                 name: config.name,
+      //                 imageUrl: bossEncounter.boss.imagePortraitLink ?? undefined,
+      //                 mapName: map.name,
+      //                 // ... other details you might need
+      //               });
+      //               break;
+      //             }
+      //           }
+      //         }
+      //         if (activeBossesDetails.find(b => b.name === config.name)) break;
+      //       }
+      //     }
+      //   }
+      // }
+      // console.log("Active bosses details:", activeBossesDetails);
     }
     processData();
   }, [regularData, pveData, mode]);
@@ -250,13 +274,53 @@ function MainApp() {
     document.body.removeChild(link);
   };
 
+  const nowMs = Date.now();
+
+  // Determine the primary event to display
+  let primaryDisplayEvent: BossEventConfig | null = null;
+
+  const activeEvents = CURRENT_BOSS_CONFIGS.filter(event => {
+    const startTimeMs = new Date(event.startDate).getTime();
+    const endTimeMs = startTimeMs + event.durationSeconds * 1000;
+    return nowMs >= startTimeMs && nowMs < endTimeMs;
+  });
+
+  const upcomingEvents = CURRENT_BOSS_CONFIGS.filter(event => {
+    const startTimeMs = new Date(event.startDate).getTime();
+    return nowMs < startTimeMs;
+  }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()); // Sort by soonest start time
+
+  // Prioritize active events: non-weekly first, then weekly
+  if (activeEvents.length > 0) {
+    primaryDisplayEvent = activeEvents.find(event => !event.isWeeklyRotation) || 
+                          activeEvents.find(event => event.isWeeklyRotation) || 
+                          null;
+  }
+
+  // If no active event, pick the soonest upcoming event: non-weekly first, then weekly
+  if (!primaryDisplayEvent && upcomingEvents.length > 0) {
+    primaryDisplayEvent = upcomingEvents.find(event => !event.isWeeklyRotation) || 
+                          upcomingEvents.find(event => event.isWeeklyRotation) || 
+                          null;
+  }
+  
+  // Fallback if no active or upcoming, pick the most recent past weekly if any, or most recent past event
+  if (!primaryDisplayEvent) {
+    const pastEvents = CURRENT_BOSS_CONFIGS.filter(event => {
+      const endTimeMs = new Date(event.startDate).getTime() + event.durationSeconds * 1000;
+      return nowMs >= endTimeMs;
+    }).sort((a,b) => (new Date(b.startDate).getTime() + b.durationSeconds * 1000) - (new Date(a.startDate).getTime() + a.durationSeconds * 1000)); // Most recent end time first
+    
+    if (pastEvents.length > 0) {
+       primaryDisplayEvent = pastEvents.find(event => event.isWeeklyRotation) || pastEvents[0];
+    }
+  }
+
   return (
     <div className="min-h-screen text-foreground flex flex-col">
       <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-10">
         <Header
-          bossName={CURRENT_BOSS_NAME}
-          bossStartDate={new Date(CURRENT_BOSS_START_DATE)}
-          bossDurationSeconds={CURRENT_BOSS_DURATION_SECONDS}
+          primaryDisplayEvent={primaryDisplayEvent}
         />
 
         <div className="flex justify-center">

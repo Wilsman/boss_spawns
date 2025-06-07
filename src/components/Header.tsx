@@ -6,6 +6,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { BossNotice } from "./BossNotice";
+import type { BossEventConfig } from "../App"; // Import the BossEventConfig type
 
 const BOSS_IMAGES = [
   "/eft_boss_jaeger.webp",
@@ -24,12 +25,10 @@ function getRandomBossImage(): string {
 }
 
 interface HeaderProps {
-  bossName: string;
-  bossStartDate: Date;
-  bossDurationSeconds: number;
+  primaryDisplayEvent: BossEventConfig | null;
 }
 
-export function Header({ bossName, bossStartDate, bossDurationSeconds }: HeaderProps) {
+export function Header({ primaryDisplayEvent }: HeaderProps) {
   return (
     <div className="">
       {/* Title Section */}
@@ -123,12 +122,21 @@ export function Header({ bossName, bossStartDate, bossDurationSeconds }: HeaderP
             <Database className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
           </a>
 
-          {/* Weekly Boss Notice (small, below attribution) */}
-          <BossNotice
-            boss={bossName}
-            start={bossStartDate}
-            durationSeconds={bossDurationSeconds}
-          />
+          {/* Boss Event Notice */}
+          {primaryDisplayEvent && (
+            <BossNotice
+              // Props will be adjusted in BossNotice.tsx to match this structure
+              key={primaryDisplayEvent.id} // Add key for potential re-renders if event changes
+              bossNames={primaryDisplayEvent.bossNames}
+              startDate={new Date(primaryDisplayEvent.startDate)}
+              durationSeconds={primaryDisplayEvent.durationSeconds}
+              eventTitle={primaryDisplayEvent.eventTitle}
+              eventDescription={primaryDisplayEvent.eventDescription}
+              mapName={primaryDisplayEvent.mapName}
+              mapWiki={primaryDisplayEvent.mapWiki}
+              spawnLocationsText={primaryDisplayEvent.spawnLocationsText}
+            />
+          )}
 
           {/* Collapsible Update Message */}
           <Accordion
