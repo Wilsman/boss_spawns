@@ -55,7 +55,8 @@ export function BossNotice({
 
   useEffect(() => {
     const fetchBossData = async () => {
-      const details: BossDetail[] = [];
+      // Initialize details with boss names first
+      let details: BossDetail[] = bossNames.map(name => ({ name, imageUrl: undefined }));
       let fetchedMapName: string | undefined = undefined;
       let fetchedMapWiki: string | undefined = undefined;
       let fetchedSpawnLocationsText: string | undefined = undefined;
@@ -66,34 +67,38 @@ export function BossNotice({
           const { data } = JSON.parse(cached);
           const allMapsData = [...(data?.regular || []), ...(data?.pve || [])];
 
-          for (const bossName of bossNames) {
-            let foundBossImage: string | undefined = undefined;
+          // Attempt to update details with images and fetch map info
+          details = details.map((bossDetail, index) => {
+            let foundBossImage: string | undefined = bossDetail.imageUrl; // Keep existing if any (though it's undefined initially here)
             for (const map of allMapsData) {
               if (map.bosses) {
                 for (const bossEncounter of map.bosses) {
-                  if (bossEncounter.boss.name === bossName) {
+                  if (bossEncounter.boss.name === bossDetail.name) {
                     foundBossImage = bossEncounter.boss.imagePortraitLink ?? undefined;
-                    // If this is the first boss and prop map details aren't set, fetch them
-                    if (bossName === bossNames[0] && !propMapName) {
+                    // If this is the first boss (index 0) and prop map details aren't set, fetch them
+                    if (index === 0 && !propMapName) {
                       fetchedMapName = map.name;
                       fetchedMapWiki = map.wiki;
                       fetchedSpawnLocationsText = (bossEncounter.spawnLocations || []).map((loc: {name: string}) => loc.name).join(", ");
                     }
-                    break; // Found boss image for this bossName
+                    break; // Found boss image for this bossDetail.name
                   }
                 }
               }
-              if (foundBossImage && (propMapName || bossName !== bossNames[0])) break; // Found image, and if not first boss or map details are from props, move to next bossName
+              if (foundBossImage && (propMapName || index !== 0)) break; // Found image, and if not first boss or map details are from props, move to next bossDetail
             }
-            details.push({ name: bossName, imageUrl: foundBossImage });
-          }
+            return { ...bossDetail, imageUrl: foundBossImage };
+          });
+        } else {
+          // localStorage is empty, details already contains names with undefined images
+          console.log("BossNotice: maps_combined cache is empty. Displaying names only.");
         }
       } catch (e) {
-        console.error("Error fetching boss data for notice:", e);
-        // Set details with names but no images if fetch fails
-        bossNames.forEach(name => details.push({ name, imageUrl: undefined }));
+        console.error("Error processing boss data from cache:", e);
+        // On error, details still contains names with undefined images from initial mapping
       }
       setBossesDetails(details);
+      // The rest of the function (setting displayMapName etc.) remains the same
       if (!propMapName) {
         setDisplayMapName(fetchedMapName);
         setDisplayMapWiki(fetchedMapWiki);
