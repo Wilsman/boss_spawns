@@ -105,10 +105,23 @@ export function BossNotice({ boss, start, durationSeconds }: BossNoticeProps) {
           </div>
         </div>
         <span className="text-base text-gray-200 tracking-wider">
-          {isExpired
-            ? "Rotation ending, boss switching soon™️"
-            : `~${formatPaddedDuration(duration)}`
-          }
+          {isExpired ? (
+            <div className="flex flex-col items-center text-center">
+              <span>
+                Hints at{" "}
+                <span className="font-bold text-purple-300">Killa</span> and{" "}
+                <span className="font-bold text-purple-300">Tagilla</span> both
+                being <span className="font-bold text-purple-300">100%</span>{" "}
+                during a tournament
+              </span>
+              <span className="mt-1">
+                on <span className="font-bold">8th June, 12:00–17:00</span>{" "}
+                (Moscow time)
+              </span>
+            </div>
+          ) : (
+            `~${formatPaddedDuration(duration)}`
+          )}
         </span>
       </div>
       <div className="text-xs text-purple-400 mt-1 text-center space-y-1">
