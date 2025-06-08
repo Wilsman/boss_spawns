@@ -38,26 +38,26 @@ export interface BossEventConfig { // Exporting for potential use in Header/Boss
 }
 
 const CURRENT_BOSS_CONFIGS: BossEventConfig[] = [
-  // {
-  //   id: "weekly_killa_ended",
-  //   bossNames: ["Killa"],
-  //   startDate: "2025-05-31T12:20:00Z", // Past event for testing expired state
-  //   durationSeconds: 7 * 24 * 60 * 60, // 1 week
-  //   isWeeklyRotation: true,
-  //   eventTitle: "Weekly Boss: Killa",
-  // },
   {
-    id: "tournament_killa_tagilla_jun8",
-    bossNames: ["Killa", "Tagilla"],
-    startDate: "2025-06-08T09:00:00Z", // June 8th, 12:00 MSK (UTC+3) -> 09:00 UTC
-    durationSeconds: 5 * 60 * 60, // 5 hours (until 14:00 UTC / 17:00 MSK)
-    isWeeklyRotation: false,
-    eventTitle: "Tournament: Killa & Tagilla 100%",
-    eventDescription: "Killa and Tagilla might spawn 100% for a special tournament event!",
-    mapName: "Interchange",
-    mapWiki: "https://escapefromtarkov.fandom.com/wiki/Interchange", // Example
-    // spawnLocationsText: "Center, OLI, IDEA, Goshan",
+    id: "weekly_kaban_ended",
+    bossNames: ["Kaban"],
+    startDate: "2025-06-08T15:05:00Z", // Past event for testing expired state
+    durationSeconds: 7 * 24 * 60 * 60, // 1 week
+    isWeeklyRotation: true,
+    eventTitle: "Weekly Boss: Kaban",
   },
+  // {
+  //   id: "tournament_killa_tagilla_jun8",
+  //   bossNames: ["Killa", "Tagilla"],
+  //   startDate: "2025-06-08T09:00:00Z", // June 8th, 12:00 MSK (UTC+3) -> 09:00 UTC
+  //   durationSeconds: 5 * 60 * 60, // 5 hours (until 14:00 UTC / 17:00 MSK)
+  //   isWeeklyRotation: false,
+  //   eventTitle: "Tournament: Killa & Tagilla 100%",
+  //   eventDescription: "Killa and Tagilla might spawn 100% for a special tournament event!",
+  //   mapName: "Interchange",
+  //   mapWiki: "https://escapefromtarkov.fandom.com/wiki/Interchange", // Example
+  //   // spawnLocationsText: "Center, OLI, IDEA, Goshan",
+  // },
   // Add more events here if needed
 ];
 // ============================
