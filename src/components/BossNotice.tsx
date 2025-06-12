@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { differenceInSeconds, intervalToDuration, isPast } from "date-fns";
 import type { Duration } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,8 @@ export function BossNotice({
   const [displayMapName, setDisplayMapName] = useState<string | undefined>(propMapName);
   const [displayMapWiki, setDisplayMapWiki] = useState<string | undefined>(propMapWiki);
   const [displaySpawnLocations, setDisplaySpawnLocations] = useState<string | undefined>(propSpawnLocationsText);
+  const initialWaitSecondsRef = useRef(0);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const fetchBossData = async () => {
@@ -118,6 +120,23 @@ export function BossNotice({
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    // Ensure the component is rendered before starting the transition
+    requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
+  }, []); // Runs once on mount
+
+  useEffect(() => {
+    const currentNow = new Date(); // Capture 'now' at the time of this effect
+    const currentInitialWait = differenceInSeconds(startDate, currentNow);
+    if (currentInitialWait > 0) {
+      initialWaitSecondsRef.current = currentInitialWait;
+    } else {
+      initialWaitSecondsRef.current = 0; 
+    }
+  }, [startDate]);
+
   const endDate = new Date(startDate.getTime() + durationSeconds * 1000);
   const secondsLeft = Math.max(0, differenceInSeconds(endDate, now));
   const timeUntilStartSeconds = Math.max(0, differenceInSeconds(startDate, now));
@@ -133,11 +152,27 @@ export function BossNotice({
   
   const displayBossNames = bossesDetails.map(b => b.name).join(" & ");
 
+  let progressPercentage = 0;
+  let progressBarShouldBeVisible = false;
+
+  if (timeUntilStartSeconds > 0 && initialWaitSecondsRef.current > 0) {
+    // Upcoming event: bar fills up
+    const elapsedWait = initialWaitSecondsRef.current - timeUntilStartSeconds;
+    progressPercentage = Math.min(100, Math.max(0, (elapsedWait / initialWaitSecondsRef.current) * 100));
+    progressBarShouldBeVisible = true;
+  } else if (isActive && durationSeconds > 0) {
+    // Active event: bar depletes
+    progressPercentage = Math.min(100, Math.max(0, (secondsLeft / durationSeconds) * 100));
+    progressBarShouldBeVisible = true;
+  }
+
   return (
     <div
       className={cn(
         "w-full bg-gradient-to-br from-purple-950/80 to-gray-900/80 border border-purple-800/40 rounded-lg px-3 py-3 mt-3 flex flex-col items-center shadow-md",
-        (isExpired || (!isActive && timeUntilStartSeconds <=0)) && "opacity-60" // Dim if expired or past start but not active (e.g. duration was 0)
+        "opacity-0 transition-opacity duration-500 ease-in-out", // Base opacity and transition
+        isVisible && "opacity-100", // Fade in when visible
+        (isExpired || (!isActive && timeUntilStartSeconds <=0)) && (isVisible ? "opacity-60" : "opacity-0") // Dim if expired, but respect initial fade-in
       )}
       role="status"
       aria-live="polite"
@@ -175,7 +210,7 @@ export function BossNotice({
         <span className="text-base text-gray-200 tracking-wider text-center">
           <div className="flex flex-col items-center">
             {eventDescription && (
-              <div className="mb-0.5">{eventDescription}</div>
+              <div className="mb-1.5 italic">{eventDescription}</div>
             )}
             {!isExpired && (
               <div className="flex items-center justify-center gap-1">
@@ -192,6 +227,18 @@ export function BossNotice({
                 </div>
               </div>
             )}
+            {/* Progress Bar Start */}
+            {progressBarShouldBeVisible && (
+              <div className="w-full max-w-xs h-2.5 bg-gray-700 rounded-full my-2 mx-auto overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${
+                    timeUntilStartSeconds > 0 ? "bg-blue-500" : "bg-purple-500"
+                  } transition-all duration-900 ease-linear`}
+                  style={{ width: `${progressPercentage}%` }}
+                ></div>
+              </div>
+            )}
+            {/* Progress Bar End */}
             {isExpired && !eventDescription && ( // Only show these if eventDescription is NOT present
               (bossNames.includes("Killa") && bossNames.includes("Tagilla")) ? (
                 <div className="flex flex-col items-center text-center text-sm">
@@ -215,7 +262,7 @@ export function BossNotice({
       </div>
 
       {(displayMapName || displaySpawnLocations) && (
-        <div className="text-xs text-purple-400 mt-2 text-center space-y-0.5">
+        <div className="text-xs text-purple-400 mt-3 text-center space-y-1">
           {displayMapName && (
             <div>
               on{" "}
