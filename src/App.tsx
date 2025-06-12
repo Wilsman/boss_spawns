@@ -67,6 +67,7 @@ function MainApp() {
   const [pveData, setPveData] = useState<SpawnData[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [changes, setChanges] = useState<DataChange[]>([]);
+  const [fatalError, setFatalError] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const mode = searchParams.get("mode") ?? "regular";
@@ -88,12 +89,14 @@ function MainApp() {
       gameMode: "regular" | "pve" | "both" = "both",
       options?: { forceRefresh?: boolean }
     ) => {
+      if (fatalError) return; // 🚫 prevent retry loop
+  
       setLoading(true);
       try {
         const { regular, pve } = await fetchAllSpawnData({
           forceRefresh: options?.forceRefresh,
         });
-
+  
         if (gameMode === "regular" || gameMode === "both") {
           setRegularData(regular);
         }
@@ -102,12 +105,15 @@ function MainApp() {
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
+        setFatalError(true); // ☠️ block retries
       } finally {
         setLoading(false);
       }
     },
-    []
+    [fatalError]
   );
+  
+  
 
   // Initial data load - fetch fresh data immediately
   useEffect(() => {
@@ -161,18 +167,18 @@ function MainApp() {
   // Check cache and refresh data when needed
   useEffect(() => {
     const checkCacheAndRefresh = () => {
-      if (loading) return; // Prevent multiple simultaneous requests
-
+      if (loading || fatalError) return; // ✅ STOP if fatalError set
+    
       const combinedCache = localStorage.getItem("maps_combined");
       if (!combinedCache) {
         loadData("both");
         return;
       }
-
+    
       try {
         const { timestamp } = JSON.parse(combinedCache);
         const now = Date.now();
-
+    
         if (now - timestamp >= CACHE_EXPIRY_TIME) {
           loadData("both");
         }
@@ -181,6 +187,7 @@ function MainApp() {
         loadData("both");
       }
     };
+    
 
     // Check when component mounts
     checkCacheAndRefresh();
@@ -201,7 +208,7 @@ function MainApp() {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [loadData, loading]);
+  }, [loadData, loading, fatalError]);
 
   // Single effect for loading changes data when mode switches to changes
   useEffect(() => {
@@ -316,6 +323,43 @@ function MainApp() {
     }
   }
 
+  if (fatalError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-50 to-orange-100 px-4 py-12">
+        <div className="bg-white rounded-xl shadow-md border border-yellow-300 max-w-lg w-full text-center p-6 space-y-4">
+          <div className="text-4xl">⚠️</div>
+          <h1 className="text-xl font-semibold text-yellow-800">
+            Cloudflare API Issue
+          </h1>
+          <p className="text-sm text-yellow-900">
+            Our API provider <strong>Cloudflare</strong> is currently experiencing problems.
+          </p>
+          <p className="text-sm text-yellow-900">
+            Please try again later. You can track the issue on their status page:
+          </p>
+          <a
+            href="https://www.cloudflarestatus.com/"
+            className="text-blue-600 hover:underline text-sm font-medium"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            https://www.cloudflarestatus.com/
+          </a>
+  
+          {/* Optional: Uncomment to allow manual retry */}
+          <div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-2 rounded transition"
+          >
+            Retry
+          </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen text-foreground flex flex-col">
       <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-10">
