@@ -44,7 +44,7 @@ const CURRENT_BOSS_CONFIGS: BossEventConfig[] = [
     startDate: "2025-06-08T15:05:00Z", // Past event for testing expired state
     durationSeconds: 7 * 24 * 60 * 60, // 1 week
     isWeeklyRotation: true,
-    eventTitle: "Weekly Boss: Kaban",
+    eventTitle: "Weekly 100% Boss: Kaban",
   },
   // {
   //   id: "tournament_killa_tagilla_jun8",
