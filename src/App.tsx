@@ -39,12 +39,12 @@ export interface BossEventConfig { // Exporting for potential use in Header/Boss
 
 const CURRENT_BOSS_CONFIGS: BossEventConfig[] = [
   {
-    id: "weekly_kaban_ended",
-    bossNames: ["Kaban"],
-    startDate: "2025-06-08T15:05:00Z", // Past event for testing expired state
+    id: "weekly_sanny_ended",
+    bossNames: ["Sanitar"],
+    startDate: "2025-06-14T11:19:00Z", // Current weekly boss
     durationSeconds: 7 * 24 * 60 * 60, // 1 week
     isWeeklyRotation: true,
-    eventTitle: "Weekly 100% Boss: Kaban",
+    eventTitle: "Weekly 100% Boss: Sanitar",
   },
   // {
   //   id: "tournament_killa_tagilla_jun8",
