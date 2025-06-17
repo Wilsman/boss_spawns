@@ -1,6 +1,6 @@
 export function VersionLabel() {
   return (
-    <footer className="fixed bottom-0 left-0 w-full bg-gray-800/30 py-2 backdrop-blur-sm">
+    <footer className="fixed bottom-0 left-0 w-full bg-gray-800/30 py-2 backdrop-blur-sm z-50">
       <div className="w-full px-4">
         <div className="flex justify-between items-center">
           {/* Discord Button - Far Left */}
@@ -30,7 +30,7 @@ export function VersionLabel() {
             >
               Wilsman77
             </a>{" "}
-            updated on 12/06/2025
+            updated on 17/06/2025
           </span>
         </div>
       </div>
