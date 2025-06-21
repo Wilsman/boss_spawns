@@ -770,13 +770,41 @@ export function ChangesTable({
   );
 }
 
-// Simplified TimestampCell component within the same file
+import * as Tooltip from '@radix-ui/react-tooltip';
+
+// Enhanced TimestampCell component with tooltip
 const TimestampCell = ({ timestamp }: { timestamp: number }) => {
-  const time = useRelativeTime(timestamp);
+  const relativeTime = useRelativeTime(timestamp);
+  const fullDateTime = timestamp ? new Date(timestamp).toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short'
+  }) : 'unknown';
+
   return (
-    <td className="px-6 py-4 whitespace-nowrap text-gray-400">
-      {time || "unknown"}
-    </td>
+    <Tooltip.Provider>
+      <Tooltip.Root>
+        <Tooltip.Trigger asChild>
+          <td className="px-6 py-4 whitespace-nowrap text-gray-400 cursor-help">
+            {relativeTime || "unknown"}
+          </td>
+        </Tooltip.Trigger>
+        <Tooltip.Portal>
+          <Tooltip.Content 
+            className="bg-gray-800 text-white text-xs p-2 rounded shadow-lg z-50"
+            side="top"
+            sideOffset={5}
+          >
+            {fullDateTime}
+            <Tooltip.Arrow className="fill-gray-800" />
+          </Tooltip.Content>
+        </Tooltip.Portal>
+      </Tooltip.Root>
+    </Tooltip.Provider>
   );
 };
 

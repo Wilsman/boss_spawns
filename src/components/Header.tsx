@@ -26,9 +26,10 @@ function getRandomBossImage(): string {
 
 interface HeaderProps {
   primaryDisplayEvent: BossEventConfig | null;
+  nextWeeklyBoss: BossEventConfig | null;
 }
 
-export function Header({ primaryDisplayEvent }: HeaderProps) {
+export function Header({ primaryDisplayEvent, nextWeeklyBoss }: HeaderProps) {
   return (
     <div className="">
       {/* Title Section */}
@@ -135,6 +136,7 @@ export function Header({ primaryDisplayEvent }: HeaderProps) {
               mapName={primaryDisplayEvent.mapName}
               mapWiki={primaryDisplayEvent.mapWiki}
               spawnLocationsText={primaryDisplayEvent.spawnLocationsText}
+              nextWeeklyBoss={nextWeeklyBoss}
             />
           )}
 

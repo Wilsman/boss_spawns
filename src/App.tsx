@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -24,7 +24,8 @@ import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 // == Boss Event Configuration ==
-export interface BossEventConfig { // Exporting for potential use in Header/BossNotice if types were shared
+export interface BossEventConfig {
+  // Exporting for potential use in Header/BossNotice if types were shared
   id: string; // Unique ID for React keys, etc.
   bossNames: string[];
   startDate: string; // ISO Date string
@@ -35,32 +36,90 @@ export interface BossEventConfig { // Exporting for potential use in Header/Boss
   mapName?: string; // Optional: Specific map for the event
   mapWiki?: string; // Optional: Wiki link for the event map
   spawnLocationsText?: string; // Optional: Text describing spawn locations for the event
+  nextBossHint?: string | React.ReactNode; // Optional: Custom hint text or React node for the next boss prediction
 }
 
 const CURRENT_BOSS_CONFIGS: BossEventConfig[] = [
   {
-    id: "weekly_sanny_ended",
+    id: "weekly_sanny",
     bossNames: ["Sanitar"],
     startDate: "2025-06-14T11:19:00Z", // Current weekly boss
-    durationSeconds: 7 * 24 * 60 * 60, // 1 week
+    durationSeconds: 8 * 24 * 60 * 60, // startDate until "2025-06-22T11:00:00Z"
     isWeeklyRotation: true,
     eventTitle: "Weekly 100% Boss: Sanitar",
   },
-  // {
-  //   id: "tournament_killa_tagilla_jun8",
-  //   bossNames: ["Killa", "Tagilla"],
-  //   startDate: "2025-06-08T09:00:00Z", // June 8th, 12:00 MSK (UTC+3) -> 09:00 UTC
-  //   durationSeconds: 5 * 60 * 60, // 5 hours (until 14:00 UTC / 17:00 MSK)
-  //   isWeeklyRotation: false,
-  //   eventTitle: "Tournament: Killa & Tagilla 100%",
-  //   eventDescription: "Killa and Tagilla might spawn 100% for a special tournament event!",
-  //   mapName: "Interchange",
-  //   mapWiki: "https://escapefromtarkov.fandom.com/wiki/Interchange", // Example
-  //   // spawnLocationsText: "Center, OLI, IDEA, Goshan",
-  // },
+  {
+    id: "weekly_tagilla",
+    bossNames: ["Tagilla"],
+    startDate: "2025-06-22T11:00:00Z", // 22/06/2025 12:00 BST (GMT+1)
+    durationSeconds: 7 * 24 * 60 * 60, // 1 week
+    isWeeklyRotation: true,
+    eventTitle: "Weekly 100% Boss: Tagilla",
+    nextBossHint: (
+      <a
+        href="https://mrsouer.com/event/bosso-terapiya"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="underline text-purple-500 hover:text-purple-700 transition-colors"
+      >
+        Tournament hint: Mr. Souer
+      </a>
+    ),
+  },
   // Add more events here if needed
 ];
-// ============================
+
+// Helper function to find the next weekly boss after current events
+function getNextWeeklyBoss(configs: BossEventConfig[], currentTime: Date): BossEventConfig | null {
+  const weeklyEvents = configs.filter(config => config.isWeeklyRotation);
+  
+  if (weeklyEvents.length === 0) return null;
+  
+  // Sort weekly events by start date
+  const sortedWeeklyEvents = weeklyEvents.sort((a, b) => 
+    new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+  );
+  
+  // Find the next upcoming weekly event
+  const upcomingWeeklyEvents = sortedWeeklyEvents.filter(event => {
+    const startTime = new Date(event.startDate);
+    return startTime > currentTime;
+  });
+  
+  if (upcomingWeeklyEvents.length > 0) {
+    // Return the next upcoming weekly event
+    const nextEvent = upcomingWeeklyEvents[0];
+    return {
+      ...nextEvent,
+      eventTitle: `Next Weekly 100% Boss: ${nextEvent.bossNames.join(", ")}`
+    };
+  }
+  
+  // If no upcoming events, find the currently active weekly event and return the next in sequence
+  const activeWeeklyEvents = sortedWeeklyEvents.filter(event => {
+    const startTime = new Date(event.startDate);
+    const endTime = new Date(startTime.getTime() + event.durationSeconds * 1000);
+    return currentTime >= startTime && currentTime <= endTime;
+  });
+  
+  if (activeWeeklyEvents.length > 0) {
+    const currentEvent = activeWeeklyEvents[0];
+    const currentIndex = sortedWeeklyEvents.findIndex(e => e.id === currentEvent.id);
+    const nextIndex = (currentIndex + 1) % sortedWeeklyEvents.length;
+    const nextEvent = sortedWeeklyEvents[nextIndex];
+    
+    // Calculate when the next event should start (after current event ends)
+    const currentEndTime = new Date(new Date(currentEvent.startDate).getTime() + currentEvent.durationSeconds * 1000);
+    
+    return {
+      ...nextEvent,
+      startDate: currentEndTime.toISOString(),
+      eventTitle: `Next Weekly 100% Boss: ${nextEvent.bossNames.join(", ")}`
+    };
+  }
+  
+  return null;
+}
 
 function MainApp() {
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
@@ -90,13 +149,13 @@ function MainApp() {
       options?: { forceRefresh?: boolean }
     ) => {
       if (fatalError) return; // 🚫 prevent retry loop
-  
+
       setLoading(true);
       try {
         const { regular, pve } = await fetchAllSpawnData({
           forceRefresh: options?.forceRefresh,
         });
-  
+
         if (gameMode === "regular" || gameMode === "both") {
           setRegularData(regular);
         }
@@ -112,8 +171,6 @@ function MainApp() {
     },
     [fatalError]
   );
-  
-  
 
   // Initial data load - fetch fresh data immediately
   useEffect(() => {
@@ -168,17 +225,17 @@ function MainApp() {
   useEffect(() => {
     const checkCacheAndRefresh = () => {
       if (loading || fatalError) return; // ✅ STOP if fatalError set
-    
+
       const combinedCache = localStorage.getItem("maps_combined");
       if (!combinedCache) {
         loadData("both");
         return;
       }
-    
+
       try {
         const { timestamp } = JSON.parse(combinedCache);
         const now = Date.now();
-    
+
         if (now - timestamp >= CACHE_EXPIRY_TIME) {
           loadData("both");
         }
@@ -187,7 +244,6 @@ function MainApp() {
         loadData("both");
       }
     };
-    
 
     // Check when component mounts
     checkCacheAndRefresh();
@@ -281,47 +337,42 @@ function MainApp() {
     document.body.removeChild(link);
   };
 
-  const nowMs = Date.now();
-
-  // Determine the primary event to display
-  let primaryDisplayEvent: BossEventConfig | null = null;
-
-  const activeEvents = CURRENT_BOSS_CONFIGS.filter(event => {
-    const startTimeMs = new Date(event.startDate).getTime();
-    const endTimeMs = startTimeMs + event.durationSeconds * 1000;
-    return nowMs >= startTimeMs && nowMs < endTimeMs;
-  });
-
-  const upcomingEvents = CURRENT_BOSS_CONFIGS.filter(event => {
-    const startTimeMs = new Date(event.startDate).getTime();
-    return nowMs < startTimeMs;
-  }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()); // Sort by soonest start time
-
-  // Prioritize active events: non-weekly first, then weekly
-  if (activeEvents.length > 0) {
-    primaryDisplayEvent = activeEvents.find(event => !event.isWeeklyRotation) || 
-                          activeEvents.find(event => event.isWeeklyRotation) || 
-                          null;
-  }
-
-  // If no active event, pick the soonest upcoming event: non-weekly first, then weekly
-  if (!primaryDisplayEvent && upcomingEvents.length > 0) {
-    primaryDisplayEvent = upcomingEvents.find(event => !event.isWeeklyRotation) || 
-                          upcomingEvents.find(event => event.isWeeklyRotation) || 
-                          null;
-  }
-  
-  // Fallback if no active or upcoming, pick the most recent past weekly if any, or most recent past event
-  if (!primaryDisplayEvent) {
-    const pastEvents = CURRENT_BOSS_CONFIGS.filter(event => {
-      const endTimeMs = new Date(event.startDate).getTime() + event.durationSeconds * 1000;
-      return nowMs >= endTimeMs;
-    }).sort((a,b) => (new Date(b.startDate).getTime() + b.durationSeconds * 1000) - (new Date(a.startDate).getTime() + a.durationSeconds * 1000)); // Most recent end time first
+  // Find primary display event (active or upcoming)
+  const primaryDisplayEvent = useMemo(() => {
+    const now = new Date();
     
-    if (pastEvents.length > 0) {
-       primaryDisplayEvent = pastEvents.find(event => event.isWeeklyRotation) || pastEvents[0];
+    // First, check for active events (non-weekly takes priority)
+    const activeEvents = CURRENT_BOSS_CONFIGS.filter((config) => {
+      const startTime = new Date(config.startDate);
+      const endTime = new Date(startTime.getTime() + config.durationSeconds * 1000);
+      return now >= startTime && now <= endTime;
+    });
+    
+    if (activeEvents.length > 0) {
+      // Prioritize non-weekly events
+      const nonWeeklyActive = activeEvents.find(event => !event.isWeeklyRotation);
+      return nonWeeklyActive || activeEvents[0];
     }
-  }
+    
+    // If no active events, find the next upcoming event
+    const upcomingEvents = CURRENT_BOSS_CONFIGS.filter((config) => {
+      const startTime = new Date(config.startDate);
+      return now < startTime;
+    }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    
+    if (upcomingEvents.length > 0) {
+      // Prioritize non-weekly events
+      const nonWeeklyUpcoming = upcomingEvents.find(event => !event.isWeeklyRotation);
+      return nonWeeklyUpcoming || upcomingEvents[0];
+    }
+    
+    return null;
+  }, []);
+
+  // Find the next weekly boss for hint/preview
+  const nextWeeklyBoss = useMemo(() => {
+    return getNextWeeklyBoss(CURRENT_BOSS_CONFIGS, new Date());
+  }, []);
 
   if (fatalError) {
     return (
@@ -332,10 +383,12 @@ function MainApp() {
             Cloudflare API Issue
           </h1>
           <p className="text-sm text-yellow-900">
-            Our API provider <strong>Cloudflare</strong> is currently experiencing problems.
+            Our API provider <strong>Cloudflare</strong> is currently
+            experiencing problems.
           </p>
           <p className="text-sm text-yellow-900">
-            Please try again later. You can track the issue on their status page:
+            Please try again later. You can track the issue on their status
+            page:
           </p>
           <a
             href="https://www.cloudflarestatus.com/"
@@ -345,26 +398,27 @@ function MainApp() {
           >
             https://www.cloudflarestatus.com/
           </a>
-  
+
           {/* Optional: Uncomment to allow manual retry */}
           <div>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-2 rounded transition"
-          >
-            Retry
-          </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-white text-sm px-4 py-2 rounded transition"
+            >
+              Retry
+            </button>
           </div>
         </div>
       </div>
     );
   }
-  
+
   return (
     <div className="min-h-screen text-foreground flex flex-col">
       <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-10">
-        <Header
+        <Header 
           primaryDisplayEvent={primaryDisplayEvent}
+          nextWeeklyBoss={nextWeeklyBoss}
         />
 
         <div className="flex justify-center">
