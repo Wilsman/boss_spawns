@@ -41,31 +41,31 @@ export interface BossEventConfig {
 
 const CURRENT_BOSS_CONFIGS: BossEventConfig[] = [
   {
-    id: "weekly_sanny",
-    bossNames: ["Sanitar"],
-    startDate: "2025-06-14T11:19:00Z", // Current weekly boss
-    durationSeconds: 8 * 24 * 60 * 60, // startDate until "2025-06-22T11:00:00Z"
-    isWeeklyRotation: true,
-    eventTitle: "Weekly 100% Boss: Sanitar",
-  },
-  {
     id: "weekly_tagilla",
     bossNames: ["Tagilla"],
-    startDate: "2025-06-22T11:00:00Z", // 22/06/2025 12:00 BST (GMT+1)
-    durationSeconds: 7 * 24 * 60 * 60, // 1 week
+    startDate: "2025-06-21T17:49:00Z", // Current weekly boss
+    durationSeconds: 7 * 24 * 60 * 60, // startDate until "2025-06-22T11:00:00Z"
     isWeeklyRotation: true,
     eventTitle: "Weekly 100% Boss: Tagilla",
-    nextBossHint: (
-      <a
-        href="https://mrsouer.com/event/bosso-terapiya"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="underline text-purple-500 hover:text-purple-700 transition-colors"
-      >
-        Tournament hint: Mr. Souer
-      </a>
-    ),
   },
+  // {
+  //   id: "weekly_tagilla",
+  //   bossNames: ["Tagilla"],
+  //   startDate: "2025-06-21T17:49:00Z", // 21/06/2025 18:49 BST (GMT+1)
+  //   durationSeconds: 7 * 24 * 60 * 60, // 1 week
+  //   isWeeklyRotation: true,
+  //   eventTitle: "Weekly 100% Boss: Tagilla",
+  //   nextBossHint: (
+  //     <a
+  //       href="https://mrsouer.com/event/bosso-terapiya"
+  //       target="_blank"
+  //       rel="noopener noreferrer"
+  //       className="underline text-purple-500 hover:text-purple-700 transition-colors"
+  //     >
+  //       Tournament hint: Mr. Souer
+  //     </a>
+  //   ),
+  // },
   // Add more events here if needed
 ];
 
@@ -95,7 +95,7 @@ function getNextWeeklyBoss(configs: BossEventConfig[], currentTime: Date): BossE
     };
   }
   
-  // If no upcoming events, find the currently active weekly event and return the next in sequence
+  // If no upcoming events, check if there's an active weekly event
   const activeWeeklyEvents = sortedWeeklyEvents.filter(event => {
     const startTime = new Date(event.startDate);
     const endTime = new Date(startTime.getTime() + event.durationSeconds * 1000);
@@ -106,18 +106,22 @@ function getNextWeeklyBoss(configs: BossEventConfig[], currentTime: Date): BossE
     const currentEvent = activeWeeklyEvents[0];
     const currentIndex = sortedWeeklyEvents.findIndex(e => e.id === currentEvent.id);
     const nextIndex = (currentIndex + 1) % sortedWeeklyEvents.length;
-    const nextEvent = sortedWeeklyEvents[nextIndex];
     
-    // Calculate when the next event should start (after current event ends)
-    const currentEndTime = new Date(new Date(currentEvent.startDate).getTime() + currentEvent.durationSeconds * 1000);
-    
-    return {
-      ...nextEvent,
-      startDate: currentEndTime.toISOString(),
-      eventTitle: `Next Weekly 100% Boss: ${nextEvent.bossNames.join(", ")}`
-    };
+    // Only return the next boss if it's different from the current one
+    if (nextIndex !== currentIndex) {
+      const nextEvent = sortedWeeklyEvents[nextIndex];
+      // Calculate when the next event should start (after current event ends)
+      const currentEndTime = new Date(new Date(currentEvent.startDate).getTime() + currentEvent.durationSeconds * 1000);
+      
+      return {
+        ...nextEvent,
+        startDate: currentEndTime.toISOString(),
+        eventTitle: `Next Weekly 100% Boss: ${nextEvent.bossNames.join(", ")}`
+      };
+    }
   }
   
+  // If no upcoming or next boss in sequence, return null
   return null;
 }
 
