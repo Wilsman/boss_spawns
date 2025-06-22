@@ -26,12 +26,6 @@ export function BossRotationTimeline({ events, currentDate }: BossRotationTimeli
   });
 
 
-  // Format duration in days
-  const formatDuration = (seconds: number) => {
-    const days = Math.ceil(seconds / (24 * 60 * 60));
-    return `${days} ${days === 1 ? 'day' : 'days'}`;
-  };
-
   return (
     <div className="mt-4">
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
