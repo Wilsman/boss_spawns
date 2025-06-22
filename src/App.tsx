@@ -20,54 +20,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { PatchToast } from "@/components/patch-toast";
 import type { DataMode } from "@/types";
 import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
+import { BossEventConfig } from "@/types/bossEvents";
+import bossEvents from "@/config/bossEvents";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-// == Boss Event Configuration ==
-export interface BossEventConfig {
-  // Exporting for potential use in Header/BossNotice if types were shared
-  id: string; // Unique ID for React keys, etc.
-  bossNames: string[];
-  startDate: string; // ISO Date string
-  durationSeconds: number;
-  isWeeklyRotation?: boolean;
-  eventTitle?: string; // e.g., "Current 100% Boss Spawn" or "Tournament Special"
-  eventDescription?: string; // Detailed text for the event
-  mapName?: string; // Optional: Specific map for the event
-  mapWiki?: string; // Optional: Wiki link for the event map
-  spawnLocationsText?: string; // Optional: Text describing spawn locations for the event
-  nextBossHint?: string | React.ReactNode; // Optional: Custom hint text or React node for the next boss prediction
-}
-
-const CURRENT_BOSS_CONFIGS: BossEventConfig[] = [
-  {
-    id: "weekly_tagilla",
-    bossNames: ["Tagilla"],
-    startDate: "2025-06-21T17:49:00Z", // Current weekly boss
-    durationSeconds: 7 * 24 * 60 * 60, // startDate until "2025-06-22T11:00:00Z"
-    isWeeklyRotation: true,
-    eventTitle: "Weekly 100% Boss: Tagilla",
-  },
-  // {
-  //   id: "weekly_tagilla",
-  //   bossNames: ["Tagilla"],
-  //   startDate: "2025-06-21T17:49:00Z", // 21/06/2025 18:49 BST (GMT+1)
-  //   durationSeconds: 7 * 24 * 60 * 60, // 1 week
-  //   isWeeklyRotation: true,
-  //   eventTitle: "Weekly 100% Boss: Tagilla",
-  //   nextBossHint: (
-  //     <a
-  //       href="https://mrsouer.com/event/bosso-terapiya"
-  //       target="_blank"
-  //       rel="noopener noreferrer"
-  //       className="underline text-purple-500 hover:text-purple-700 transition-colors"
-  //     >
-  //       Tournament hint: Mr. Souer
-  //     </a>
-  //   ),
-  // },
-  // Add more events here if needed
-];
+// Import boss events from configuration
+const CURRENT_BOSS_CONFIGS: BossEventConfig[] = bossEvents;
 
 // Helper function to find the next weekly boss after current events
 function getNextWeeklyBoss(configs: BossEventConfig[], currentTime: Date): BossEventConfig | null {
@@ -423,6 +382,7 @@ function MainApp() {
         <Header 
           primaryDisplayEvent={primaryDisplayEvent}
           nextWeeklyBoss={nextWeeklyBoss}
+          allBossEvents={CURRENT_BOSS_CONFIGS}
         />
 
         <div className="flex justify-center">

@@ -6,7 +6,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { BossNotice } from "./BossNotice";
-import type { BossEventConfig } from "../App"; // Import the BossEventConfig type
+import type { BossEventConfig } from "@/types/bossEvents";
 
 const BOSS_IMAGES = [
   "/eft_boss_jaeger.webp",
@@ -27,9 +27,10 @@ function getRandomBossImage(): string {
 interface HeaderProps {
   primaryDisplayEvent: BossEventConfig | null;
   nextWeeklyBoss: BossEventConfig | null;
+  allBossEvents?: BossEventConfig[];
 }
 
-export function Header({ primaryDisplayEvent, nextWeeklyBoss }: HeaderProps) {
+export function Header({ primaryDisplayEvent, nextWeeklyBoss, allBossEvents = [] }: HeaderProps) {
   return (
     <div className="">
       {/* Title Section */}
@@ -137,6 +138,7 @@ export function Header({ primaryDisplayEvent, nextWeeklyBoss }: HeaderProps) {
               mapWiki={primaryDisplayEvent.mapWiki}
               spawnLocationsText={primaryDisplayEvent.spawnLocationsText}
               nextWeeklyBoss={nextWeeklyBoss}
+              allBossEvents={allBossEvents}
             />
           )}
 

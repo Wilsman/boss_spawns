@@ -4,7 +4,8 @@ import { differenceInSeconds, intervalToDuration, isPast } from "date-fns";
 import type { Duration } from "date-fns";
 import { cn } from "@/lib/utils";
 import { HelpCircle } from "lucide-react";
-import type { BossEventConfig } from "../App";
+import type { BossEventConfig } from "@/types/bossEvents";
+import { BossRotationTimeline } from "./BossRotationTimeline";
 
 // Helper function to format duration with leading zeros
 function formatPaddedDuration(duration: Duration): string {
@@ -34,6 +35,7 @@ interface BossNoticeProps {
   mapWiki?: string;
   spawnLocationsText?: string;
   nextWeeklyBoss?: BossEventConfig | null;
+  allBossEvents?: BossEventConfig[];
 }
 
 interface BossDetail {
@@ -51,6 +53,7 @@ export function BossNotice({
   mapWiki: propMapWiki,
   spawnLocationsText: propSpawnLocationsText,
   nextWeeklyBoss,
+  allBossEvents,
 }: BossNoticeProps) {
   const [now, setNow] = useState(new Date());
   const [bossesDetails, setBossesDetails] = useState<BossDetail[]>([]);
@@ -341,35 +344,55 @@ export function BossNotice({
           )}
         </div>
       )}
-      {nextWeeklyBoss && (
-        <div className="mt-4 p-4 bg-slate-800/50 border border-slate-600/50 rounded-lg">
-          <div className="flex flex-col items-center text-center space-y-2">
-            <div className="flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-amber-400" />
-              <span className="text-amber-300 font-medium text-sm">Possible Next Weekly Boss</span>
-            </div>
-            <div className="flex flex-col items-center space-y-1">
-              <span className="font-bold text-purple-300 text-lg">
-                {nextWeeklyBoss.bossNames.join(" & ")}
-              </span>
-              {nextWeeklyBoss.mapName && (
-                <span className="text-sm text-gray-400">
-                  likely on {nextWeeklyBoss.mapName}
-                </span>
-              )}
-              <span className="text-xs text-gray-500">
-                Expected: {new Date(nextWeeklyBoss.startDate).toLocaleDateString()} at{" "}
-                {new Date(nextWeeklyBoss.startDate).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </span>
-              <div className="text-xs text-amber-400/70 italic">
-                * {nextWeeklyBoss.nextBossHint || "This is a guess based on rotation patterns"}
+      {nextWeeklyBoss && 
+        // Only show if the next weekly boss is starting within the next 24 hours or is already active
+        (() => {
+          const now = new Date();
+          const nextBossStart = new Date(nextWeeklyBoss.startDate);
+          const twentyFourHoursFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+          
+          // Show if the next boss starts within 24 hours or is already active
+          const shouldShow = nextBossStart <= twentyFourHoursFromNow;
+          
+          if (!shouldShow) return null;
+          
+          // Parse the date string to a Date object
+          const nextBossDate = new Date(nextWeeklyBoss.startDate);
+          
+          return (
+            <div className="mt-4 p-4 bg-slate-800/50 border border-slate-600/50 rounded-lg">
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-4 h-4 text-amber-400" />
+                  <span className="text-amber-300 font-medium text-sm">Possible Next Weekly Boss</span>
+                </div>
+                <div className="flex flex-col items-center space-y-1">
+                  <span className="font-bold text-purple-300 text-lg">
+                    {nextWeeklyBoss.bossNames.join(" & ")}
+                  </span>
+                  {nextWeeklyBoss.mapName && (
+                    <span className="text-sm text-gray-400">
+                      likely on {nextWeeklyBoss.mapName}
+                    </span>
+                  )}
+                  <span className="text-xs text-gray-500">
+                    Expected: {nextBossDate.toLocaleDateString()} at{" "}
+                    {nextBossDate.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </span>
+                  <div className="text-xs text-amber-400/70 italic">
+                    * {nextWeeklyBoss.nextBossHint || "This is a guess based on rotation patterns"}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          );
+        })()
+      }
+      {allBossEvents && allBossEvents.length > 0 && (
+        <BossRotationTimeline events={allBossEvents} currentDate={new Date()} />
       )}
     </div>
   );
