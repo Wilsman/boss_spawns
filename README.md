@@ -13,6 +13,7 @@ A real-time tracker for Escape from Tarkov boss spawn locations and probabilitie
 - **Offline Support**: Local caching for uninterrupted access
 - **Responsive Design**: Fully functional on both desktop and mobile devices
 - **Dark Mode**: Eye-friendly interface for extended gaming sessions
+- **Event Banners**: Displays prominent notices for active or upcoming boss events
 
 ## 🚀 Getting Started
 
@@ -32,7 +33,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🛠 Tech Stack
 
-- **Next.js** - React framework
+- **Vite** - Frontend tooling
+- **React** - UI library
 - **TypeScript** - Static typing
 - **Tailwind CSS** - Utility-first CSS framework
 - **Shadcn UI** - UI component library

@@ -28,61 +28,7 @@ const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 // Import boss events from configuration
 const CURRENT_BOSS_CONFIGS: BossEventConfig[] = bossEvents;
 
-// Helper function to find the next weekly boss after current events
-function getNextWeeklyBoss(configs: BossEventConfig[], currentTime: Date): BossEventConfig | null {
-  const weeklyEvents = configs.filter(config => config.isWeeklyRotation);
-  
-  if (weeklyEvents.length === 0) return null;
-  
-  // Sort weekly events by start date
-  const sortedWeeklyEvents = weeklyEvents.sort((a, b) => 
-    new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
-  );
-  
-  // Find the next upcoming weekly event
-  const upcomingWeeklyEvents = sortedWeeklyEvents.filter(event => {
-    const startTime = new Date(event.startDate);
-    return startTime > currentTime;
-  });
-  
-  if (upcomingWeeklyEvents.length > 0) {
-    // Return the next upcoming weekly event
-    const nextEvent = upcomingWeeklyEvents[0];
-    return {
-      ...nextEvent,
-      eventTitle: `Next Weekly 100% Boss: ${nextEvent.bossNames.join(", ")}`
-    };
-  }
-  
-  // If no upcoming events, check if there's an active weekly event
-  const activeWeeklyEvents = sortedWeeklyEvents.filter(event => {
-    const startTime = new Date(event.startDate);
-    const endTime = new Date(startTime.getTime() + event.durationSeconds * 1000);
-    return currentTime >= startTime && currentTime <= endTime;
-  });
-  
-  if (activeWeeklyEvents.length > 0) {
-    const currentEvent = activeWeeklyEvents[0];
-    const currentIndex = sortedWeeklyEvents.findIndex(e => e.id === currentEvent.id);
-    const nextIndex = (currentIndex + 1) % sortedWeeklyEvents.length;
-    
-    // Only return the next boss if it's different from the current one
-    if (nextIndex !== currentIndex) {
-      const nextEvent = sortedWeeklyEvents[nextIndex];
-      // Calculate when the next event should start (after current event ends)
-      const currentEndTime = new Date(new Date(currentEvent.startDate).getTime() + currentEvent.durationSeconds * 1000);
-      
-      return {
-        ...nextEvent,
-        startDate: currentEndTime.toISOString(),
-        eventTitle: `Next Weekly 100% Boss: ${nextEvent.bossNames.join(", ")}`
-      };
-    }
-  }
-  
-  // If no upcoming or next boss in sequence, return null
-  return null;
-}
+
 
 function MainApp() {
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
@@ -332,10 +278,6 @@ function MainApp() {
     return null;
   }, []);
 
-  // Find the next weekly boss for hint/preview
-  const nextWeeklyBoss = useMemo(() => {
-    return getNextWeeklyBoss(CURRENT_BOSS_CONFIGS, new Date());
-  }, []);
 
   if (fatalError) {
     return (
@@ -381,7 +323,6 @@ function MainApp() {
       <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-10">
         <Header 
           primaryDisplayEvent={primaryDisplayEvent}
-          nextWeeklyBoss={nextWeeklyBoss}
           allBossEvents={CURRENT_BOSS_CONFIGS}
         />
 
