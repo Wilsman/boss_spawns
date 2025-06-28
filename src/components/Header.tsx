@@ -52,7 +52,7 @@ export function Header({
         <div className="flex flex-col space-y-3">
           {/* Discord Link */}
           <a
-            href="https://discord.gg/wXTH6Z5n"
+            href="https://discord.gg/3dFmr5qaJK"
             target="_blank"
             rel="noopener noreferrer"
             className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg 
@@ -99,7 +99,7 @@ export function Header({
             href="https://www.cultistcircle.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg
+            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg
              hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.02]
              border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
           >
