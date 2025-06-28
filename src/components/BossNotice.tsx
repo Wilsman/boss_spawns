@@ -3,9 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { differenceInSeconds, intervalToDuration, isPast } from "date-fns";
 import type { Duration } from "date-fns";
 import { cn } from "@/lib/utils";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, ExternalLink, AlertCircle } from "lucide-react";
 import type { BossEventConfig } from "@/types/bossEvents";
 import { BossRotationTimeline } from "./BossRotationTimeline";
+import { MANUAL_BOSS_HINT } from "@/config/bossEvents";
 
 // Helper function to format duration with leading zeros
 function formatPaddedDuration(duration: Duration): string {
@@ -67,6 +68,8 @@ export function BossNotice({
   >(propSpawnLocationsText);
   const initialWaitSecondsRef = useRef(0);
   const [isVisible, setIsVisible] = useState(false);
+
+
 
   useEffect(() => {
     const fetchBossData = async () => {
@@ -305,7 +308,9 @@ export function BossNotice({
                   </span>
                 </div>
               ) : (
-                <div className="text-purple-300 font-medium">Boss changing soontm</div>
+                <div className="text-purple-300 font-medium text-center">
+                  Boss could be ending soon, wait for next boss announcement
+                </div>
               ))}
           </div>
         </span>
@@ -338,6 +343,35 @@ export function BossNotice({
               <span className="font-bold text-purple-300">
                 {displaySpawnLocations}
               </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Manual Hint Section */}
+      {MANUAL_BOSS_HINT.enabled && (
+        <div className="mt-4 p-3 bg-white/10 dark:bg-white/5 border border-white/20 dark:border-white/10 rounded-lg backdrop-blur-sm">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertCircle className="h-4 w-4 text-yellow-400" />
+            <span className="font-bold text-white">{MANUAL_BOSS_HINT.bossName}</span>
+            <span className="text-purple-200">{MANUAL_BOSS_HINT.hintText}</span>
+          </div>
+          {(MANUAL_BOSS_HINT.sourceLabel || MANUAL_BOSS_HINT.sourceUrl) && (
+            <div className="flex items-center gap-1 text-xs text-purple-300 mt-2 opacity-75">
+              <span>Source:</span>
+              {MANUAL_BOSS_HINT.sourceUrl ? (
+                <a
+                  href={MANUAL_BOSS_HINT.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 hover:text-white transition-colors underline"
+                >
+                  {MANUAL_BOSS_HINT.sourceLabel || 'Link'}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              ) : (
+                <span>{MANUAL_BOSS_HINT.sourceLabel}</span>
+              )}
             </div>
           )}
         </div>

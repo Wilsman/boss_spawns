@@ -246,7 +246,7 @@ function MainApp() {
     document.body.removeChild(link);
   };
 
-  // Find primary display event (active or upcoming)
+  // Find primary display event (active, upcoming, or recently expired)
   const primaryDisplayEvent = useMemo(() => {
     const now = new Date();
     
@@ -273,6 +273,25 @@ function MainApp() {
       // Prioritize non-weekly events
       const nonWeeklyUpcoming = upcomingEvents.find(event => !event.isWeeklyRotation);
       return nonWeeklyUpcoming || upcomingEvents[0];
+    }
+    
+    // If no active or upcoming events, show the most recently expired event
+    // This allows displaying "Boss could be ending soon" message
+    const expiredEvents = CURRENT_BOSS_CONFIGS.filter((config) => {
+      const startTime = new Date(config.startDate);
+      const endTime = new Date(startTime.getTime() + config.durationSeconds * 1000);
+      return now > endTime;
+    }).sort((a, b) => {
+      // Sort by end time descending (most recently expired first)
+      const aEndTime = new Date(a.startDate).getTime() + a.durationSeconds * 1000;
+      const bEndTime = new Date(b.startDate).getTime() + b.durationSeconds * 1000;
+      return bEndTime - aEndTime;
+    });
+    
+    if (expiredEvents.length > 0) {
+      // Prioritize non-weekly events
+      const nonWeeklyExpired = expiredEvents.find(event => !event.isWeeklyRotation);
+      return nonWeeklyExpired || expiredEvents[0];
     }
     
     return null;

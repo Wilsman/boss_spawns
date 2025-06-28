@@ -1,5 +1,15 @@
 import { BossEventConfig } from "@/types/bossEvents";
 
+// Manual Boss Hint Configuration
+// Change these values when you want to update the hint
+export const MANUAL_BOSS_HINT = {
+  bossName: "Goons",
+  hintText: "100% spawn next?",
+  sourceLabel: "Community Digest",
+  sourceUrl: "https://pbs.twimg.com/media/Guh0w2iXEAAtKk0?format=jpg&name=medium",
+  enabled: true // Set to false to hide the hint
+};
+
 const bossEvents: BossEventConfig[] = [
   {
     id: "weekly_reshala",
@@ -53,13 +63,22 @@ const bossEvents: BossEventConfig[] = [
     id: "weekly_tagilla",
     bossNames: ["Tagilla"],
     startDate: "2025-06-21T17:49:00Z", // 2025-06-21 18:49 BST (GMT+1)
-    durationSeconds: 7 * 24 * 60 * 60, // 7 days
+    durationSeconds: 6 * 24 * 60 * 60, // 7 days
     isWeeklyRotation: true,
     mapName: "Factory",
     mapWiki: "https://escapefromtarkov.fandom.com/wiki/Factory",
     spawnLocationsText: "Any scav spawn",
     eventTitle: "Weekly 100% Boss: Tagilla"
   },
+  // {
+  //   id: "weekly_goons",
+  //   bossNames: ["Goons"],
+  //   startDate: "2025-06-28T18:00:00Z", // 2025-06-28 19:00 BST (GMT+1)
+  //   durationSeconds: 7 * 24 * 60 * 60, // 7 days
+  //   isWeeklyRotation: true,
+  //   spawnLocationsText: "Any scav spawn",
+  //   eventTitle: "Weekly 100% Boss: Goons"
+  // },
 ];
 
 export default bossEvents;
