@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap (update this URL when you deploy)
+Sitemap: https://eftboss.com/sitemap.xml
