@@ -3,11 +3,11 @@ import { BossEventConfig } from "@/types/bossEvents";
 // Manual Boss Hint Configuration
 // Change these values when you want to update the hint
 export const MANUAL_BOSS_HINT = {
-  // bossName: "Goons",
-  // hintText: "100% spawn next?",
-  // sourceLabel: "Community Digest",
-  // sourceUrl: "https://pbs.twimg.com/media/Guh0w2iXEAAtKk0?format=jpg&name=medium",
-  // enabled: true // Set to false to hide the hint
+  bossName: "Goons",
+  hintText: "100% spawn next?",
+  sourceLabel: "Community Digest",
+  sourceUrl: "https://pbs.twimg.com/media/Guh0w2iXEAAtKk0?format=jpg&name=medium",
+  enabled: false // Set to false to hide the hint
 };
 
 const bossEvents: BossEventConfig[] = [
