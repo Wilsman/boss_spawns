@@ -63,22 +63,24 @@ const bossEvents: BossEventConfig[] = [
     id: "weekly_tagilla",
     bossNames: ["Tagilla"],
     startDate: "2025-06-21T17:49:00Z", // 2025-06-21 18:49 BST (GMT+1)
-    durationSeconds: 6 * 24 * 60 * 60, // 7 days
+    durationSeconds: 7 * 24 * 60 * 60, // 7 days
     isWeeklyRotation: true,
     mapName: "Factory",
     mapWiki: "https://escapefromtarkov.fandom.com/wiki/Factory",
     spawnLocationsText: "Any scav spawn",
     eventTitle: "Weekly 100% Boss: Tagilla"
   },
-  // {
-  //   id: "weekly_goons",
-  //   bossNames: ["Goons"],
-  //   startDate: "2025-06-28T18:00:00Z", // 2025-06-28 19:00 BST (GMT+1)
-  //   durationSeconds: 7 * 24 * 60 * 60, // 7 days
-  //   isWeeklyRotation: true,
-  //   spawnLocationsText: "Any scav spawn",
-  //   eventTitle: "Weekly 100% Boss: Goons"
-  // },
+  {
+    id: "weekly_goons",
+    bossNames: ["Goons"],
+    startDate: "2025-06-29T10:00:00Z", // 2025-06-29 11:00 BST (GMT+1)
+    durationSeconds: 7 * 24 * 60 * 60, // 7 days
+    isWeeklyRotation: true,
+    eventTitle: "Weekly 100% Boss: Goons",
+    mapName: "Lighthouse",
+    spawnLocationsText: "Water Treatment Plant and Chalet",
+    mapWiki: "https://escapefromtarkov.fandom.com/wiki/Lighthouse",
+  },
 ];
 
 export default bossEvents;
