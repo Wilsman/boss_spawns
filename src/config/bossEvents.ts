@@ -73,7 +73,7 @@ const bossEvents: BossEventConfig[] = [
   {
     id: "weekly_goons",
     bossNames: ["Goons"],
-    startDate: "2025-06-29T10:00:00Z", // 2025-06-29 11:00 BST (GMT+1)
+    startDate: "2025-06-29T11:55:00Z", // 2025-06-29 12:55 BST (GMT+1)
     durationSeconds: 7 * 24 * 60 * 60, // 7 days
     isWeeklyRotation: true,
     eventTitle: "Weekly 100% Boss: Goons",
