@@ -88,7 +88,7 @@ const bossEvents: BossEventConfig[] = [
     durationSeconds: 3 * 24 * 60 * 60, // 3 days
     isWeeklyRotation: false,
     eventTitle: "Special Event: ALL BOSSES 100%",
-    eventDescription: "All bosses have 100% spawn rate across all maps!",
+    eventDescription: "All bosses will spawn 100% of the time on their respective maps!",
     mapName: "All Maps",
     spawnLocationsText: "All boss spawn locations active"
   },
