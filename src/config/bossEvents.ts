@@ -84,8 +84,8 @@ const bossEvents: BossEventConfig[] = [
   {
     id: "special_all_bosses",
     bossNames: ["Reshala", "Glukhar", "Shturman", "Killa", "Sanitar", "Tagilla", "Kaban", "Goons"],
-    startDate: "2025-07-12T11:00:00Z", // 2025-07-12 12:00 BST (GMT+1)
-    durationSeconds: 3 * 24 * 60 * 60, // 3 days
+    startDate: "2025-07-05T09:00:00Z", // 2025-07-05 09:00 BST (GMT+1) TODAY
+    durationSeconds: 7 * 24 * 60 * 60, // 7 days
     isWeeklyRotation: false,
     eventTitle: "Special Event: ALL BOSSES 100%",
     eventDescription: "All bosses will spawn 100% of the time on their respective maps!",
