@@ -74,12 +74,23 @@ const bossEvents: BossEventConfig[] = [
     id: "weekly_goons",
     bossNames: ["Goons"],
     startDate: "2025-06-29T11:55:00Z", // 2025-06-29 12:55 BST (GMT+1)
-    durationSeconds: 7 * 24 * 60 * 60, // 7 days
+    durationSeconds: 6 * 22 * 60 * 60, // 7 days
     isWeeklyRotation: true,
     eventTitle: "Weekly 100% Boss: Goons",
-    mapName: "Lighthouse",
-    spawnLocationsText: "Water Treatment Plant and Chalet",
-    mapWiki: "https://escapefromtarkov.fandom.com/wiki/Lighthouse",
+    // mapName: "Lighthouse",
+    // spawnLocationsText: "Water Treatment Plant and Chalet",
+    // mapWiki: "https://escapefromtarkov.fandom.com/wiki/Lighthouse",
+  },
+  {
+    id: "special_all_bosses",
+    bossNames: ["Reshala", "Glukhar", "Shturman", "Killa", "Sanitar", "Tagilla", "Kaban", "Goons"],
+    startDate: "2025-07-12T11:00:00Z", // 2025-07-12 12:00 BST (GMT+1)
+    durationSeconds: 3 * 24 * 60 * 60, // 3 days
+    isWeeklyRotation: false,
+    eventTitle: "Special Event: ALL BOSSES 100%",
+    eventDescription: "All bosses have 100% spawn rate across all maps!",
+    mapName: "All Maps",
+    spawnLocationsText: "All boss spawn locations active"
   },
 ];
 
