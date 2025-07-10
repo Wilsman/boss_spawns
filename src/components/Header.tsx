@@ -6,7 +6,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { BossNotice } from "./BossNotice";
+import { Notice } from "./Notice";
 import type { BossEventConfig } from "@/types/bossEvents";
+
+// Toggle this to switch between BossNotice and Notice components
+const USE_NOTICE_COMPONENT = true;
 
 const BOSS_IMAGES = [
   "/eft_boss_jaeger.webp",
@@ -126,21 +130,25 @@ export function Header({
             <Database className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
           </a>
 
-          {/* Boss Event Notice */}
-          {primaryDisplayEvent && (
-            <BossNotice
-              // Props will be adjusted in BossNotice.tsx to match this structure
-              key={primaryDisplayEvent.id} // Add key for potential re-renders if event changes
-              bossNames={primaryDisplayEvent.bossNames}
-              startDate={new Date(primaryDisplayEvent.startDate)}
-              durationSeconds={primaryDisplayEvent.durationSeconds}
-              eventTitle={primaryDisplayEvent.eventTitle}
-              eventDescription={primaryDisplayEvent.eventDescription}
-              mapName={primaryDisplayEvent.mapName}
-              mapWiki={primaryDisplayEvent.mapWiki}
-              spawnLocationsText={primaryDisplayEvent.spawnLocationsText}
-              allBossEvents={allBossEvents}
-            />
+          {/* Boss Event Notice - Toggle between BossNotice and Notice */}
+          {USE_NOTICE_COMPONENT ? (
+            <Notice />
+          ) : (
+            primaryDisplayEvent && (
+              <BossNotice
+                // Props will be adjusted in BossNotice.tsx to match this structure
+                key={primaryDisplayEvent.id} // Add key for potential re-renders if event changes
+                bossNames={primaryDisplayEvent.bossNames}
+                startDate={new Date(primaryDisplayEvent.startDate)}
+                durationSeconds={primaryDisplayEvent.durationSeconds}
+                eventTitle={primaryDisplayEvent.eventTitle}
+                eventDescription={primaryDisplayEvent.eventDescription}
+                mapName={primaryDisplayEvent.mapName}
+                mapWiki={primaryDisplayEvent.mapWiki}
+                spawnLocationsText={primaryDisplayEvent.spawnLocationsText}
+                allBossEvents={allBossEvents}
+              />
+            )
           )}
 
           {/* Collapsible Update Message */}
