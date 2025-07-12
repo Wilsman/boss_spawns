@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { AlertCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 
 export function Notice() {
   const [isVisible, setIsVisible] = useState(false);
@@ -32,15 +32,15 @@ export function Notice() {
       </div>
 
       <div className="flex items-center gap-2 mb-3">
-        <AlertCircle className="w-6 h-6 text-yellow-400 flex-shrink-0" />
-        <span className="text-xl sm:text-2xl font-bold text-purple-200 drop-shadow-sm text-center">
-          API Recovery Notice
+        <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+        <span className="text-xl sm:text-2xl font-bold text-green-400 drop-shadow-sm text-center">
+          API Back Online
         </span>
       </div>
 
       <div className="text-base text-gray-200 tracking-wider text-center space-y-3">
         <div className="mb-3">
-          Data from API may still be recovering due to 0.16.8.0 Wipe.
+          The API is now fully operational. All boss spawn data is up to date.
         </div>
         
         <div className="space-y-2">
@@ -52,7 +52,7 @@ export function Notice() {
             </div>
             <div>
               <span className="font-bold text-blue-400">PVP:</span>{" "}
-              <span className="text-purple-200">All bosses 100% on their respective maps</span>
+              <span className="text-purple-200">All bosses 70% on their respective maps</span>
             </div>
           </div>
         </div>
