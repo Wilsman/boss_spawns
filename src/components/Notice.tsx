@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { CheckCircle, Swords, Shield } from "lucide-react";
+import { Swords, Shield } from "lucide-react";
 
 export function Notice() {
   const [isVisible, setIsVisible] = useState(false);
