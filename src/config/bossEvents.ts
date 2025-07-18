@@ -92,6 +92,18 @@ const bossEvents: BossEventConfig[] = [
     mapName: "All Maps",
     spawnLocationsText: "All boss spawn locations active"
   },
+  // {
+  //   id: "pve_only_goons",
+  //   bossNames: ["Goons"],
+  //   startDate: "2025-07-18T09:00:00Z", // 2025-07-05 09:00 BST (GMT+1) TODAY
+  //   durationSeconds: 24 * 60 * 60 - 3600 * 2, // make end 2025-07-19 08:00 BST (GMT+1) TODAY
+  //   isWeeklyRotation: false,
+  //   eventTitle: "PVE ONLY: GOONS 100%",
+  //   eventDescription: "PVE ONLY: Goons will spawn 100% of the time on their respective maps!",
+  //   mapName: "Lighthouse",
+  //   spawnLocationsText: "Water Treatment Plant and Chalet",
+  //   mapWiki: "https://escapefromtarkov.fandom.com/wiki/Lighthouse",
+  // },
 ];
 
 export default bossEvents;

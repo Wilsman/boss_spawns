@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Swords, Shield } from "lucide-react";
 
 export function Notice() {
   const [isVisible, setIsVisible] = useState(false);
@@ -27,34 +27,32 @@ export function Notice() {
     >
       <div className="flex flex-col items-center gap-1 mb-2">
         <span className="text-xs text-purple-300 font-semibold uppercase tracking-wider">
-          System Notice
+          Boss Spawn Notice
         </span>
       </div>
 
-      <div className="flex items-center gap-2 mb-3">
-        <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
-        <span className="text-xl sm:text-2xl font-bold text-green-400 drop-shadow-sm text-center">
-          API Back Online
-        </span>
-      </div>
-
-      <div className="text-base text-gray-200 tracking-wider text-center space-y-3">
-        <div className="mb-3">
-          The API is now fully operational. All boss spawn data is up to date.
-        </div>
-        
-        <div className="space-y-2">
-          <div className="font-semibold text-purple-300">Current Status:</div>
-          <div className="space-y-1">
-            <div>
-              <span className="font-bold text-green-400">PVE:</span>{" "}
-              <span className="text-purple-200">100% Goons on Lighthouse</span>
-            </div>
-            <div>
-              <span className="font-bold text-blue-400">PVP:</span>{" "}
-              <span className="text-purple-200">All bosses 70% on their respective maps</span>
-            </div>
+      <div className="w-full space-y-4">
+        {/* PvP Section */}
+        <div className="bg-blue-900/30 border border-blue-800/50 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Swords className="h-4 w-4 text-blue-400" />
+            <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">PvP Mode</h3>
           </div>
+          <p className="text-blue-100 text-sm">
+            All bosses <span className="font-semibold text-blue-300">70%</span> on their respective maps
+          </p>
+        </div>
+
+        {/* PvE Section */}
+        <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Shield className="h-4 w-4 text-green-400" />
+            <h3 className="text-green-300 font-semibold text-sm uppercase tracking-wider">PvE Mode</h3>
+          </div>
+          <p className="text-green-100 text-sm mb-1">
+            <span className="font-semibold text-green-300">100% Goons</span> on Lighthouse
+          </p>
+          <p className="text-xs text-green-300/70">Boss Rotations usually happen on weekend so watch this space for more info</p>
         </div>
       </div>
     </div>
