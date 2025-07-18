@@ -39,7 +39,7 @@ export function Notice() {
             <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">PvP Mode</h3>
           </div>
           <p className="text-blue-100 text-sm">
-            All bosses <span className="font-semibold text-blue-300">70%</span> on their respective maps
+            All bosses <span className="font-semibold text-blue-300">50%</span> on their respective maps
           </p>
         </div>
 
