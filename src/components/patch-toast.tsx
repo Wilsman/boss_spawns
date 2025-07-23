@@ -11,14 +11,15 @@ export const SHOW_PATCH_TOAST = true;
 export function PatchToast() {
   useEffect(() => {
     if (!SHOW_PATCH_TOAST) return;
-    const sessionKey = "patch-toast-shown-2025-05-14";
+    const sessionKey = "patch-toast-shown-2025-07-23";
     if (sessionStorage.getItem(sessionKey)) return;
     toast({
-      title: "✅ Completed",
+      title: "✅ PvE Change",
       description:
-        "📅 May 14, 2025\n\n" +
-        "🔧 Removed silent walking for BirdEye, Shturman, Partizan, and Cultists. They should now walk about 20–35% quieter than the rest.\n\n" +
-        "— YOWA, Lead of Game Design, Battlestate Games",
+        "📅 July 23, 2025\n\n" +
+        "👹 Goons spawn rate on Lighthouse reduced to 39%\n" +
+        "🔧 No other boss currently has a 100% spawn rate\n\n" +
+        "— Battlestate Games",
       duration: 30000, // 30 seconds
       className: "border-green-600 bg-gray-800 shadow-lg z-50",
     });

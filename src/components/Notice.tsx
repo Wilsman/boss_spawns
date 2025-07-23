@@ -50,9 +50,11 @@ export function Notice() {
             <h3 className="text-green-300 font-semibold text-sm uppercase tracking-wider">PvE Mode</h3>
           </div>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">100% Goons</span> on Lighthouse
+            <span className="font-semibold text-green-300">39% Goons</span> on Lighthouse
           </p>
-          <p className="text-xs text-green-300/70">Boss Rotations usually happen on weekend so watch this space for more info</p>
+          <p className="text-xs text-green-300/70">
+            Goons Lighthouse spawn rate reduced, no new 100% boss 😖
+          </p>
         </div>
       </div>
     </div>
