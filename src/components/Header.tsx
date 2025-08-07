@@ -163,6 +163,9 @@ export function Header({
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
+                  (07/08/2025): notifications fix; compare mode adds Δ column with inline bars and wider layout.
+                </span>
+                <span className="block mb-1">
                   (20/05/2025): refactor: reduced API calls by combining regular
                   and PVE data; changed refresh interval to every 5 minutes in
                   real-time
