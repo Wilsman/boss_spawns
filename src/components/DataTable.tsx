@@ -307,7 +307,7 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
               {mapName}
             </h3>
             <div className="overflow-x-auto rounded-lg border border-gray-700 -mx-2 sm:mx-0">
-              <table className="w-full min-w-[600px]">
+              <table className="w-full min-w-[700px]">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-gray-800">
                     <th className="px-4 py-2 text-left text-sm font-semibold text-gray-300 w-1/4">
@@ -315,11 +315,14 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                     </th>
                     {mode === "compare" ? (
                       <>
-                        <th className="px-4 py-2 text-center text-sm font-semibold text-red-300 w-1/2">
-                          PVP Chance
+                        <th className="px-4 py-2 text-center text-sm font-semibold text-red-300 w-1/5">
+                          PvP
                         </th>
-                        <th className="px-4 py-2 text-center text-sm font-semibold text-green-300 w-1/2">
-                          PVE Chance
+                        <th className="px-4 py-2 text-center text-sm font-semibold text-green-300 w-1/5">
+                          PvE
+                        </th>
+                        <th className="px-4 py-2 text-center text-sm font-semibold text-gray-300 w-1/5">
+                          Δ (PvE − PvP)
                         </th>
                       </>
                     ) : (
@@ -341,14 +344,33 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                   {items.length === 0 && (
                     <tr>
                       <td
-                        colSpan={mode === "compare" ? 3 : 4}
+                        colSpan={mode === "compare" ? 4 : 4}
                         className="text-center text-gray-500 py-4"
                       >
                         No bosses found for this map with the current filter.
                       </td>
                     </tr>
                   )}
-                  {items.map((bossGroup) => {
+                  {[...items]
+                    .sort((a, b) => {
+                      if (mode !== "compare") return 0;
+                      const aReg = Math.max(
+                        ...(a.locations.map((l: Location) => l.regularChance || 0))
+                      );
+                      const aPve = Math.max(
+                        ...(a.locations.map((l: Location) => l.pveChance || 0))
+                      );
+                      const bReg = Math.max(
+                        ...(b.locations.map((l: Location) => l.regularChance || 0))
+                      );
+                      const bPve = Math.max(
+                        ...(b.locations.map((l: Location) => l.pveChance || 0))
+                      );
+                      const aDiff = Math.abs(aPve - aReg);
+                      const bDiff = Math.abs(bPve - bReg);
+                      return bDiff - aDiff;
+                    })
+                    .map((bossGroup) => {
                     if (mode === "compare") {
                       const hasDifferences = bossGroup.locations.some(
                         (loc: Location) => loc.hasDifference
@@ -365,6 +387,14 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                           (loc: Location) => loc.pveChance || 0
                         )
                       );
+                      const delta = pveChance - regularChance;
+                      const deltaPct = (delta * 100).toFixed(0);
+                      const deltaColor =
+                        delta > 0
+                          ? "text-green-300"
+                          : delta < 0
+                          ? "text-red-300"
+                          : "text-gray-300";
 
                       return (
                         <tr
@@ -375,13 +405,30 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                             <BossCell boss={bossGroup} />
                           </td>
                           <td className="px-4 py-2 text-center bg-red-700/20">
-                            <span className="text-red-300 font-medium">
-                              {(regularChance * 100).toFixed(0)}%
-                            </span>
+                            <div className="relative h-5 rounded overflow-hidden bg-red-900/20">
+                              <div
+                                className="absolute left-0 top-0 h-full bg-red-500/40"
+                                style={{ width: `${Math.max(0, Math.min(100, regularChance * 100))}%` }}
+                              />
+                              <span className="relative z-10 text-red-300 font-medium">
+                                {(regularChance * 100).toFixed(0)}%
+                              </span>
+                            </div>
                           </td>
                           <td className="px-4 py-2 text-center bg-green-700/20">
-                            <span className="text-green-300 font-medium">
-                              {(pveChance * 100).toFixed(0)}%
+                            <div className="relative h-5 rounded overflow-hidden bg-green-900/20">
+                              <div
+                                className="absolute left-0 top-0 h-full bg-green-500/40"
+                                style={{ width: `${Math.max(0, Math.min(100, pveChance * 100))}%` }}
+                              />
+                              <span className="relative z-10 text-green-300 font-medium">
+                                {(pveChance * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2 text-center">
+                            <span className={`font-semibold ${deltaColor}`}>
+                              {delta > 0 ? "▲" : delta < 0 ? "▼" : "–"} {deltaPct}%
                             </span>
                           </td>
                         </tr>

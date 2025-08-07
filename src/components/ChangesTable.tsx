@@ -51,8 +51,14 @@ export function ChangesTable({
   // Fixed 5-minute auto-refresh interval
   const autoRefreshInterval = 300000; // 5 minutes in milliseconds
   const notificationSound = useRef<HTMLAudioElement | null>(null);
+  // Guard to prevent firing notifications on initial load
+  const notificationsInitializedRef = useRef<boolean>(false);
   const [lastSeenChangeCount, setLastSeenChangeCount] = useState<number>(() => {
     return parseInt(localStorage.getItem("last_seen_change_count") || "0", 10);
+  });
+  // Track the latest seen change timestamp to avoid false positives on reloads/tab switches
+  const [lastSeenLatestTimestamp, setLastSeenLatestTimestamp] = useState<number>(() => {
+    return parseInt(localStorage.getItem("last_seen_latest_ts") || "0", 10);
   });
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(() => {
     return parseInt(
@@ -72,6 +78,21 @@ export function ChangesTable({
   );
   const lastRefreshedTimeDisplay = useRelativeTime(lastRefreshTime);
   const canRefresh = timeUntilRefresh === 0;
+
+  // Compute the latest timestamp in the current changes list
+  const latestTimestamp = useMemo(() => {
+    return changes && changes.length ? Math.max(...changes.map((c) => c.timestamp)) : 0;
+  }, [changes]);
+
+  // Track last page visibility change to suppress notifications right after switching tabs
+  const lastVisibilityChangeRef = useRef<number>(Date.now());
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      lastVisibilityChangeRef.current = Date.now();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
 
   // Toggle auto-refresh
   const toggleAutoRefresh = useCallback(() => {
@@ -110,7 +131,10 @@ export function ChangesTable({
     localStorage.setItem("sound_enabled", "true");
     setLastSeenChangeCount(changes.length);
     localStorage.setItem("last_seen_change_count", changes.length.toString());
-  }, [notificationsEnabled, changes.length]);
+    // Also sync the latest timestamp so we don't fire immediately after enabling
+    setLastSeenLatestTimestamp(latestTimestamp);
+    localStorage.setItem("last_seen_latest_ts", latestTimestamp.toString());
+  }, [notificationsEnabled, changes.length, latestTimestamp]);
 
   // Toggle sound notifications separately
   const toggleSound = useCallback(() => {
@@ -140,38 +164,12 @@ export function ChangesTable({
       const currentTime = Date.now();
       setLastRefreshTime(currentTime);
       setNextRefreshAllowed(currentTime + CACHE_DURATION);
-      
-      // Check for new changes and notify if enabled
-      if (changes.length > lastSeenChangeCount) {
-        const newChangesCount = changes.length - lastSeenChangeCount;
-        
-        // Show browser notification if enabled
-        if (notificationsEnabled) {
-          new Notification("New Changes Detected", {
-            body: `${newChangesCount} new change${newChangesCount !== 1 ? 's' : ''} detected.`,
-            icon: "/favicon.ico"
-          });
-        }
-        
-        // Play sound notification if enabled
-        if (soundEnabled && notificationSound.current) {
-          // Reset the audio to the beginning if it's already playing
-          notificationSound.current.currentTime = 0;
-          notificationSound.current.play().catch(err => {
-            console.error("Error playing notification sound:", err);
-          });
-        }
-        
-        // Update last seen count
-        setLastSeenChangeCount(changes.length);
-        localStorage.setItem("last_seen_change_count", changes.length.toString());
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch changes");
     } finally {
       setIsRefreshing(false);
     }
-  }, [isRefreshing, onChangesUpdate, nextRefreshAllowed, notificationsEnabled, soundEnabled, changes.length, lastSeenChangeCount]);
+  }, [isRefreshing, onChangesUpdate, nextRefreshAllowed]);
 
   // Calculate time until next refresh
   useEffect(() => {
@@ -210,6 +208,70 @@ export function ChangesTable({
       }
     };
   }, []);
+
+  // Trigger notifications when genuinely new changes arrive
+  useEffect(() => {
+    if (!notificationsEnabled) return;
+
+    // On first run after enabling/mount, initialize without notifying
+    if (!notificationsInitializedRef.current) {
+      notificationsInitializedRef.current = true;
+      // Sync counters silently to avoid initial spam
+      if (changes.length !== lastSeenChangeCount) {
+        setLastSeenChangeCount(changes.length);
+        localStorage.setItem("last_seen_change_count", changes.length.toString());
+      }
+      if (latestTimestamp && latestTimestamp !== lastSeenLatestTimestamp) {
+        setLastSeenLatestTimestamp(latestTimestamp);
+        localStorage.setItem("last_seen_latest_ts", latestTimestamp.toString());
+      }
+      return;
+    }
+
+    // Suppress right after tab becomes visible to avoid false positives on refocus
+    const now = Date.now();
+    if (document.visibilityState === 'visible' && now - lastVisibilityChangeRef.current < 1500) {
+      // Sync silently
+      if (latestTimestamp > lastSeenLatestTimestamp) {
+        setLastSeenLatestTimestamp(latestTimestamp);
+        localStorage.setItem("last_seen_latest_ts", latestTimestamp.toString());
+      }
+      if (changes.length !== lastSeenChangeCount) {
+        setLastSeenChangeCount(changes.length);
+        localStorage.setItem("last_seen_change_count", changes.length.toString());
+      }
+      return;
+    }
+
+    // Only notify when we see changes newer than the last seen timestamp
+    if (latestTimestamp > lastSeenLatestTimestamp) {
+      const newChangesCount = changes.filter(c => c.timestamp > lastSeenLatestTimestamp).length;
+
+      if (newChangesCount > 0) {
+        // Browser notification
+        if (Notification.permission === "granted") {
+          new Notification("New Changes Detected", {
+            body: `${newChangesCount} new change${newChangesCount !== 1 ? 's' : ''} detected.`,
+            icon: "/favicon.ico",
+          });
+        }
+
+        // Optional sound
+        if (soundEnabled && notificationSound.current) {
+          notificationSound.current.currentTime = 0;
+          notificationSound.current.play().catch((err) => {
+            console.error("Error playing notification sound:", err);
+          });
+        }
+
+        // Persist the new seen markers
+        setLastSeenLatestTimestamp(latestTimestamp);
+        localStorage.setItem("last_seen_latest_ts", latestTimestamp.toString());
+        setLastSeenChangeCount(changes.length);
+        localStorage.setItem("last_seen_change_count", changes.length.toString());
+      }
+    }
+  }, [changes, changes.length, latestTimestamp, notificationsEnabled, soundEnabled, lastSeenChangeCount, lastSeenLatestTimestamp]);
 
   // Apply date range filter before other filters
   const filteredChanges = useMemo(() => {
