@@ -31,9 +31,9 @@ export function Notice() {
         </span>
       </div>
 
-      <div className="w-full space-y-4">
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* PvP Section */}
-        <div className="bg-blue-900/30 border border-blue-800/50 rounded-lg p-3">
+        <div className="bg-blue-900/30 border border-blue-800/50 rounded-lg p-3 h-full">
           <div className="flex items-center gap-2 mb-2">
             <Swords className="h-4 w-4 text-blue-400" />
             <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">PvP Mode</h3>
@@ -44,7 +44,7 @@ export function Notice() {
         </div>
 
         {/* PvE Section */}
-        <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-3">
+        <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-3 h-full">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="h-4 w-4 text-green-400" />
             <h3 className="text-green-300 font-semibold text-sm uppercase tracking-wider">PvE Mode</h3>

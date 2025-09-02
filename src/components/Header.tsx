@@ -40,27 +40,28 @@ export function Header({
   return (
     <div className="">
       {/* Title Section */}
-      <div className="flex flex-col items-center space-y-6">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col items-center space-y-4">
+        <div className="flex items-center">
           <a href="/">
             <img
               src={getRandomBossImage()}
               alt="EFT Boss Spawns Logo"
-              width={300}
-              height={100}
+              width={260}
+              height={90}
+              className="max-w-[60vw] h-auto"
             />
           </a>
         </div>
 
-        {/* Links Section */}
-        <div className="flex flex-col space-y-3">
+        {/* Links + Notice Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-4xl">
           {/* Discord Link */}
           <a
             href="https://discord.gg/3dFmr5qaJK"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg 
-   hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.02]
+            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg w-full
+   hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.01]
    border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
           >
             <svg
@@ -79,7 +80,7 @@ export function Header({
               />
             </svg>
             <span className="text-sm font-medium text-gray-300 transition-colors duration-300 sm:text-base group-hover:text-purple-400">
-              Join our Discord Community
+              Join our Discord
             </span>
             <svg
               role="img"
@@ -103,13 +104,13 @@ export function Header({
             href="https://www.cultistcircle.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg
-             hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.02]
+            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg w-full
+             hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.01]
              border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
           >
             <Calculator className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
             <span className="text-sm font-medium text-gray-300 transition-colors duration-300 sm:text-base group-hover:text-purple-400">
-              Check out the Cultist Circle Calculator!
+              Cultist Circle Calc!
             </span>
             <Calculator className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:rotate-12" />
           </a>
@@ -119,43 +120,45 @@ export function Header({
             href="https://tarkov.dev"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg 
-             hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.02]
+            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg w-full
+             hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.01]
              border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
           >
             <Database className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:rotate-12" />
             <span className="text-sm font-medium text-gray-300 transition-colors duration-300 sm:text-base group-hover:text-purple-400">
-              Data provided by Tarkov.dev
+              Data - Tarkov.dev
             </span>
             <Database className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
           </a>
 
-          {/* Boss Event Notice - Toggle between BossNotice and Notice */}
-          {USE_NOTICE_COMPONENT ? (
-            <Notice />
-          ) : (
-            primaryDisplayEvent && (
-              <BossNotice
-                // Props will be adjusted in BossNotice.tsx to match this structure
-                key={primaryDisplayEvent.id} // Add key for potential re-renders if event changes
-                bossNames={primaryDisplayEvent.bossNames}
-                startDate={new Date(primaryDisplayEvent.startDate)}
-                durationSeconds={primaryDisplayEvent.durationSeconds}
-                eventTitle={primaryDisplayEvent.eventTitle}
-                eventDescription={primaryDisplayEvent.eventDescription}
-                mapName={primaryDisplayEvent.mapName}
-                mapWiki={primaryDisplayEvent.mapWiki}
-                spawnLocationsText={primaryDisplayEvent.spawnLocationsText}
-                allBossEvents={allBossEvents}
-              />
-            )
-          )}
+          {/* Boss Event Notice - spans all columns */}
+          <div className="md:col-span-3">
+            {USE_NOTICE_COMPONENT ? (
+              <Notice />
+            ) : (
+              primaryDisplayEvent && (
+                <BossNotice
+                  // Props will be adjusted in BossNotice.tsx to match this structure
+                  key={primaryDisplayEvent.id} // Add key for potential re-renders if event changes
+                  bossNames={primaryDisplayEvent.bossNames}
+                  startDate={new Date(primaryDisplayEvent.startDate)}
+                  durationSeconds={primaryDisplayEvent.durationSeconds}
+                  eventTitle={primaryDisplayEvent.eventTitle}
+                  eventDescription={primaryDisplayEvent.eventDescription}
+                  mapName={primaryDisplayEvent.mapName}
+                  mapWiki={primaryDisplayEvent.mapWiki}
+                  spawnLocationsText={primaryDisplayEvent.spawnLocationsText}
+                  allBossEvents={allBossEvents}
+                />
+              )
+            )}
+          </div>
 
           {/* Collapsible Update Message */}
           <Accordion
             type="single"
             collapsible
-            className="w-full max-w-xs mx-auto"
+            className="w-full md:col-span-3 mx-auto"
           >
             <AccordionItem value="item-1" className="border-b-0">
               <AccordionTrigger className="text-xs text-gray-500 hover:text-gray-300 justify-center py-1 font-normal hover:no-underline data-[state=open]:text-gray-300">
