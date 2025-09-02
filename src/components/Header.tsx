@@ -166,6 +166,9 @@ export function Header({
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
+                  (02/09/2025): redesign of table layout for easier reading.
+                </span>
+                <span className="block mb-1">
                   (07/08/2025): notifications fix; compare mode adds Δ column with inline bars and wider layout.
                 </span>
                 <span className="block mb-1">

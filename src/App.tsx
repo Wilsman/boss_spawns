@@ -6,7 +6,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { SpawnData, fetchAllSpawnData } from "./lib/api";
-import { DataTable } from "@/components/DataTable";
+import ModernTable from "@/components/ModernTable";
 import { Header } from "@/components/Header";
 import { FilterBar } from "@/components/FilterBar";
 import { CacheStatus } from "@/components/CacheStatus";
@@ -413,7 +413,7 @@ function MainApp() {
               onChangesUpdate={handleChangesUpdate}
             />
           ) : (
-            <DataTable
+            <ModernTable
               data={
                 mode === "compare"
                   ? { regular: regularData || [], pve: pveData || [] }

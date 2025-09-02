@@ -40,6 +40,7 @@ export function FilterBar({
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+      {/* Left: Filters */}
       <div className="flex flex-col flex-grow gap-2 sm:flex-row sm:gap-4">
         <div className="relative flex-1">
           <Map className="absolute w-4 h-4 text-gray-500 -translate-y-1/2 left-3 top-1/2" />
@@ -89,13 +90,28 @@ export function FilterBar({
         </div>
       </div>
 
-      <button
-        onClick={onExport}
-        className="hidden w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-purple-600 rounded-lg sm:flex sm:items-center sm:gap-2 hover:bg-purple-700 sm:w-auto"
-      >
-        <FileDown className="hidden w-4 h-4 sm:block" />
-        Export
-      </button>
+      {/* Right: Actions */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {(mapFilter || bossFilter || searchQuery) && (
+          <button
+            onClick={() => {
+              onMapFilterChange("");
+              onBossFilterChange("");
+              onSearchQueryChange("");
+            }}
+            className="px-3 py-2 text-sm text-gray-300 bg-gray-800 rounded-lg hover:bg-gray-700"
+          >
+            Clear
+          </button>
+        )}
+        <button
+          onClick={onExport}
+          className="hidden w-full px-4 py-2 text-sm font-medium text-white transition-colors bg-purple-600 rounded-lg sm:flex sm:items-center sm:gap-2 hover:bg-purple-700 sm:w-auto"
+        >
+          <FileDown className="hidden w-4 h-4 sm:block" />
+          Export
+        </button>
+      </div>
     </div>
   );
 }

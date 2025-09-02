@@ -28,8 +28,14 @@ export function NavBar({ items, className }: NavBarProps) {
             ? modeParam === 'regular' 
             : item.name.toLowerCase() === modeParam;
 
+          // Preserve existing filters when switching modes
+          const nextParams = new URLSearchParams(searchParams);
+          const targetMode = item.name === 'PVP' ? 'regular' : item.name.toLowerCase();
+          nextParams.set('mode', targetMode);
+          const to = `/?${nextParams.toString()}`;
+
           return (
-            <Link key={item.name} to={item.url}
+            <Link key={item.name} to={to}
               className={cn(
                 "relative cursor-pointer text-sm font-semibold px-3 sm:px-6 py-2 rounded-full transition-colors",
                 "text-foreground/80 hover:text-primary",

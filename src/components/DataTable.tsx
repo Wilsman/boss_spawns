@@ -1,5 +1,7 @@
 import { SpawnData, Boss, DataMode, Health, SpawnLocation } from "@/types";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 
 type CompareData = {
   regular: SpawnData[];
@@ -62,6 +64,47 @@ interface BossEntry {
 }
 
 export function DataTable({ data, mode, filters }: DataTableProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const isCompare = mode === "compare";
+  const urlSort = searchParams.get("sort") || (isCompare ? "delta" : "spawn");
+  const urlDir = (searchParams.get("dir") as "asc" | "desc") || "desc";
+  const [sortKey, setSortKey] = useState<string>(urlSort);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(urlDir);
+
+  const toggleSort = (key: string) => {
+    const nextDir = sortKey === key ? (sortDir === "asc" ? "desc" : "asc") : "desc";
+    setSortKey(key);
+    setSortDir(nextDir);
+    const params = new URLSearchParams(searchParams);
+    params.set("sort", key);
+    params.set("dir", nextDir);
+    setSearchParams(params);
+  };
+
+  const SortLabel = ({
+    label,
+    columnKey,
+    align = "center",
+  }: {
+    label: string;
+    columnKey: string;
+    align?: "left" | "center" | "right";
+  }) => (
+    <button
+      onClick={() => toggleSort(columnKey)}
+      className={`inline-flex items-center gap-1 text-gray-300 hover:text-white transition-colors ${
+        align === "left" ? "justify-start" : align === "right" ? "justify-end" : "justify-center"
+      } w-full`}
+    >
+      <span>{label}</span>
+      {sortKey === columnKey ? (
+        sortDir === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+      ) : (
+        <ArrowUpDown size={14} className="opacity-60" />
+      )}
+    </button>
+  );
   const normalizedData = useMemo<NormalizedData | null>(() => {
     if (!data) return null;
 
@@ -191,7 +234,10 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
             const search = filters.search.toLowerCase();
             const matchesMap = map.name.toLowerCase().includes(search);
             const matchesBoss = bossName.toLowerCase().includes(search);
-            if (!matchesMap && !matchesBoss) return;
+            const matchesLocation = bossEntry.spawnLocations?.some((loc: SpawnLocation) =>
+              loc.name.toLowerCase().includes(search)
+            );
+            if (!matchesMap && !matchesBoss && !matchesLocation) return;
           }
 
           const key = `${map.name}-${bossName}`;
@@ -306,12 +352,12 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
             <h3 className="text-lg font-bold text-white text-center px-2 capitalize bg-gray-800 py-2 rounded-lg">
               {mapName}
             </h3>
-            <div className="overflow-x-auto rounded-lg border border-gray-700 -mx-2 sm:mx-0">
+            <div className="overflow-x-auto rounded-lg border border-gray-700 shadow-sm -mx-2 sm:mx-0">
               <table className="w-full min-w-[700px]">
                 <thead className="sticky top-0 z-10">
-                  <tr className="bg-gray-800">
+                  <tr className="bg-gray-900/80 backdrop-blur supports-[backdrop-filter]:bg-gray-900/60">
                     <th className="px-4 py-2 text-left text-sm font-semibold text-gray-300 w-1/4">
-                      Boss
+                      <SortLabel label="Boss" columnKey="boss" align="left" />
                     </th>
                     {mode === "compare" ? (
                       <>
@@ -328,13 +374,13 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                     ) : (
                       <>
                         <th className="px-4 py-2 text-center text-sm font-semibold text-gray-300 w-1/6">
-                          Spawn Chance
+                          <SortLabel label="Spawn Chance" columnKey="spawn" />
                         </th>
                         <th className="px-4 py-2 text-left text-sm font-semibold text-gray-300 w-1/3">
-                          Location
+                          <SortLabel label="Location" columnKey="location" align="left" />
                         </th>
                         <th className="px-4 py-2 text-center text-sm font-semibold text-gray-300 w-1/6">
-                          Location Chance
+                          <SortLabel label="Location Chance" columnKey="locationChance" />
                         </th>
                       </>
                     )}
@@ -353,22 +399,73 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
                   )}
                   {[...items]
                     .sort((a, b) => {
-                      if (mode !== "compare") return 0;
-                      const aReg = Math.max(
-                        ...(a.locations.map((l: Location) => l.regularChance || 0))
-                      );
-                      const aPve = Math.max(
-                        ...(a.locations.map((l: Location) => l.pveChance || 0))
-                      );
-                      const bReg = Math.max(
-                        ...(b.locations.map((l: Location) => l.regularChance || 0))
-                      );
-                      const bPve = Math.max(
-                        ...(b.locations.map((l: Location) => l.pveChance || 0))
-                      );
-                      const aDiff = Math.abs(aPve - aReg);
-                      const bDiff = Math.abs(bPve - bReg);
-                      return bDiff - aDiff;
+                      if (mode === "compare") {
+                        const aReg = Math.max(
+                          ...(a.locations.map((l: Location) => l.regularChance || 0))
+                        );
+                        const aPve = Math.max(
+                          ...(a.locations.map((l: Location) => l.pveChance || 0))
+                        );
+                        const bReg = Math.max(
+                          ...(b.locations.map((l: Location) => l.regularChance || 0))
+                        );
+                        const bPve = Math.max(
+                          ...(b.locations.map((l: Location) => l.pveChance || 0))
+                        );
+                        const aDelta = aPve - aReg;
+                        const bDelta = bPve - bReg;
+
+                        let valA = 0;
+                        let valB = 0;
+                        switch (sortKey as any) {
+                          case "pvp":
+                            valA = aReg;
+                            valB = bReg;
+                            break;
+                          case "pve":
+                            valA = aPve;
+                            valB = bPve;
+                            break;
+                          case "delta":
+                            valA = aDelta;
+                            valB = bDelta;
+                            break;
+                          case "boss":
+                          default:
+                            return sortDir === "asc"
+                              ? a.boss.localeCompare(b.boss)
+                              : b.boss.localeCompare(a.boss);
+                        }
+                        const diff = valA - valB;
+                        return sortDir === "asc" ? diff : -diff;
+                      }
+
+                      // Regular/PvE modes
+                      let valA: number | string = 0;
+                      let valB: number | string = 0;
+                      switch (sortKey as any) {
+                        case "spawn":
+                          valA = a.spawnChance;
+                          valB = b.spawnChance;
+                          break;
+                        case "locationChance":
+                          valA = Math.max(...a.locations.map((l) => l.chance));
+                          valB = Math.max(...b.locations.map((l) => l.chance));
+                          break;
+                        case "location":
+                          valA = a.locations[0]?.name || "";
+                          valB = b.locations[0]?.name || "";
+                          return sortDir === "asc"
+                            ? String(valA).localeCompare(String(valB))
+                            : String(valB).localeCompare(String(valA));
+                        case "boss":
+                        default:
+                          return sortDir === "asc"
+                            ? a.boss.localeCompare(b.boss)
+                            : b.boss.localeCompare(a.boss);
+                      }
+                      const diff = Number(valA) - Number(valB);
+                      return sortDir === "asc" ? diff : -diff;
                     })
                     .map((bossGroup) => {
                     if (mode === "compare") {
