@@ -29,6 +29,9 @@ export function Notice() {
         <span className="text-xs text-purple-300 font-semibold uppercase tracking-wider">
           Boss Spawn Notice
         </span>
+        <span className="text-xs text-purple-400/70">
+          Updated: October 22, 2025
+        </span>
       </div>
 
       <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -38,8 +41,11 @@ export function Notice() {
             <Swords className="h-4 w-4 text-blue-400" />
             <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">PvP Mode</h3>
           </div>
+          <p className="text-blue-100 text-sm mb-1">
+            <span className="font-semibold text-blue-300">Cultist Priest</span> buffed to <span className="font-semibold text-blue-300">50%</span> on Customs & Shoreline
+          </p>
           <p className="text-blue-100 text-sm">
-            All bosses <span className="font-semibold text-blue-300">50%</span> on their respective maps
+            <span className="font-semibold text-blue-300">Harbinger</span> added at <span className="font-semibold text-blue-300">40%</span> on Customs, Shoreline & Woods
           </p>
         </div>
 
@@ -50,10 +56,13 @@ export function Notice() {
             <h3 className="text-green-300 font-semibold text-sm uppercase tracking-wider">PvE Mode</h3>
           </div>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">39% Goons</span> on Lighthouse
+            <span className="font-semibold text-green-300">Cultist Priest</span> buffed to <span className="font-semibold text-green-300">50%</span> on Customs & Shoreline
           </p>
-          <p className="text-xs text-green-300/70">
-            Goons Lighthouse spawn rate reduced, no new 100% boss 😖
+          <p className="text-green-100 text-sm">
+            <span className="font-semibold text-green-300">Harbinger</span> added at <span className="font-semibold text-green-300">40%</span> on Customs, Shoreline & Woods
+          </p>
+          <p className="text-green-100 text-sm mb-1">
+            <span className="font-semibold text-green-300">Glukhar 80%</span> Reserve • <span className="font-semibold text-green-300">Knight 50%</span> Lighthouse
           </p>
         </div>
       </div>
