@@ -58,7 +58,7 @@ export function Notice() {
           <p className="text-green-100 text-sm mb-1">
             <span className="font-semibold text-green-300">Cultist Priest</span> buffed to <span className="font-semibold text-green-300">50%</span> on Customs & Shoreline
           </p>
-          <p className="text-green-100 text-sm">
+          <p className="text-green-100 text-sm mb-1">
             <span className="font-semibold text-green-300">Harbinger</span> added at <span className="font-semibold text-green-300">40%</span> on Customs, Shoreline & Woods
           </p>
           <p className="text-green-100 text-sm mb-1">
