@@ -42,7 +42,7 @@ export function Notice() {
             <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">PvP Mode</h3>
           </div>
           <p className="text-blue-100 text-sm mb-1">
-            <span className="font-semibold text-blue-300">Cultist Priest</span> buffed to <span className="font-semibold text-blue-300">50%</span> on Customs & Shoreline
+            <span className="font-semibold text-blue-300">Cultist Priest</span> buffed to <span className="font-semibold text-blue-300">50%</span> on Customs & Shoreline, <span className="font-semibold text-blue-300">30%</span> on Ground Zero & Night Factory
           </p>
           <p className="text-blue-100 text-sm">
             <span className="font-semibold text-blue-300">Harbinger</span> added at <span className="font-semibold text-blue-300">40%</span> on Customs, Shoreline & Woods
@@ -56,13 +56,16 @@ export function Notice() {
             <h3 className="text-green-300 font-semibold text-sm uppercase tracking-wider">PvE Mode</h3>
           </div>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Cultist Priest</span> buffed to <span className="font-semibold text-green-300">50%</span> on Customs & Shoreline
-          </p>
-          <p className="text-green-100 text-sm mb-1">
             <span className="font-semibold text-green-300">Harbinger</span> added at <span className="font-semibold text-green-300">40%</span> on Customs, Shoreline & Woods
           </p>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Glukhar 80%</span> Reserve • <span className="font-semibold text-green-300">Knight 50%</span> Lighthouse
+            <span className="font-semibold text-green-300">Cultist Priest</span> buffed to <span className="font-semibold text-green-300">50%</span> on Customs & Shoreline, <span className="font-semibold text-green-300">30%</span> on Ground Zero & Night Factory
+          </p>
+          <p className="text-green-100 text-sm mb-1">
+            <span className="font-semibold text-green-300">Main bosses buffed to 50%+</span> across all maps
+          </p>
+          <p className="text-green-100 text-xs opacity-80">
+            Reshala, Tagilla, Sanitar, Shturman, Kollontay, Glukhar (80%), Knight, Rogue (80%), Shadow of Tagilla (100%)
           </p>
         </div>
       </div>
