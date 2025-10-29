@@ -333,7 +333,7 @@ const BossCell = ({ boss }: { boss: BossEntry }) => {
     if (boss.boss === "BEAR") return "/BEAR.webp";
     if (boss.boss === "USEC") return "/USEC.webp";
     if (boss.boss === "Labyrinthian") return "/SCAV.webp";
-    return boss.imagePortraitLink;
+    return boss.imagePortraitLink || undefined;
   };
   const imageUrl = getImageUrl(boss);
   
