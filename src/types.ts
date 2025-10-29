@@ -11,6 +11,18 @@ export interface Health {
   max: number;
 }
 
+// Define the Escort interface for boss escorts
+export interface Escort {
+  amount: {
+    count: number;
+  }[];
+  boss: {
+    name: string;
+    health?: Health[] | null;
+    imagePortraitLink?: string | null;
+  };
+}
+
 export interface Boss {
   boss: {
     name: string;
@@ -20,6 +32,7 @@ export interface Boss {
   };
   spawnLocations: SpawnLocation[];
   spawnChance: number;
+  escorts?: Escort[] | null; // Add escorts array
 }
 
 export interface SpawnData {

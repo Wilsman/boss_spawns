@@ -125,6 +125,19 @@ export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): P
                 name
                 chance
               }
+              escorts
+              {
+               amount{
+                count
+               }
+                boss{
+                  name
+                  imagePortraitLink
+                  health{
+                    max
+                  }
+                }
+              }
             }
           }
           pve: maps(gameMode: pve) {
@@ -143,6 +156,19 @@ export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): P
               spawnLocations {
                 name
                 chance
+              }
+              escorts
+              {
+               amount{
+                count
+               }
+                boss{
+                  name
+                  imagePortraitLink
+                  health{
+                    max
+                  }
+                }
               }
             }
           }

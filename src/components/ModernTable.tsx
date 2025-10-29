@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
-import { SpawnData, Boss, DataMode, Health } from "@/types";
+import { SpawnData, Boss, DataMode, Health, Escort } from "@/types";
 import {
   HoverCard,
   HoverCardContent,
@@ -31,7 +31,15 @@ function groupData<T extends Record<string, any>>(data: T[], key: keyof T): Reco
 }
 
 interface Location { name: string; chance: number; regularChance?: number; pveChance?: number; hasDifference?: boolean }
-interface BossEntry { map: string; boss: string; spawnChance: number; locations: Location[]; health: Health[] | null; imagePortraitLink: string | null }
+interface BossEntry { 
+  map: string; 
+  boss: string; 
+  spawnChance: number; 
+  locations: Location[]; 
+  health: Health[] | null; 
+  imagePortraitLink: string | null;
+  escorts: Escort[] | null;
+}
 
 export function ModernTable({ data, mode, filters }: DataTableProps) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -98,6 +106,7 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
               locations: [{ name: rMap.name, chance: 0, regularChance: r, pveChance: p, hasDifference: true }],
               health: rBoss.boss.health || null,
               imagePortraitLink: rBoss.boss.imagePortraitLink || null,
+              escorts: rBoss.escorts || null,
             });
           }
         });
@@ -137,6 +146,33 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
               locations: locs.map((l) => ({ name: l.name, chance: l.chance })),
               health: b.boss.health ?? null,
               imagePortraitLink: b.boss.imagePortraitLink ?? null,
+              escorts: b.escorts ?? null,
+            });
+          } else {
+            // Merge escorts from duplicate entries
+            const existingEscorts = existing.escorts || [];
+            const newEscorts = b.escorts || [];
+            const allEscorts = [...existingEscorts, ...newEscorts];
+            
+            // Remove duplicates by escort boss name
+            const uniqueEscorts = allEscorts.reduce((acc: Escort[], escort: Escort) => {
+              const existingIndex = acc.findIndex(e => e.boss.name === escort.boss.name);
+              if (existingIndex === -1) {
+                acc.push(escort);
+              } else {
+                // If escort already exists, update the count to the higher value
+                const existingCount = acc[existingIndex].amount[0]?.count || 0;
+                const newCount = escort.amount[0]?.count || 0;
+                if (newCount > existingCount) {
+                  acc[existingIndex] = escort;
+                }
+              }
+              return acc;
+            }, []);
+            
+            byKey.set(key, {
+              ...existing,
+              escorts: uniqueEscorts,
             });
           }
         });
@@ -290,8 +326,8 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
 }
 
 // Boss hover cell (duplicated to keep component self-contained)
-const BossCell = ({ boss }: { boss: any }) => {
-  const getImageUrl = (boss: any) => {
+const BossCell = ({ boss }: { boss: BossEntry }) => {
+  const getImageUrl = (boss: BossEntry) => {
     if (boss.boss === "Shadow of Tagilla") return "/Shadow_Tagilla_Long_crop.webp";
     if (boss.boss === "Vengeful Killa") return "/killa-portrait.webp";
     if (boss.boss === "BEAR") return "/BEAR.webp";
@@ -300,6 +336,7 @@ const BossCell = ({ boss }: { boss: any }) => {
     return boss.imagePortraitLink;
   };
   const imageUrl = getImageUrl(boss);
+  
   return (
     <HoverCard>
       <HoverCardTrigger>
@@ -312,32 +349,63 @@ const BossCell = ({ boss }: { boss: any }) => {
           </span>
         </div>
       </HoverCardTrigger>
-      <HoverCardContent align="start" className="w-[300px] bg-gray-800 border-gray-700">
-        <div className="flex flex-col gap-2">
+      <HoverCardContent align="start" className="w-[320px] bg-gray-800 border-gray-700">
+        <div className="flex flex-col gap-3">
           <h1 className="font-semibold text-gray-200">{boss.boss}</h1>
           {boss.imagePortraitLink && (
             <img src={imageUrl} alt={boss.boss} className="w-full h-32 object-cover rounded-lg" />
           )}
-          <div className="space-y-1">
-            {boss.health && (
-              <div className="text-sm text-gray-400">
-                <div className="flex justify-between">
-                  <span className="font-bold text-gray-200 mb-1">Health:</span>
-                  <span className="font-bold text-gray-200">
-                    Total: {boss.health.reduce((acc: number, part: any) => acc + part.max, 0)}
-                  </span>
-                </div>
-                <ul className="space-y-1">
-                  {boss.health.map((part: any) => (
-                    <li key={part.bodyPart} className="flex justify-between">
-                      <span className="capitalize">{part.bodyPart}</span>
-                      <span>{part.max}</span>
-                    </li>
-                  ))}
-                </ul>
+          
+          {boss.health && (
+            <div className="text-sm text-gray-400">
+              <div className="flex justify-between">
+                <span className="font-bold text-gray-200 mb-1">Health:</span>
+                <span className="font-bold text-gray-200">
+                  Total: {boss.health.reduce((acc: number, part: Health) => acc + part.max, 0)}
+                </span>
               </div>
-            )}
-          </div>
+              <ul className="space-y-1">
+                {boss.health.map((part: Health) => (
+                  <li key={part.bodyPart} className="flex justify-between">
+                    <span className="capitalize">{part.bodyPart}</span>
+                    <span>{part.max}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {boss.escorts && boss.escorts.length > 0 && (
+            <div className="text-sm text-gray-400">
+              <span className="font-bold text-gray-200 mb-2 block">Escorts:</span>
+              <div className="space-y-2">
+                {boss.escorts.map((escort: Escort, index: number) => (
+                  <div key={index} className="flex items-start justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      {escort.boss.imagePortraitLink && (
+                        <img 
+                          src={escort.boss.imagePortraitLink} 
+                          alt={escort.boss.name} 
+                          className="w-5 h-5 rounded-full object-cover" 
+                        />
+                      )}
+                      <div>
+                        <span className="text-gray-300">{escort.boss.name}</span>
+                        {escort.boss.health && (
+                          <div className="text-gray-500 text-xs">
+                            HP: {escort.boss.health.reduce((acc: number, part: Health) => acc + part.max, 0)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-gray-500">
+                      {escort.amount[0]?.count > 1 ? `×${escort.amount[0]?.count}` : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </HoverCardContent>
     </HoverCard>
