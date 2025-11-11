@@ -42,7 +42,7 @@ export function Notice() {
             <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">PvP Mode</h3>
           </div>
           <p className="text-blue-100 text-sm mb-1">
-            <span className="font-semibold text-blue-300">Knight (Goons)</span> added at <span className="font-bold text-blue-200">40%</span> on Customs, Lighthouse, Shoreline & Woods, <span className="font-bold text-blue-200">50%</span> on Lighthouse
+            <span className="font-semibold text-blue-300">Goons</span> added back at <span className="font-bold text-blue-200">40%</span> on Customs, Shoreline & Woods, <span className="font-bold text-blue-200">50%</span> on Lighthouse
           </p>
           <p className="text-blue-100 text-sm mb-1">
             <span className="font-semibold text-blue-300">Cultist Priest</span> buffed to <span className="font-bold text-blue-200">50%</span> on Shoreline, Customs, Woods, <span className="font-bold text-blue-200">30%</span> on Ground Zero (21+) & Woods (<span className="font-bold text-blue-200">25%</span>)
@@ -62,7 +62,7 @@ export function Notice() {
             <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">PvE Mode</h3>
           </div>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Knight (Goons)</span> added at <span className="font-bold text-green-200">40%</span> on Customs, Lighthouse, Shoreline & Woods, <span className="font-bold text-green-200">50%</span> on Lighthouse
+            <span className="font-semibold text-green-300">Goons</span> added back at <span className="font-bold text-green-200">40%</span> on Customs, Shoreline & Woods, <span className="font-bold text-green-200">50%</span> on Lighthouse
           </p>
           <p className="text-green-100 text-sm mb-1">
             <span className="font-semibold text-green-300">Cultist Priest</span> buffed to <span className="font-bold text-green-200">50%</span> on Shoreline, Customs, Woods, <span className="font-bold text-green-200">30%</span> on Ground Zero (21+) & Woods (<span className="font-bold text-green-200">25%</span>)
