@@ -39,19 +39,22 @@ export function Notice() {
         <div className="bg-blue-900/30 border border-blue-800/50 rounded-lg p-3 h-full">
           <div className="flex items-center gap-2 mb-2">
             <Swords className="h-4 w-4 text-blue-400" />
-            <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">PvP Mode</h3>
+            <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">
+              PvP Mode
+            </h3>
           </div>
-          <p className="text-blue-100 text-sm mb-1">
-            <span className="font-semibold text-blue-300">Goons</span> added back at <span className="font-bold text-blue-200">40%</span> on Customs, Shoreline & Woods, <span className="font-bold text-blue-200">50%</span> on Lighthouse
+          <p className="text-blue-100 text-base font-bold mb-2">
+            <span className="font-semibold text-blue-200">
+              Main bosses <span className="font-bold text-blue-100">100%</span>
+            </span>{" "}
+            on their respective maps (including Goons)
           </p>
           <p className="text-blue-100 text-sm mb-1">
-            <span className="font-semibold text-blue-300">Cultist Priest</span> buffed to <span className="font-bold text-blue-200">50%</span> on Shoreline, Customs, Woods, <span className="font-bold text-blue-200">30%</span> on Ground Zero (21+) & Woods (<span className="font-bold text-blue-200">25%</span>)
-          </p>
-          <p className="text-blue-100 text-sm mb-1">
-            <span className="font-semibold text-blue-300">Main bosses <span className="font-bold text-blue-200">50%</span></span> across all maps
-          </p>
-          <p className="text-blue-100 text-xs opacity-80">
-            Reshala, Tagilla, Sanitar, Shturman, Kollontay, Glukhar, Knight, Rogue (<span className="font-bold text-blue-200">80%</span>), Shadow of Tagilla (<span className="font-bold text-blue-200">100%</span>)
+            <span className="font-semibold text-blue-300">Cultist Priest</span>{" "}
+            buffed to <span className="font-bold text-blue-200">50%</span> on
+            Shoreline, Customs, Woods,{" "}
+            <span className="font-bold text-blue-200">30%</span> on Ground Zero
+            (21+) & Woods (<span className="font-bold text-blue-200">25%</span>)
           </p>
         </div>
 
@@ -59,19 +62,36 @@ export function Notice() {
         <div className="bg-green-900/20 border border-green-800/50 rounded-lg p-3 h-full">
           <div className="flex items-center gap-2 mb-2">
             <Shield className="h-4 w-4 text-green-400" />
-            <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">PvE Mode</h3>
+            <h3 className="text-blue-300 font-semibold text-sm uppercase tracking-wider">
+              PvE Mode
+            </h3>
           </div>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Goons</span> added back at <span className="font-bold text-green-200">40%</span> on Customs, Shoreline & Woods, <span className="font-bold text-green-200">50%</span> on Lighthouse
+            <span className="font-semibold text-green-300">Goons</span> added
+            back at <span className="font-bold text-green-200">40%</span> on
+            Customs, Shoreline & Woods,{" "}
+            <span className="font-bold text-green-200">100%</span> on Lighthouse
           </p>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Cultist Priest</span> buffed to <span className="font-bold text-green-200">50%</span> on Shoreline, Customs, Woods, <span className="font-bold text-green-200">30%</span> on Ground Zero (21+) & Woods (<span className="font-bold text-green-200">25%</span>)
+            <span className="font-semibold text-green-300">Cultist Priest</span>{" "}
+            buffed to <span className="font-bold text-green-200">50%</span> on
+            Shoreline, Customs, Woods,{" "}
+            <span className="font-bold text-green-200">30%</span> on Ground Zero
+            (21+) & Woods (<span className="font-bold text-green-200">25%</span>
+            )
           </p>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Main bosses <span className="font-bold text-green-200">50%</span></span> across all maps
+            <span className="font-semibold text-green-300">
+              Main bosses <span className="font-bold text-green-200">50%</span>
+            </span>{" "}
+            across all maps
           </p>
           <p className="text-green-100 text-xs opacity-80">
-            Reshala, Tagilla, Sanitar, Shturman, Kollontay, Glukhar (<span className="font-bold text-green-200">80%</span>), Knight, Rogue (<span className="font-bold text-green-200">80%</span>), Shadow of Tagilla (<span className="font-bold text-green-200">100%</span>)
+            Reshala, Tagilla, Sanitar, Shturman, Kollontay, Glukhar (
+            <span className="font-bold text-green-200">80%</span>), Knight,
+            Rogue (<span className="font-bold text-green-200">80%</span>),
+            Shadow of Tagilla (
+            <span className="font-bold text-green-200">100%</span>)
           </p>
         </div>
       </div>
