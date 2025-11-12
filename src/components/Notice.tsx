@@ -47,7 +47,11 @@ export function Notice() {
             <span className="font-semibold text-blue-200">
               Main bosses <span className="font-bold text-blue-100">100%</span>
             </span>{" "}
-            on their respective maps (including Goons)
+            on their respective maps
+          </p>
+          <p className="text-blue-100 text-sm mb-1">
+            <span className="font-semibold text-blue-300">Goons</span> <span className="font-bold text-blue-200">100%</span> on
+            Customs, Lighthouse, Shoreline & Woods
           </p>
           <p className="text-blue-100 text-sm mb-1">
             <span className="font-semibold text-blue-300">Cultist Priest</span>{" "}
@@ -66,11 +70,15 @@ export function Notice() {
               PvE Mode
             </h3>
           </div>
+          <p className="text-green-100 text-base font-bold mb-2">
+            <span className="font-semibold text-green-200">
+              Main bosses <span className="font-bold text-green-100">100%</span>
+            </span>{" "}
+            on their respective maps [Tagilla is 50% on Factory and Factory Night]
+          </p>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Goons</span> added
-            back at <span className="font-bold text-green-200">40%</span> on
-            Customs, Shoreline & Woods,{" "}
-            <span className="font-bold text-green-200">100%</span> on Lighthouse
+            <span className="font-semibold text-green-300">Goons</span> <span className="font-bold text-green-200">100%</span> on
+            Customs, Lighthouse, Shoreline & Woods
           </p>
           <p className="text-green-100 text-sm mb-1">
             <span className="font-semibold text-green-300">Cultist Priest</span>{" "}
@@ -79,19 +87,6 @@ export function Notice() {
             <span className="font-bold text-green-200">30%</span> on Ground Zero
             (21+) & Woods (<span className="font-bold text-green-200">25%</span>
             )
-          </p>
-          <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">
-              Main bosses <span className="font-bold text-green-200">50%</span>
-            </span>{" "}
-            across all maps
-          </p>
-          <p className="text-green-100 text-xs opacity-80">
-            Reshala, Tagilla, Sanitar, Shturman, Kollontay, Glukhar (
-            <span className="font-bold text-green-200">80%</span>), Knight,
-            Rogue (<span className="font-bold text-green-200">80%</span>),
-            Shadow of Tagilla (
-            <span className="font-bold text-green-200">100%</span>)
           </p>
         </div>
       </div>
