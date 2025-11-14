@@ -7,9 +7,12 @@ import {
 } from "@/components/ui/accordion";
 import { BossNotice } from "./BossNotice";
 import { Notice } from "./Notice";
+import { MaintenanceNotice } from "./MaintenanceNotice";
 import type { BossEventConfig } from "@/types/bossEvents";
 
-// Toggle this to switch between BossNotice and Notice components
+// Change this to "maintenance" when we need to swap out the boss notice for the maintenance message
+const NOTICE_VARIANT: "boss" | "maintenance" = "maintenance";
+// Toggle this to switch between BossNotice and Notice components when NOTICE_VARIANT === "boss"
 const USE_NOTICE_COMPONENT = true;
 
 const BOSS_IMAGES = [
@@ -133,7 +136,9 @@ export function Header({
 
           {/* Boss Event Notice - spans all columns */}
           <div className="md:col-span-3">
-            {USE_NOTICE_COMPONENT ? (
+            {NOTICE_VARIANT === "maintenance" ? (
+              <MaintenanceNotice />
+            ) : USE_NOTICE_COMPONENT ? (
               <Notice />
             ) : (
               primaryDisplayEvent && (
