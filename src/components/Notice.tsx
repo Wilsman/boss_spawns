@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Swords, Shield } from "lucide-react";
-
 export function Notice() {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -25,7 +24,7 @@ export function Notice() {
       role="status"
       aria-live="polite"
     >
-      <div className="flex flex-col items-center gap-1 mb-2">
+      <div className="flex flex-col items-center gap-1 mb-1">
         <span className="text-xs text-purple-300 font-semibold uppercase tracking-wider">
           Boss Spawn Notice
         </span>
@@ -34,7 +33,33 @@ export function Notice() {
         </span>
       </div>
 
-      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="w-full mt-1">
+        <div className="bg-gradient-to-r from-rose-900/70 via-purple-900 to-purple-700/70 border border-rose-800/60 rounded-2xl p-4 shadow-lg shadow-rose-900/40">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="flex-shrink-0">
+              <img
+                src="https://assets.tarkov.dev/tagilla-portrait.png"
+                alt="Tagilla portrait"
+                className="w-32 h-32 md:w-36 md:h-36 object-cover rounded-xl border-2 border-rose-500 shadow-xl"
+              />
+            </div>
+            <div className="flex-1 text-white">
+              <p className="text-xs text-rose-100 uppercase tracking-[0.3em] font-semibold mb-1">
+                Tagilla Update
+              </p>
+              <p className="text-xl sm:text-2xl font-black leading-tight">
+                Tagilla can also be found on Interchange in the underground carpark near the no-bag extract. [Tagilla’s hideout]
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PvP/PvE info is hidden for now, but kept in the markup for quick restoration */}
+      <div
+        className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 hidden"
+        aria-hidden="true"
+      >
         {/* PvP Section */}
         <div className="bg-blue-900/30 border border-blue-800/50 rounded-lg p-3 h-full">
           <div className="flex items-center gap-2 mb-2">
@@ -50,8 +75,9 @@ export function Notice() {
             on their respective maps
           </p>
           <p className="text-blue-100 text-sm mb-1">
-            <span className="font-semibold text-blue-300">Goons</span> <span className="font-bold text-blue-200">100%</span> on
-            Customs, Lighthouse, Shoreline & Woods
+            <span className="font-semibold text-blue-300">Goons</span>{" "}
+            <span className="font-bold text-blue-200">100%</span> on Customs,
+            Lighthouse, Shoreline & Woods
           </p>
           <p className="text-blue-100 text-sm mb-1">
             <span className="font-semibold text-blue-300">Cultist Priest</span>{" "}
@@ -74,11 +100,13 @@ export function Notice() {
             <span className="font-semibold text-green-200">
               Main bosses <span className="font-bold text-green-100">100%</span>
             </span>{" "}
-            on their respective maps [Tagilla is 50% on Factory and Factory Night]
+            on their respective maps [Tagilla is 50% on Factory and Factory
+            Night]
           </p>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Goons</span> <span className="font-bold text-green-200">100%</span> on
-            Customs, Lighthouse, Shoreline & Woods
+            <span className="font-semibold text-green-300">Goons</span>{" "}
+            <span className="font-bold text-green-200">100%</span> on Customs,
+            Lighthouse, Shoreline & Woods
           </p>
           <p className="text-green-100 text-sm mb-1">
             <span className="font-semibold text-green-300">Cultist Priest</span>{" "}

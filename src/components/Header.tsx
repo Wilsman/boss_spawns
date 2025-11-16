@@ -101,7 +101,7 @@ export function Header({
               />
             </svg>
           </a>
-          
+
           {/* Existing Cultist Circle Link */}
           <a
             href="https://www.cultistcircle.com/"
@@ -135,9 +135,12 @@ export function Header({
           </a>
 
           {/* Boss Event Notice - spans all columns */}
-          <div className="md:col-span-3">
+          <div className="md:col-span-3 space-y-3">
             {NOTICE_VARIANT === "maintenance" ? (
-              <MaintenanceNotice />
+              <>
+                <MaintenanceNotice />
+                <Notice />
+              </>
             ) : USE_NOTICE_COMPONENT ? (
               <Notice />
             ) : (
@@ -174,7 +177,8 @@ export function Header({
                   (02/09/2025): redesign of table layout for easier reading.
                 </span>
                 <span className="block mb-1">
-                  (07/08/2025): notifications fix; compare mode adds Δ column with inline bars and wider layout.
+                  (07/08/2025): notifications fix; compare mode adds Δ column
+                  with inline bars and wider layout.
                 </span>
                 <span className="block mb-1">
                   (20/05/2025): refactor: reduced API calls by combining regular
