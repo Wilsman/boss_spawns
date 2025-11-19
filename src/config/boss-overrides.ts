@@ -78,7 +78,7 @@ export const BOSS_OVERRIDES: BossOverride[] = [
   {
     mapName: "Lighthouse",
     bossName: "Zryachiy",
-    spawnChance: 0.75, // 75%
+    spawnChance: 1, // 100%
     gameMode: "both" // PVP & PvE
   },
   {
