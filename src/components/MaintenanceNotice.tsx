@@ -29,12 +29,11 @@ export function MaintenanceNotice() {
         <span className="text-xs text-amber-200 font-semibold uppercase tracking-wider">
           Maintenance Alert
         </span>
-        <span className="text-xs text-amber-200/80">Updated: November 14, 2025</span>
+        <span className="text-xs text-amber-200/80">Updated: November 19, 2025</span>
       </div>
 
       <p className="text-sm text-amber-50 leading-snug">
-        Escape from Tarkov is patching 1.0. The API will need a little time to recover once the
-        servers are back up, so please be patient while the data settles.
+        The API that we get the boss data from is still recovering. I'll update this section as soon as I have more information.
       </p>
     </div>
   );

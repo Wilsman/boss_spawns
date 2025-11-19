@@ -55,10 +55,9 @@ export function Notice() {
         </div>
       </div>
 
-      {/* PvP/PvE info is hidden for now, but kept in the markup for quick restoration */}
+      {/* PvP/PvE info */}
       <div
-        className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 hidden"
-        aria-hidden="true"
+        className="w-full grid grid-cols-1 md:grid-cols-2 gap-3 mt-4"
       >
         {/* PvP Section */}
         <div className="bg-blue-900/30 border border-blue-800/50 rounded-lg p-3 h-full">
@@ -68,23 +67,17 @@ export function Notice() {
               PvP Mode
             </h3>
           </div>
-          <p className="text-blue-100 text-base font-bold mb-2">
-            <span className="font-semibold text-blue-200">
-              Main bosses <span className="font-bold text-blue-100">100%</span>
+          <p className="text-green-100 text-base font-bold mb-2">
+            <span className="font-semibold text-green-200">
+              Main bosses <span className="font-bold text-green-100">{">"}75% [assumed]</span>
             </span>{" "}
             on their respective maps
           </p>
-          <p className="text-blue-100 text-sm mb-1">
-            <span className="font-semibold text-blue-300">Goons</span>{" "}
-            <span className="font-bold text-blue-200">100%</span> on Customs,
-            Lighthouse, Shoreline & Woods
+          <p className="text-green-100 text-sm mb-1">
+            <span className="font-semibold text-green-300">Goons might be back on their old map rotations:</span>
           </p>
-          <p className="text-blue-100 text-sm mb-1">
-            <span className="font-semibold text-blue-300">Cultist Priest</span>{" "}
-            buffed to <span className="font-bold text-blue-200">50%</span> on
-            Shoreline, Customs, Woods,{" "}
-            <span className="font-bold text-blue-200">30%</span> on Ground Zero
-            (21+) & Woods (<span className="font-bold text-blue-200">25%</span>)
+          <p className="text-green-100 text-sm mb-1">
+            <span className="text-green-100">- on Customs, Lighthouse, Shoreline & Woods</span>
           </p>
         </div>
 
@@ -98,23 +91,15 @@ export function Notice() {
           </div>
           <p className="text-green-100 text-base font-bold mb-2">
             <span className="font-semibold text-green-200">
-              Main bosses <span className="font-bold text-green-100">100%</span>
+              Main bosses <span className="font-bold text-green-100">{">"}75% [assumed]</span>
             </span>{" "}
-            on their respective maps [Tagilla is 50% on Factory and Factory
-            Night]
+            on their respective maps
           </p>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Goons</span>{" "}
-            <span className="font-bold text-green-200">100%</span> on Customs,
-            Lighthouse, Shoreline & Woods
+            <span className="font-semibold text-green-300">Goons might be back on their old map rotations:</span>
           </p>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Cultist Priest</span>{" "}
-            buffed to <span className="font-bold text-green-200">50%</span> on
-            Shoreline, Customs, Woods,{" "}
-            <span className="font-bold text-green-200">30%</span> on Ground Zero
-            (21+) & Woods (<span className="font-bold text-green-200">25%</span>
-            )
+            <span className="text-green-100">- on Customs, Lighthouse, Shoreline & Woods</span>
           </p>
         </div>
       </div>
