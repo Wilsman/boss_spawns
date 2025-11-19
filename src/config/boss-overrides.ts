@@ -54,6 +54,9 @@ export const BOSS_OVERRIDES: BossOverride[] = [
   {
     mapName: "Interchange",
     bossName: "Tagilla",
+    spawnLocations: [
+      { name: "Parking garage below Goshan store", chance: 1 },
+    ],
     spawnChance: 0.5, // 50%
     gameMode: "both" // PVP & PvE
   },
