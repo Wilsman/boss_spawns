@@ -29,7 +29,7 @@ export function Notice() {
           Boss Spawn Notice
         </span>
         <span className="text-xs text-purple-400/70">
-          Updated: November 11, 2025
+          Updated: November 19, 2025
         </span>
       </div>
 
