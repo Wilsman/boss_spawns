@@ -1,6 +1,8 @@
 import { SpawnData } from "@/types";
 import { DataChange } from "./diff";
 import tempBossDataFromFile from "./temp-bosses.json"; // Added import for temp bosses
+import { BOSS_OVERRIDES, ENABLE_OVERRIDES } from "@/config/boss-overrides";
+
 
 export type { SpawnData };
 
@@ -18,31 +20,79 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || CHANGES_API_URL;
 // Cast the imported JSON to the correct type
 const tempBossData: SpawnData[] = tempBossDataFromFile as SpawnData[];
 
-// Helper function to merge spawn data with temporary boss data
-export function mergeWithTempData(currentData: SpawnData[]): SpawnData[] {
-  if (!tempBossData || tempBossData.length === 0) {
-    return currentData;
-  }
-
-  // shallow copy maps, then bosses – avoids heavy serialisation
-  const mergedData: SpawnData[] = currentData.map((m) => ({
+// Helper function to merge spawn data with temporary boss data and apply overrides
+export function applyLocalData(currentData: SpawnData[], mode: "regular" | "pve"): SpawnData[] {
+  let mergedData: SpawnData[] = currentData.map((m) => ({
     ...m,
     bosses: [...m.bosses],
   })); // Deep copy to avoid mutating original cache/API data
 
-  tempBossData.forEach((tempMap) => {
-    const existingMap = mergedData.find(
-      (map: SpawnData) => map.name === tempMap.name
-    );
-    if (existingMap) {
-      // Map exists, merge bosses
-      // Simple concatenation for now. Consider de-duplication or more complex merging if needed.
-      existingMap.bosses = existingMap.bosses.concat(tempMap.bosses);
-    } else {
-      // Map doesn't exist, add it
-      mergedData.push(tempMap);
-    }
-  });
+  // 1. Merge temp bosses (existing logic)
+  if (tempBossData && tempBossData.length > 0) {
+    tempBossData.forEach((tempMap) => {
+      const existingMap = mergedData.find(
+        (map: SpawnData) => map.name === tempMap.name
+      );
+      if (existingMap) {
+        // Map exists, merge bosses
+        existingMap.bosses = existingMap.bosses.concat(tempMap.bosses);
+      } else {
+        // Map doesn't exist, add it
+        mergedData.push(tempMap);
+      }
+    });
+  }
+
+  // 2. Apply config overrides
+  if (ENABLE_OVERRIDES && BOSS_OVERRIDES.length > 0) {
+    BOSS_OVERRIDES.forEach((override) => {
+      // Check if override applies to this game mode
+      const overrideMode = override.gameMode || "both";
+      if (overrideMode !== "both" && overrideMode !== mode) {
+        return;
+      }
+
+      // Normalize mapName to array
+      const mapNames = Array.isArray(override.mapName)
+        ? override.mapName
+        : [override.mapName];
+
+      mapNames.forEach((targetMapName) => {
+        let mapData = mergedData.find((m) => m.name === targetMapName);
+
+        if (!mapData) {
+          // Map doesn't exist, create it
+          mapData = {
+            name: targetMapName,
+            bosses: [],
+          };
+          mergedData.push(mapData);
+        }
+
+        const bossEntry = mapData.bosses.find(
+          (b) => b.boss.name === override.bossName
+        );
+
+        if (bossEntry) {
+          // Update existing boss
+          bossEntry.spawnChance = override.spawnChance;
+          if (override.spawnLocations) {
+            bossEntry.spawnLocations = override.spawnLocations;
+          }
+        } else {
+          // Add new boss entry (minimal)
+          mapData!.bosses.push({
+            boss: {
+              name: override.bossName,
+              // Add placeholders if needed, or rely on optional types
+            },
+            spawnChance: override.spawnChance,
+            spawnLocations: override.spawnLocations || [],
+          });
+        }
+      });
+    });
+  }
 
   return mergedData;
 }
@@ -82,8 +132,8 @@ export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): P
         // Return cached data only if it's less than 5 minutes old
         if (data?.regular && data?.pve && cacheAge < FIVE_MINUTES) {
           return {
-            regular: mergeWithTempData(data.regular),
-            pve: mergeWithTempData(data.pve),
+            regular: applyLocalData(data.regular, "regular"),
+            pve: applyLocalData(data.pve, "pve"),
           };
         }
       } catch (error) {
@@ -188,8 +238,8 @@ export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): P
         if (data?.regular && data?.pve) {
           console.log("Using cached data");
           return {
-            regular: mergeWithTempData(data.regular),
-            pve: mergeWithTempData(data.pve),
+            regular: applyLocalData(data.regular, "regular"),
+            pve: applyLocalData(data.pve, "pve"),
           };
         }
       } catch (error) {
@@ -217,8 +267,8 @@ export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): P
   const pveData = processMaps(result.data.pve || []);
 
   const finalData = {
-    regular: mergeWithTempData(regularData),
-    pve: mergeWithTempData(pveData),
+    regular: applyLocalData(regularData, "regular"),
+    pve: applyLocalData(pveData, "pve"),
   };
 
   // Update cache with transformed data

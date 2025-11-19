@@ -29,26 +29,37 @@ export function Notice() {
           Boss Spawn Notice
         </span>
         <span className="text-xs text-purple-400/70">
-          Updated: November 19, 2025
+          Updated: November 20, 2025
         </span>
       </div>
 
       <div className="w-full mt-1">
         <div className="bg-gradient-to-r from-rose-900/70 via-purple-900 to-purple-700/70 border border-rose-800/60 rounded-2xl p-4 shadow-lg shadow-rose-900/40">
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 relative">
               <img
                 src="https://assets.tarkov.dev/tagilla-portrait.png"
                 alt="Tagilla portrait"
                 className="w-32 h-32 md:w-36 md:h-36 object-cover rounded-xl border-2 border-rose-500 shadow-xl"
               />
+              <div className="absolute -top-2 -right-2 bg-rose-600 text-white text-xs font-bold px-2 py-1 rounded-full border border-rose-400 shadow-lg md:hidden">
+                50% Spawn
+              </div>
             </div>
             <div className="flex-1 text-white">
-              <p className="text-xs text-rose-100 uppercase tracking-[0.3em] font-semibold mb-1">
-                Tagilla Update
+              <div className="flex items-center gap-3 mb-1">
+                <p className="text-xs text-rose-100 uppercase tracking-[0.3em] font-semibold">
+                  Tagilla Update
+                </p>
+                <span className="hidden md:inline-block bg-rose-600/90 text-white text-xs font-bold px-2 py-0.5 rounded border border-rose-400/50 shadow-sm">
+                  50% Spawn Rate
+                </span>
+              </div>
+              <p className="text-xl sm:text-3xl font-black leading-tight mb-2">
+                Tagilla on Interchange
               </p>
-              <p className="text-xl sm:text-2xl font-black leading-tight">
-                Tagilla can also be found on Interchange in the underground carpark near the no-bag extract. [Tagilla’s hideout]
+              <p className="text-sm sm:text-base text-rose-100/90 leading-relaxed font-medium">
+                Found in the underground carpark near the no-bag extract. <span className="opacity-75">[Tagilla’s hideout]</span>
               </p>
             </div>
           </div>
@@ -74,7 +85,7 @@ export function Notice() {
             on their respective maps
           </p>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Goons might be back on their old map rotations:</span>
+            <span className="font-semibold text-green-300">Goons 40%:</span>
           </p>
           <p className="text-green-100 text-sm mb-1">
             <span className="text-green-100">- on Customs, Lighthouse, Shoreline & Woods</span>
@@ -96,7 +107,7 @@ export function Notice() {
             on their respective maps
           </p>
           <p className="text-green-100 text-sm mb-1">
-            <span className="font-semibold text-green-300">Goons might be back on their old map rotations:</span>
+            <span className="font-semibold text-green-300">Goons 40%:</span>
           </p>
           <p className="text-green-100 text-sm mb-1">
             <span className="text-green-100">- on Customs, Lighthouse, Shoreline & Woods</span>

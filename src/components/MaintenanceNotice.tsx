@@ -27,13 +27,16 @@ export function MaintenanceNotice() {
     >
       <div className="flex flex-col items-center gap-1 mb-2">
         <span className="text-xs text-amber-200 font-semibold uppercase tracking-wider">
-          Maintenance Alert
+          Boss Spawn Data - Updated
         </span>
-        <span className="text-xs text-amber-200/80">Updated: November 19, 2025</span>
+        <span className="text-xs text-amber-200/80">Updated: November 20, 2025</span>
       </div>
 
       <p className="text-sm text-amber-50 leading-snug">
-        The API that we get the boss data from is still recovering. I'll update this section as soon as I have more information.
+        {/* link on "tarkov-changes" https://x.com/LogicaISoIution/status/1991226574792757436?s=20 */}
+        We have setup a temparay override with the lastest boss spawn data provided by <a href="https://x.com/LogicaISoIution/status/1991226574792757436?s=20" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">tarkov-changes</a> until the API is back online. 
+        {/* boss data last updated: 20/11/2025 */}
+        <p className="text-xs text-amber-200/80">Boss data last updated: November 20, 2025</p>
       </p>
     </div>
   );
