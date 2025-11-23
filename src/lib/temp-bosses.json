@@ -25,5 +25,35 @@
         "spawnChance": 1
       }
     ]
+  },
+  {
+    "name": "Terminal",
+    "bosses": [
+      {
+        "boss": {
+          "name": "bossbully",
+          "imagePortraitLink": "/bully.webp"
+        },
+        "spawnLocations": [
+          {
+            "name": "66",
+            "chance": 1
+          }
+        ],
+        "spawnChance": 1,
+        "escorts": [
+          {
+            "amount": [
+              {
+                "count": 3
+              }
+            ],
+            "boss": {
+              "name": "followerbully"
+            }
+          }
+        ]
+      }
+    ]
   }
 ]
