@@ -109,9 +109,15 @@ export const BOSS_OVERRIDES: BossOverride[] = [
     gameMode: "both"
   },
   {
-    mapName: ["Woods", "Customs", "Shoreline"],
+    mapName: ["Customs", "Shoreline"],
     bossName: "Cultist Priest",
     spawnChance: 0.2, // 20%
     gameMode: "both"
-  }
+  },
+  {
+    mapName: ["Woods"],
+    bossName: "Cultist Priest",
+    spawnChance: 0.25, // 25%
+    gameMode: "both"
+  },
 ];
