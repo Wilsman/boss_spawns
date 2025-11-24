@@ -27,6 +27,9 @@ type DateRange = "all" | "24h" | "7d" | "30d";
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Check if we're in development mode
+const isDev = import.meta.env.DEV;
+
 export function ChangesTable({
   changes = [],
   filters,
@@ -577,29 +580,31 @@ export function ChangesTable({
               <BellPlus className="w-4 h-4 text-gray-400" />
             )}
           </button>
-          <button
-            onClick={() => {
-              if (Notification.permission === "granted") {
-                new Notification("Test Notification", {
-                  body: "This is a test notification for developers",
-                  icon: "/favicon.ico",
-                });
-              } else {
-                Notification.requestPermission().then((permission) => {
-                  if (permission === "granted") {
-                    new Notification("Test Notification", {
-                      body: "This is a test notification for developers",
-                      icon: "/favicon.ico",
-                    });
-                  }
-                });
-              }
-            }}
-            className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 ml-2"
-            title="Test notification (for developers)"
-          >
-            Test
-          </button>
+          {isDev && (
+            <button
+              onClick={() => {
+                if (Notification.permission === "granted") {
+                  new Notification("Test Notification", {
+                    body: "This is a test notification for developers",
+                    icon: "/favicon.ico",
+                  });
+                } else {
+                  Notification.requestPermission().then((permission) => {
+                    if (permission === "granted") {
+                      new Notification("Test Notification", {
+                        body: "This is a test notification for developers",
+                        icon: "/favicon.ico",
+                      });
+                    }
+                  });
+                }
+              }}
+              className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 ml-2"
+              title="Test notification (for developers)"
+            >
+              Test
+            </button>
+          )}
         </div>
       </div>
     );
@@ -936,33 +941,35 @@ export function ChangesTable({
               </svg>
             </button>
           )}
-          <button
-            onClick={() => {
-              // Play the sound notification
-              testSound();
+          {isDev && (
+            <button
+              onClick={() => {
+                // Play the sound notification
+                testSound();
 
-              // Also show a browser notification if permission is granted
-              if (Notification.permission === "granted") {
-                new Notification("Test Notification", {
-                  body: "Parmesan is a great cheese",
-                  icon: "/favicon.ico",
-                });
-              } else {
-                Notification.requestPermission().then((permission) => {
-                  if (permission === "granted") {
-                    new Notification("Test Notification", {
-                      body: "Parmesan is a bad cheese",
-                      icon: "/favicon.ico",
-                    });
-                  }
-                });
-              }
-            }}
-            className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 ml-2"
-            title="Test notification (for developers)"
-          >
-            Test
-          </button>
+                // Also show a browser notification if permission is granted
+                if (Notification.permission === "granted") {
+                  new Notification("Test Notification", {
+                    body: "Parmesan is a great cheese",
+                    icon: "/favicon.ico",
+                  });
+                } else {
+                  Notification.requestPermission().then((permission) => {
+                    if (permission === "granted") {
+                      new Notification("Test Notification", {
+                        body: "Parmesan is a bad cheese",
+                        icon: "/favicon.ico",
+                      });
+                    }
+                  });
+                }
+              }}
+              className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 ml-2"
+              title="Test notification (for developers)"
+            >
+              Test
+            </button>
+          )}
         </div>
       </div>
 

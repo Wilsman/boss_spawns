@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -19,7 +19,6 @@ import { Swords, Crosshair, Scale, History } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { PatchToast } from "@/components/patch-toast";
 import type { DataMode } from "@/types";
-import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 import { BossEventConfig } from "@/types/bossEvents";
 import bossEvents from "@/config/bossEvents";
 import { About, Privacy } from "@/pages";
@@ -33,6 +32,7 @@ function MainApp() {
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
   const [pveData, setPveData] = useState<SpawnData[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false); // For background refresh indicator
   const [changes, setChanges] = useState<DataChange[]>([]);
   const [fatalError, setFatalError] = useState(false);
 
@@ -51,6 +51,10 @@ function MainApp() {
   const setBossFilter = (v: string) => updateParam("boss", v);
   const setSearchQuery = (v: string) => updateParam("search", v);
 
+  // Use refs to track data existence without causing re-renders
+  const hasDataRef = useRef(false);
+  const hasChangesRef = useRef(false);
+
   const loadData = useCallback(
     async (
       gameMode: "regular" | "pve" | "both" = "both",
@@ -58,7 +62,14 @@ function MainApp() {
     ) => {
       if (fatalError) return; // 🚫 prevent retry loop
 
-      setLoading(true);
+      // Only show full loading state on initial load (no data yet)
+      // For background refreshes, show subtle refreshing indicator
+      if (hasDataRef.current) {
+        setIsRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
       try {
         const { regular, pve } = await fetchAllSpawnData({
           forceRefresh: options?.forceRefresh,
@@ -70,11 +81,13 @@ function MainApp() {
         if (gameMode === "pve" || gameMode === "both") {
           setPveData(pve);
         }
+        hasDataRef.current = true; // Mark that we have data now
       } catch (error) {
         console.error("Failed to fetch data:", error);
         setFatalError(true); // ☠️ block retries
       } finally {
         setLoading(false);
+        setIsRefreshing(false);
       }
     },
     [fatalError]
@@ -177,29 +190,43 @@ function MainApp() {
   // Single effect for loading changes data when mode switches to changes
   useEffect(() => {
     if (mode === "changes") {
-      setLoading(true);
+      // Only show full loading on initial load, use refreshing indicator for subsequent loads
+      if (hasChangesRef.current) {
+        setIsRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       getStoredChanges()
         .then((changesData) => {
           setChanges(changesData);
+          hasChangesRef.current = true;
         })
         .catch((error) => {
           console.error("Failed to fetch changes:", error);
         })
         .finally(() => {
           setLoading(false);
+          setIsRefreshing(false);
         });
     }
   }, [mode]);
 
   const handleChangesUpdate = useCallback(async () => {
     try {
-      setLoading(true);
+      // Always use refreshing indicator for manual updates (user already has data)
+      if (hasChangesRef.current) {
+        setIsRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       const data = await getStoredChanges();
       setChanges(data);
+      hasChangesRef.current = true;
     } catch (error) {
       console.error("Failed to update changes:", error);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -450,12 +477,6 @@ function MainApp() {
           allBossEvents={CURRENT_BOSS_CONFIGS}
         />
 
-        <div className="flex justify-center">
-          <CacheStatus
-            onExpired={() => loadData("both", { forceRefresh: true })}
-          />
-        </div>
-
         <NavBar
           items={[
             { name: "PVP", url: "/?mode=regular", icon: Swords },
@@ -464,30 +485,6 @@ function MainApp() {
             { name: "Changes", url: "/?mode=changes", icon: History },
           ]}
         />
-        <Alert
-          variant="default"
-          className="w-full max-w-3xl mx-auto bg-gradient-to-r from-yellow-400/70 to-orange-500/70 border border-yellow-500/30 rounded-md px-2.5 py-1.5 flex items-center justify-center shadow-sm text-xs text-orange-950 tracking-wide"
-        >
-          <div className="flex flex-col w-full">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-green-700 text-xs">✅</span>
-              <AlertTitle className="font-bold text-xs m-0 p-0">
-                Completed
-              </AlertTitle>
-              <span className="ml-auto text-xs text-orange-900">
-                📅 <span className="italic">May 14, 2025</span>
-              </span>
-            </div>
-            <AlertDescription className="text-xs mt-0.5">
-              Removed silent walking for <b>BirdEye</b>, <b>Shturman</b>,{" "}
-              <b>Partizan</b>, and <b>Cultists</b>. They should now walk about{" "}
-              <b>20–35% quieter</b> than the rest.
-            </AlertDescription>
-            <div className="text-xs text-right italic text-orange-900 text-[10px] mt-0.5">
-              — YOWA, Lead of Game Design, Battlestate Games
-            </div>
-          </div>
-        </Alert>
 
         <div className="p-2 rounded-lg bg-black/30">
           <FilterBar
@@ -503,6 +500,14 @@ function MainApp() {
         </div>
 
         <div className="flex flex-col gap-4">
+          {/* Cache status / refresh indicator - positioned near the data */}
+          <div className="flex justify-center">
+            <CacheStatus
+              onExpired={() => loadData("both", { forceRefresh: true })}
+              isRefreshing={isRefreshing}
+            />
+          </div>
+
           {loading ? (
             <div className="space-y-6">
               {/* Loading spinner with context */}

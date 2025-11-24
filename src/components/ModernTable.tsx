@@ -290,28 +290,58 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
                       const top = locs.slice(0, 4);
                       const more = locs.length - top.length;
                       return (
-                        <div key={row.boss} className="grid grid-cols-12 gap-3 items-center px-3 py-3 hover:bg-gray-800/30 rounded-md">
-                          <div className="col-span-12 sm:col-span-5"><BossCell boss={row} /></div>
+                        <div
+                          key={row.boss}
+                          className="grid grid-cols-12 gap-3 items-center px-3 py-3 hover:bg-gray-800/30 rounded-md"
+                        >
+                          <div className="col-span-12 sm:col-span-5">
+                            <BossCell boss={row} />
+                          </div>
                           <div className="col-span-6 sm:col-span-3">
                             <div className="relative h-5 rounded bg-slate-900/40">
-                              <div className="absolute left-0 top-0 h-full bg-slate-400/50" style={{ width: `${Math.max(0, Math.min(100, row.spawnChance * 100))}%` }} />
-                              <div className="absolute inset-0 flex items-center justify-center text-slate-100 text-sm">{(row.spawnChance * 100).toFixed(0)}%</div>
+                              <div
+                                className="absolute left-0 top-0 h-full bg-slate-400/50"
+                                style={{
+                                  width: `${Math.max(
+                                    0,
+                                    Math.min(100, row.spawnChance * 100)
+                                  )}%`,
+                                }}
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center text-slate-100 text-sm">
+                                {(row.spawnChance * 100).toFixed(0)}%
+                              </div>
                             </div>
                           </div>
                           <div className="col-span-6 sm:col-span-4 flex flex-wrap gap-1">
                             {top.length === 0 ? (
-                              <span className="italic text-gray-500">(No specific location)</span>
+                              <span className="italic text-gray-500">
+                                (No specific location)
+                              </span>
                             ) : (
-                              top.map((l) => (
-                                <span key={l.name} className={`px-2 py-1 rounded bg-slate-800/70 ring-1 ring-slate-700/50 text-slate-100 ${getLocationClasses(l.name, l.chance)}`}>
+                              top.map((l, idx) => (
+                                <span
+                                  key={`${l.name}-${idx}`}
+                                  className={`px-2 py-1 rounded bg-slate-800/70 ring-1 ring-slate-700/50 text-slate-100 ${getLocationClasses(
+                                    l.name,
+                                    l.chance
+                                  )}`}
+                                >
                                   {l.name}
-                                  <span className="ml-1 text-gray-400">{l.chance > 0 ? `${(l.chance * 100).toFixed(0)}%` : '-'}</span>
+                                  <span className="ml-1 text-gray-400">
+                                    {l.chance > 0
+                                      ? `${(l.chance * 100).toFixed(0)}%`
+                                      : "-"}
+                                  </span>
                                 </span>
                               ))
                             )}
-                            {more > 0 && <span className="px-2 py-1 rounded bg-slate-800/70 ring-1 ring-slate-700/50 text-gray-300">+{more} more</span>}
+                            {more > 0 && (
+                              <span className="px-2 py-1 rounded bg-slate-800/70 ring-1 ring-slate-700/50 text-gray-300">
+                                +{more} more
+                              </span>
+                            )}
                           </div>
-                          
                         </div>
                       );
                     })}

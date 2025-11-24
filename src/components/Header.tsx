@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import { Calculator, Database } from "lucide-react";
 import {
   Accordion,
@@ -36,10 +37,13 @@ interface HeaderProps {
   allBossEvents?: BossEventConfig[];
 }
 
-export function Header({
+export const Header = memo(function Header({
   primaryDisplayEvent,
   allBossEvents = [],
 }: HeaderProps) {
+  // Memoize the random image so it doesn't change on every render
+  const bossImage = useMemo(() => getRandomBossImage(), []);
+
   return (
     <div className="">
       {/* Title Section */}
@@ -47,7 +51,7 @@ export function Header({
         <div className="flex items-center">
           <a href="/">
             <img
-              src={getRandomBossImage()}
+              src={bossImage}
               alt="EFT Boss Spawns Logo"
               width={260}
               height={90}
@@ -206,4 +210,4 @@ export function Header({
       </div>
     </div>
   );
-}
+});
