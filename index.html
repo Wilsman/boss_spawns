@@ -5,18 +5,39 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Tarkov Boss Spawn Chances - Track boss spawn chances in Escape from Tarkov" />
-    <meta name="keywords" content="tarkov, boss, spawns, changes, spawn chances, chance, spawn chance, locations, escape from tarkov, eft, wilsman77" />
+    <meta name="description" content="Track real-time boss spawn chances in Escape from Tarkov. View spawn rates for Reshala, Killa, Glukhar, Shturman, Tagilla, Kaban, The Goons and more across all maps in PVP and PVE modes." />
+    <meta name="keywords" content="tarkov, boss, spawns, changes, spawn chances, chance, spawn chance, locations, escape from tarkov, eft, reshala, killa, glukhar, shturman, tagilla, kaban, goons, sanitar, zryachiy, kollontay, pvp, pve" />
     <!-- og image using public\eftboss.webp -->
     <meta property="og:image" content="https://eftboss.com/eftboss.webp" />
-    <meta property="og:title" content="Tarkov Boss Spawns" />
-    <meta property="og:description" content="Track boss spawn chances in Escape from Tarkov" />
+    <meta property="og:title" content="Tarkov Boss Spawns - Real-Time Spawn Tracking" />
+    <meta property="og:description" content="Track real-time boss spawn chances in Escape from Tarkov. View spawn rates for all bosses across every map." />
     <meta property="og:url" content="https://eftboss.com/" />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Tarkov Boss Spawn Chances" />
-    <title>Tarkov Boss Spawns</title>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4028411901202065"
-        crossorigin="anonymous"></script>
+    <meta property="og:site_name" content="EFT Boss Spawns" />
+    <title>Tarkov Boss Spawns - Real-Time Boss Spawn Tracking | EFT</title>
+    
+    <!-- Delay AdSense loading until page content is ready -->
+    <script>
+        // Load AdSense after DOM is ready and content exists
+        function loadAdSense() {
+            if (document.querySelector('[data-content-loaded="true"]') || document.readyState === 'complete') {
+                var script = document.createElement('script');
+                script.async = true;
+                script.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4028411901202065';
+                script.crossOrigin = 'anonymous';
+                document.head.appendChild(script);
+            }
+        }
+        // Wait for content to be ready
+        if (document.readyState === 'complete') {
+            setTimeout(loadAdSense, 1000);
+        } else {
+            window.addEventListener('load', function() {
+                setTimeout(loadAdSense, 1000);
+            });
+        }
+    </script>
+    
     <script data-name="BMC-Widget" 
             data-cfasync="false" 
             src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" 
@@ -31,6 +52,29 @@
 </head>
 
 <body>
+    <!-- Noscript fallback content for SEO and AdSense compliance -->
+    <noscript>
+        <div style="padding: 20px; max-width: 800px; margin: 0 auto; font-family: system-ui, sans-serif;">
+            <h1>EFT Boss Spawns - Tarkov Boss Spawn Tracker</h1>
+            <p>Track real-time boss spawn chances in Escape from Tarkov. This tool helps players plan their raids by showing current spawn rates for all bosses across every map.</p>
+            <h2>Featured Bosses</h2>
+            <ul>
+                <li><strong>Reshala</strong> - Customs (Dorms, Gas Station, Stronghold)</li>
+                <li><strong>Killa</strong> - Interchange (Mall)</li>
+                <li><strong>Glukhar</strong> - Reserve</li>
+                <li><strong>Shturman</strong> - Woods (Sawmill)</li>
+                <li><strong>Sanitar</strong> - Shoreline (Resort, Pier)</li>
+                <li><strong>Tagilla</strong> - Factory, Interchange</li>
+                <li><strong>Kaban</strong> - Streets of Tarkov</li>
+                <li><strong>The Goons</strong> - Roaming (Customs, Woods, Shoreline, Lighthouse)</li>
+                <li><strong>Zryachiy</strong> - Lighthouse Island</li>
+                <li><strong>Kollontay</strong> - Streets, Ground Zero</li>
+            </ul>
+            <p>Please enable JavaScript to use the interactive boss spawn tracker.</p>
+            <p><a href="/about">About</a> | <a href="/privacy">Privacy Policy</a></p>
+        </div>
+    </noscript>
+    
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
 </body>

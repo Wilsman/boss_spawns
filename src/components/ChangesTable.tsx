@@ -39,9 +39,11 @@ export function ChangesTable({
   const [modeFilter, setModeFilter] = useState<string>(""); // Add mode filter state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
-    return localStorage.getItem("notifications_enabled") === "true";
-  });
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(
+    () => {
+      return localStorage.getItem("notifications_enabled") === "true";
+    }
+  );
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
     return localStorage.getItem("sound_enabled") === "true";
   });
@@ -57,9 +59,10 @@ export function ChangesTable({
     return parseInt(localStorage.getItem("last_seen_change_count") || "0", 10);
   });
   // Track the latest seen change timestamp to avoid false positives on reloads/tab switches
-  const [lastSeenLatestTimestamp, setLastSeenLatestTimestamp] = useState<number>(() => {
-    return parseInt(localStorage.getItem("last_seen_latest_ts") || "0", 10);
-  });
+  const [lastSeenLatestTimestamp, setLastSeenLatestTimestamp] =
+    useState<number>(() => {
+      return parseInt(localStorage.getItem("last_seen_latest_ts") || "0", 10);
+    });
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(() => {
     return parseInt(
       localStorage.getItem("changes_timestamp") || Date.now().toString(),
@@ -81,7 +84,9 @@ export function ChangesTable({
 
   // Compute the latest timestamp in the current changes list
   const latestTimestamp = useMemo(() => {
-    return changes && changes.length ? Math.max(...changes.map((c) => c.timestamp)) : 0;
+    return changes && changes.length
+      ? Math.max(...changes.map((c) => c.timestamp))
+      : 0;
   }, [changes]);
 
   // Track last page visibility change to suppress notifications right after switching tabs
@@ -91,7 +96,8 @@ export function ChangesTable({
       lastVisibilityChangeRef.current = Date.now();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", onVisibilityChange);
   }, []);
 
   // Toggle auto-refresh
@@ -100,9 +106,9 @@ export function ChangesTable({
     setAutoRefreshEnabled(newState);
     localStorage.setItem("auto_refresh_enabled", newState.toString());
   }, [autoRefreshEnabled]);
-  
+
   // Using fixed 5-minute interval, no need for change handler
-  
+
   const toggleNotifications = useCallback(async () => {
     if (notificationsEnabled) {
       // Turn off notifications
@@ -113,7 +119,7 @@ export function ChangesTable({
       localStorage.setItem("sound_enabled", "false");
       return;
     }
-    
+
     // Request permission if not granted
     if (Notification.permission !== "granted") {
       const permission = await Notification.requestPermission();
@@ -122,7 +128,7 @@ export function ChangesTable({
         return;
       }
     }
-    
+
     // Enable notifications and store current change count
     setNotificationsEnabled(true);
     localStorage.setItem("notifications_enabled", "true");
@@ -143,12 +149,16 @@ export function ChangesTable({
     localStorage.setItem("sound_enabled", newSoundState.toString());
     // No longer automatically play sound when toggling
   }, [soundEnabled]);
-  
+
   // Test sound function
   const testSound = useCallback(() => {
     if (notificationSound.current) {
       notificationSound.current.currentTime = 0;
-      notificationSound.current.play().catch(err => console.error("Error playing notification sound:", err));
+      notificationSound.current
+        .play()
+        .catch((err) =>
+          console.error("Error playing notification sound:", err)
+        );
     }
   }, []);
 
@@ -181,11 +191,11 @@ export function ChangesTable({
       return () => clearInterval(interval);
     }
   }, [nextRefreshAllowed, canRefresh]);
-  
+
   // Auto-refresh effect
   useEffect(() => {
     if (!autoRefreshEnabled || !canRefresh) return;
-    
+
     const interval = setInterval(() => {
       if (canRefresh && !isRefreshing) {
         handleManualRefresh();
@@ -195,7 +205,7 @@ export function ChangesTable({
         localStorage.setItem("changes_timestamp", currentTime.toString());
       }
     }, autoRefreshInterval);
-    
+
     return () => clearInterval(interval);
   }, [autoRefreshEnabled, canRefresh, isRefreshing, autoRefreshInterval]);
 
@@ -219,7 +229,10 @@ export function ChangesTable({
       // Sync counters silently to avoid initial spam
       if (changes.length !== lastSeenChangeCount) {
         setLastSeenChangeCount(changes.length);
-        localStorage.setItem("last_seen_change_count", changes.length.toString());
+        localStorage.setItem(
+          "last_seen_change_count",
+          changes.length.toString()
+        );
       }
       if (latestTimestamp && latestTimestamp !== lastSeenLatestTimestamp) {
         setLastSeenLatestTimestamp(latestTimestamp);
@@ -230,7 +243,10 @@ export function ChangesTable({
 
     // Suppress right after tab becomes visible to avoid false positives on refocus
     const now = Date.now();
-    if (document.visibilityState === 'visible' && now - lastVisibilityChangeRef.current < 1500) {
+    if (
+      document.visibilityState === "visible" &&
+      now - lastVisibilityChangeRef.current < 1500
+    ) {
       // Sync silently
       if (latestTimestamp > lastSeenLatestTimestamp) {
         setLastSeenLatestTimestamp(latestTimestamp);
@@ -238,20 +254,27 @@ export function ChangesTable({
       }
       if (changes.length !== lastSeenChangeCount) {
         setLastSeenChangeCount(changes.length);
-        localStorage.setItem("last_seen_change_count", changes.length.toString());
+        localStorage.setItem(
+          "last_seen_change_count",
+          changes.length.toString()
+        );
       }
       return;
     }
 
     // Only notify when we see changes newer than the last seen timestamp
     if (latestTimestamp > lastSeenLatestTimestamp) {
-      const newChangesCount = changes.filter(c => c.timestamp > lastSeenLatestTimestamp).length;
+      const newChangesCount = changes.filter(
+        (c) => c.timestamp > lastSeenLatestTimestamp
+      ).length;
 
       if (newChangesCount > 0) {
         // Browser notification
         if (Notification.permission === "granted") {
           new Notification("New Changes Detected", {
-            body: `${newChangesCount} new change${newChangesCount !== 1 ? 's' : ''} detected.`,
+            body: `${newChangesCount} new change${
+              newChangesCount !== 1 ? "s" : ""
+            } detected.`,
             icon: "/favicon.ico",
           });
         }
@@ -268,10 +291,21 @@ export function ChangesTable({
         setLastSeenLatestTimestamp(latestTimestamp);
         localStorage.setItem("last_seen_latest_ts", latestTimestamp.toString());
         setLastSeenChangeCount(changes.length);
-        localStorage.setItem("last_seen_change_count", changes.length.toString());
+        localStorage.setItem(
+          "last_seen_change_count",
+          changes.length.toString()
+        );
       }
     }
-  }, [changes, changes.length, latestTimestamp, notificationsEnabled, soundEnabled, lastSeenChangeCount, lastSeenLatestTimestamp]);
+  }, [
+    changes,
+    changes.length,
+    latestTimestamp,
+    notificationsEnabled,
+    soundEnabled,
+    lastSeenChangeCount,
+    lastSeenLatestTimestamp,
+  ]);
 
   // Apply date range filter before other filters
   const filteredChanges = useMemo(() => {
@@ -297,7 +331,10 @@ export function ChangesTable({
       }
 
       // Apply mode filter
-      if (modeFilter && change.gameMode.toLowerCase() !== modeFilter.toLowerCase()) {
+      if (
+        modeFilter &&
+        change.gameMode.toLowerCase() !== modeFilter.toLowerCase()
+      ) {
         return false;
       }
 
@@ -426,7 +463,8 @@ export function ChangesTable({
   function renderTable(changes: DataChange[]) {
     if (!changes.length) {
       // Check if we have filters applied
-      const hasFilters = filters.map || filters.boss || filters.search || modeFilter;
+      const hasFilters =
+        filters.map || filters.boss || filters.search || modeFilter;
       const message = hasFilters
         ? "No changes match your current filters"
         : "No changes have been detected yet";
@@ -520,12 +558,18 @@ export function ChangesTable({
         </div>
         <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
           <span className="text-sm text-gray-400">
-            {notificationsEnabled ? "Notifications enabled" : "Get notified of changes"}
+            {notificationsEnabled
+              ? "Notifications enabled"
+              : "Get notified of changes"}
           </span>
           <button
             onClick={toggleNotifications}
             className="p-1 rounded-full hover:bg-gray-700/50 transition-colors"
-            title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
+            title={
+              notificationsEnabled
+                ? "Disable notifications"
+                : "Enable notifications"
+            }
           >
             {notificationsEnabled ? (
               <BellOff className="w-4 h-4 text-purple-400" />
@@ -538,14 +582,14 @@ export function ChangesTable({
               if (Notification.permission === "granted") {
                 new Notification("Test Notification", {
                   body: "This is a test notification for developers",
-                  icon: "/favicon.ico"
+                  icon: "/favicon.ico",
                 });
               } else {
-                Notification.requestPermission().then(permission => {
+                Notification.requestPermission().then((permission) => {
                   if (permission === "granted") {
                     new Notification("Test Notification", {
                       body: "This is a test notification for developers",
-                      icon: "/favicon.ico"
+                      icon: "/favicon.ico",
                     });
                   }
                 });
@@ -561,70 +605,154 @@ export function ChangesTable({
     );
   }
 
-  // If we have no changes data, show an appropriate message
+  // If we have no changes data, show an appropriate message with substantial content
   if (!changes.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4">
-        <AlertTriangle className="w-12 h-12 text-yellow-500" />
-        <div className="text-center space-y-2">
-          <p className="text-gray-400">No changes have been detected yet</p>
-          <p className="text-gray-500 text-sm">
-            Changes will appear here when boss spawns are updated
-          </p>
-          <button
-            onClick={handleManualRefresh}
-            disabled={isRefreshing}
-            className="px-4 py-2 mt-4 text-sm bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isRefreshing ? (
-              <>
-                <RefreshCcw className="inline w-4 h-4 mr-2 animate-spin" />
-                Checking for changes...
-              </>
-            ) : (
-              "Check for changes"
-            )}
-          </button>
-          {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
-        </div>
-        <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
-          <span className="text-sm text-gray-400">
-            {notificationsEnabled ? "Notifications enabled" : "Get notified of changes"}
-          </span>
-          <button
-            onClick={toggleNotifications}
-            className="p-1 rounded-full hover:bg-gray-700/50 transition-colors"
-            title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
-          >
-            {notificationsEnabled ? (
-              <BellOff className="w-4 h-4 text-purple-400" />
-            ) : (
-              <BellPlus className="w-4 h-4 text-gray-400" />
-            )}
-          </button>
-          <button
-            onClick={() => {
-              if (Notification.permission === "granted") {
-                new Notification("Test Notification", {
-                  body: "This is a test notification for developers",
-                  icon: "/favicon.ico"
-                });
-              } else {
-                Notification.requestPermission().then(permission => {
-                  if (permission === "granted") {
-                    new Notification("Test Notification", {
-                      body: "This is a test notification for developers",
-                      icon: "/favicon.ico"
-                    });
-                  }
-                });
+      <div className="space-y-6">
+        {/* Status message */}
+        <div className="flex flex-col items-center justify-center py-8 gap-4">
+          <AlertTriangle className="w-12 h-12 text-yellow-500" />
+          <div className="text-center space-y-2">
+            <p className="text-gray-400">No changes have been detected yet</p>
+            <p className="text-gray-500 text-sm">
+              Changes will appear here when boss spawns are updated
+            </p>
+            <button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className="px-4 py-2 mt-4 text-sm bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isRefreshing ? (
+                <>
+                  <RefreshCcw className="inline w-4 h-4 mr-2 animate-spin" />
+                  Checking for changes...
+                </>
+              ) : (
+                "Check for changes"
+              )}
+            </button>
+            {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
+          </div>
+          <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
+            <span className="text-sm text-gray-400">
+              {notificationsEnabled
+                ? "Notifications enabled"
+                : "Get notified of changes"}
+            </span>
+            <button
+              onClick={toggleNotifications}
+              className="p-1 rounded-full hover:bg-gray-700/50 transition-colors"
+              title={
+                notificationsEnabled
+                  ? "Disable notifications"
+                  : "Enable notifications"
               }
-            }}
-            className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 ml-2"
-            title="Test notification (for developers)"
-          >
-            Test
-          </button>
+            >
+              {notificationsEnabled ? (
+                <BellOff className="w-4 h-4 text-purple-400" />
+              ) : (
+                <BellPlus className="w-4 h-4 text-gray-400" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Informational content for AdSense compliance */}
+        <div className="bg-gray-800/30 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-white mb-3">
+            About Boss Spawn Changes
+          </h3>
+          <p className="text-gray-400 text-sm mb-4">
+            This page tracks historical changes to boss spawn rates in Escape
+            from Tarkov. Battlestate Games periodically adjusts spawn chances
+            during events, patches, and wipes.
+          </p>
+
+          <h4 className="text-md font-semibold text-white mb-2">
+            What We Track
+          </h4>
+          <ul className="text-gray-400 text-sm space-y-1 mb-4">
+            <li>
+              • <strong className="text-gray-300">Spawn Chance Changes</strong>{" "}
+              - When a boss's spawn probability is modified
+            </li>
+            <li>
+              • <strong className="text-gray-300">Location Changes</strong> -
+              When bosses are added to or removed from maps
+            </li>
+            <li>
+              • <strong className="text-gray-300">Event Updates</strong> -
+              Special events like 100% boss spawn weeks
+            </li>
+            <li>
+              •{" "}
+              <strong className="text-gray-300">PVP vs PVE Differences</strong>{" "}
+              - Mode-specific spawn rate adjustments
+            </li>
+          </ul>
+
+          <h4 className="text-md font-semibold text-white mb-2">
+            How It Works
+          </h4>
+          <p className="text-gray-400 text-sm">
+            We poll the Tarkov.dev API every 5 minutes and compare the data
+            against previous snapshots. When differences are detected, they're
+            logged here with timestamps. Enable notifications to get alerted
+            when new changes are detected.
+          </p>
+        </div>
+
+        {/* Boss quick reference */}
+        <div className="bg-gray-800/30 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-white mb-3">
+            Tarkov Bosses Quick Reference
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div className="bg-gray-800/50 rounded p-3">
+              <span className="text-purple-400 font-semibold block">
+                Reshala
+              </span>
+              <span className="text-gray-500">Customs</span>
+            </div>
+            <div className="bg-gray-800/50 rounded p-3">
+              <span className="text-purple-400 font-semibold block">Killa</span>
+              <span className="text-gray-500">Interchange</span>
+            </div>
+            <div className="bg-gray-800/50 rounded p-3">
+              <span className="text-purple-400 font-semibold block">
+                Glukhar
+              </span>
+              <span className="text-gray-500">Reserve</span>
+            </div>
+            <div className="bg-gray-800/50 rounded p-3">
+              <span className="text-purple-400 font-semibold block">
+                Shturman
+              </span>
+              <span className="text-gray-500">Woods</span>
+            </div>
+            <div className="bg-gray-800/50 rounded p-3">
+              <span className="text-purple-400 font-semibold block">
+                Sanitar
+              </span>
+              <span className="text-gray-500">Shoreline</span>
+            </div>
+            <div className="bg-gray-800/50 rounded p-3">
+              <span className="text-purple-400 font-semibold block">
+                Tagilla
+              </span>
+              <span className="text-gray-500">Factory</span>
+            </div>
+            <div className="bg-gray-800/50 rounded p-3">
+              <span className="text-purple-400 font-semibold block">Kaban</span>
+              <span className="text-gray-500">Streets</span>
+            </div>
+            <div className="bg-gray-800/50 rounded p-3">
+              <span className="text-purple-400 font-semibold block">
+                The Goons
+              </span>
+              <span className="text-gray-500">Roaming</span>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -730,13 +858,21 @@ export function ChangesTable({
                 </span>
               )}
             </div>
-            
+
             <div className="flex items-center gap-2 md:ml-4 md:border-l md:border-gray-700 md:pl-4">
               <span className="text-xs text-gray-400">Auto-refresh:</span>
               <button
                 onClick={toggleAutoRefresh}
-                className={`px-2 py-1 text-xs rounded ${autoRefreshEnabled ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300'}`}
-                title={autoRefreshEnabled ? "Disable auto-refresh (5 min)" : "Enable auto-refresh (5 min)"}
+                className={`px-2 py-1 text-xs rounded ${
+                  autoRefreshEnabled
+                    ? "bg-purple-600 text-white"
+                    : "bg-gray-700 text-gray-300"
+                }`}
+                title={
+                  autoRefreshEnabled
+                    ? "Disable auto-refresh (5 min)"
+                    : "Enable auto-refresh (5 min)"
+                }
               >
                 {autoRefreshEnabled ? "ON (5m)" : "OFF"}
               </button>
@@ -745,12 +881,18 @@ export function ChangesTable({
         </div>
         <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30 md:flex-wrap">
           <span className="text-sm text-gray-400">
-            {notificationsEnabled ? "Notifications enabled" : "Get notified of changes"}
+            {notificationsEnabled
+              ? "Notifications enabled"
+              : "Get notified of changes"}
           </span>
           <button
             onClick={toggleNotifications}
             className="p-1 rounded-full hover:bg-gray-700/50 transition-colors"
-            title={notificationsEnabled ? "Disable notifications" : "Enable notifications"}
+            title={
+              notificationsEnabled
+                ? "Disable notifications"
+                : "Enable notifications"
+            }
           >
             {notificationsEnabled ? (
               <BellOff className="w-4 h-4 text-purple-400" />
@@ -761,10 +903,23 @@ export function ChangesTable({
           {notificationsEnabled && (
             <button
               onClick={toggleSound}
-              className={`p-1 rounded-full hover:bg-gray-700/50 transition-colors ${soundEnabled ? 'text-purple-400' : 'text-gray-400'}`}
+              className={`p-1 rounded-full hover:bg-gray-700/50 transition-colors ${
+                soundEnabled ? "text-purple-400" : "text-gray-400"
+              }`}
               title={soundEnabled ? "Disable sound" : "Enable sound"}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-4 h-4"
+              >
                 {soundEnabled ? (
                   <>
                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -785,19 +940,19 @@ export function ChangesTable({
             onClick={() => {
               // Play the sound notification
               testSound();
-              
+
               // Also show a browser notification if permission is granted
               if (Notification.permission === "granted") {
                 new Notification("Test Notification", {
                   body: "Parmesan is a great cheese",
-                  icon: "/favicon.ico"
+                  icon: "/favicon.ico",
                 });
               } else {
-                Notification.requestPermission().then(permission => {
+                Notification.requestPermission().then((permission) => {
                   if (permission === "granted") {
                     new Notification("Test Notification", {
                       body: "Parmesan is a bad cheese",
-                      icon: "/favicon.ico"
+                      icon: "/favicon.ico",
                     });
                   }
                 });
