@@ -52,6 +52,12 @@ export const BOSS_OVERRIDES: BossOverride[] = [
     gameMode: "both" // PVP & PvE
   },
   {
+    mapName: ["Night Factory"],
+    bossName: "Cultist Priest",
+    spawnChance: 0.02, // 2%
+    gameMode: "both" // PVP & PvE
+  },
+  {
     mapName: "Interchange",
     bossName: "Tagilla",
     spawnLocations: [
