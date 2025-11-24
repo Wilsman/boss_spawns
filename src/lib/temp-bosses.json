@@ -31,8 +31,38 @@
     "bosses": [
       {
         "boss": {
-          "name": "bossbully",
-          "imagePortraitLink": "/bully.webp"
+          "name": "Glukhar",
+          "imagePortraitLink": "https://assets.tarkov.dev/glukhar-portrait.png"
+        },
+        "spawnLocations": [
+          {
+            "name": "(No specific location)",
+            "chance": 1
+          }
+        ],
+        "spawnChance": 1,
+        "escorts": [
+          {
+            "amount": [
+              {
+                "count": 3
+              }
+            ],
+            "boss": {
+              "name": "followerGlukharSecurity"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Terminal",
+    "bosses": [
+      {
+        "boss": {
+          "name": "bossBully (Reshala?)",
+          "imagePortraitLink": "/mystery.webp"
         },
         "spawnLocations": [
           {
