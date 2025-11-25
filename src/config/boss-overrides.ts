@@ -1,6 +1,6 @@
 import { SpawnLocation } from "@/types";
 
-export const ENABLE_OVERRIDES = true;
+export const ENABLE_OVERRIDES = false;
 
 export interface BossOverride {
   mapName: string | string[];
@@ -31,7 +31,7 @@ export const BOSS_OVERRIDES: BossOverride[] = [
       { name: "IDEA", chance: 0.2 },
       { name: "Goshan", chance: 0.2 },
     ],
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: "Customs",
@@ -43,19 +43,19 @@ export const BOSS_OVERRIDES: BossOverride[] = [
       { name: "Dorms", chance: 0.2 },
     ],
     spawnChance: 0.75, // 75%
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: ["Factory", "Night Factory"],
     bossName: "Tagilla",
     spawnChance: 0.75, // 75%
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: ["Night Factory", "Ground Zero 21+"],
     bossName: "Cultist Priest",
     spawnChance: 0.02, // 2%
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: "Interchange",
@@ -64,60 +64,60 @@ export const BOSS_OVERRIDES: BossOverride[] = [
       { name: "Parking garage below Goshan store", chance: 1 },
     ],
     spawnChance: 0.5, // 50%
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: "Reserve",
     bossName: "Glukhar",
     spawnChance: 0.75, // 75%
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: "Woods",
     bossName: "Shturman",
     spawnChance: 0.75, // 75%
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: "Shoreline",
     bossName: "Sanitar",
     spawnChance: 0.75, // 75%
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: "Lighthouse",
     bossName: "Zryachiy",
     spawnChance: 1, // 100%
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: "Streets of Tarkov",
     bossName: "Kaban",
     spawnChance: 0.75, // 75%
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: ["Ground Zero", "Ground Zero 21+", "Streets of Tarkov"],
     bossName: "Kollontay",
     spawnChance: 0.75, // 75%
-    gameMode: "both" // PVP & PvE
+    gameMode: "pve" // PVP & PvE
   },
   {
     mapName: ["Woods", "Customs", "Shoreline", "Lighthouse"],
     bossName: "Goons",
     spawnChance: 0.4, // 40%
-    gameMode: "both"
+    gameMode: "pve"
   },
   {
     mapName: ["Customs", "Shoreline"],
     bossName: "Cultist Priest",
     spawnChance: 0.2, // 20%
-    gameMode: "both"
+    gameMode: "pve"
   },
   {
     mapName: ["Woods"],
     bossName: "Cultist Priest",
     spawnChance: 0.25, // 25%
-    gameMode: "both"
+    gameMode: "pve"
   },
 ];
