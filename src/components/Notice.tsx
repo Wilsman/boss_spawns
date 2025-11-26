@@ -80,15 +80,21 @@ export function Notice() {
           </div>
           <p className="text-green-100 text-base font-bold mb-2">
             <span className="font-semibold text-green-200">
-              Main bosses <span className="font-bold text-green-100">{">"}75% [assumed]</span>
+              Main bosses <span className="font-bold text-green-100">{"~"}75%</span>
             </span>{" "}
             on their respective maps
           </p>
           <p className="text-green-100 text-sm mb-1">
             <span className="font-semibold text-green-300">Goons 40%:</span>
           </p>
-          <p className="text-green-100 text-sm mb-1">
+          <p className="text-green-100 text-sm mb-2">
             <span className="text-green-100">- on Customs, Lighthouse, Shoreline & Woods</span>
+          </p>
+          <p className="text-green-100 text-sm mb-1">
+            <span className="font-semibold text-green-300">Cultists 20/25%:</span>
+          </p>
+          <p className="text-green-100 text-sm mb-1">
+            <span className="text-green-100">- on Customs, Shoreline & Woods</span>
           </p>
         </div>
 
@@ -102,15 +108,21 @@ export function Notice() {
           </div>
           <p className="text-green-100 text-base font-bold mb-2">
             <span className="font-semibold text-green-200">
-              Main bosses <span className="font-bold text-green-100">{">"}75% [assumed]</span>
+              Main bosses <span className="font-bold text-green-100">{"~"}75%</span>
             </span>{" "}
             on their respective maps
           </p>
           <p className="text-green-100 text-sm mb-1">
             <span className="font-semibold text-green-300">Goons 40%:</span>
           </p>
-          <p className="text-green-100 text-sm mb-1">
+          <p className="text-green-100 text-sm mb-2">
             <span className="text-green-100">- on Customs, Lighthouse, Shoreline & Woods</span>
+          </p>
+          <p className="text-green-100 text-sm mb-1">
+            <span className="font-semibold text-green-300">Cultists 20/25%:</span>
+          </p>
+          <p className="text-green-100 text-sm mb-1">
+            <span className="text-green-100">- on Customs, Shoreline & Woods</span>
           </p>
         </div>
       </div>
