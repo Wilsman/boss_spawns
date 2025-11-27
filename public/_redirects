@@ -1,0 +1,7 @@
+# Exclude static files from SPA fallback
+/ads.txt /ads.txt 200
+/robots.txt /robots.txt 200
+/sitemap.xml /sitemap.xml 200
+
+# SPA fallback for everything else
+/* /index.html 200
