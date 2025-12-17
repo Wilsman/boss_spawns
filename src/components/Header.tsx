@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/accordion";
 import { BossNotice } from "./BossNotice";
 import { Notice } from "./Notice";
-import { MaintenanceNotice } from "./MaintenanceNotice";
+// import { MaintenanceNotice } from "./MaintenanceNotice";
 import type { BossEventConfig } from "@/types/bossEvents";
 
 // Change this to "maintenance" when we need to swap out the boss notice for the maintenance message
@@ -142,7 +142,7 @@ export const Header = memo(function Header({
           <div className="md:col-span-3 space-y-3">
             {NOTICE_VARIANT === "maintenance" ? (
               <>
-                <MaintenanceNotice />
+                {/* <MaintenanceNotice /> */}
                 <Notice />
               </>
             ) : USE_NOTICE_COMPONENT ? (
