@@ -5,6 +5,7 @@ import {
   Route,
   useSearchParams,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { SpawnData, fetchAllSpawnData } from "./lib/api";
 import ModernTable from "@/components/ModernTable";
@@ -39,6 +40,21 @@ function MainApp() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Legacy URL normalization (redirect ?mode=... to clean paths)
+  useEffect(() => {
+    const modeParam = searchParams.get("mode");
+    if (modeParam && location.pathname === "/") {
+      const targetPath = modeParam === "regular" ? "/pvp" : `/${modeParam}`;
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("mode");
+      const queryString = newParams.toString();
+      navigate(`${targetPath}${queryString ? `?${queryString}` : ""}`, {
+        replace: true,
+      });
+    }
+  }, [searchParams, location.pathname, navigate]);
 
   // Derived mode from path or search params (fallback)
   const mode = useMemo(() => {

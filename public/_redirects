@@ -3,11 +3,5 @@
 /robots.txt /robots.txt 200
 /sitemap.xml /sitemap.xml 200
 
-# Navigation redirects for SEO (redirect query params to clean paths)
-/?mode=regular /pvp 301
-/?mode=pve /pve 301
-/?mode=compare /compare 301
-/?mode=changes /changes 301
-
-# SPA Catch-all
+# SPA Catch-all (Cloudflare Pages serves index.html for unknown routes)
 /* /index.html 200
