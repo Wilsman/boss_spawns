@@ -52,12 +52,15 @@ export const Header = memo(function Header({
           <a href="/">
             <img
               src={bossImage}
-              alt="EFT Boss Spawns Logo"
+              alt="EFT Boss Spawns - Tarkov Real-Time Boss Spawn Tracker"
               width={260}
               height={90}
               className="max-w-[60vw] h-auto"
             />
           </a>
+          <h1 className="sr-only">
+            EFT Boss Spawns - Escape from Tarkov Real-Time Boss Tracking
+          </h1>
         </div>
 
         {/* Links + Notice Section */}

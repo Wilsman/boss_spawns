@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   useSearchParams,
+  useLocation,
 } from "react-router-dom";
 import { SpawnData, fetchAllSpawnData } from "./lib/api";
 import ModernTable from "@/components/ModernTable";
@@ -37,7 +38,16 @@ function MainApp() {
   const [fatalError, setFatalError] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
-  const mode = searchParams.get("mode") ?? "regular";
+  const location = useLocation();
+
+  // Derived mode from path or search params (fallback)
+  const mode = useMemo(() => {
+    const path = location.pathname.toLowerCase().replace(/^\/+/, "");
+    if (path === "pve" || path === "compare" || path === "changes") return path;
+    if (path === "pvp") return "regular";
+    return searchParams.get("mode") ?? "regular";
+  }, [searchParams, location.pathname]);
+
   const mapFilter = searchParams.get("map") ?? "";
   const bossFilter = searchParams.get("boss") ?? "";
   const searchQuery = searchParams.get("search") ?? "";
@@ -209,6 +219,43 @@ function MainApp() {
           setIsRefreshing(false);
         });
     }
+  }, [mode]);
+
+  // Dynamic SEO management
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      regular: "PVP Boss Spawns - Tarkov Real-Time Tracking",
+      pve: "PVE Boss Spawns - Tarkov Real-Time Tracking",
+      compare: "Compare Boss Spawns - PVP vs PVE | EFT",
+      changes: "Recent Spawn Changes - Tarkov Boss Tracking",
+    };
+
+    const descriptions: Record<string, string> = {
+      regular:
+        "Track real-time boss spawn chances in Escape from Tarkov PVP raids. Live updates for all bosses and maps.",
+      pve: "Track real-time boss spawn chances in Escape from Tarkov PVE raids. Perfect for co-op and solo planning.",
+      compare:
+        "Compare the differences in boss spawn rates between Escape from Tarkov PVP and PVE game modes.",
+      changes:
+        "View the most recent changes to boss spawn chances in Escape from Tarkov. Stay updated on the latest rate adjustments.",
+    };
+
+    const currentTitle = titles[mode] || titles.regular;
+    const currentDesc = descriptions[mode] || descriptions.regular;
+
+    document.title = `${currentTitle} | EFT Boss Spawns`;
+
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute("content", currentDesc);
+    }
+
+    // Also update OG tags
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute("content", currentTitle);
+
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.setAttribute("content", currentDesc);
   }, [mode]);
 
   const handleChangesUpdate = useCallback(async () => {
@@ -479,10 +526,10 @@ function MainApp() {
 
         <NavBar
           items={[
-            { name: "PVP", url: "/?mode=regular", icon: Swords },
-            { name: "PVE", url: "/?mode=pve", icon: Crosshair },
-            { name: "Compare", url: "/?mode=compare", icon: Scale },
-            { name: "Changes", url: "/?mode=changes", icon: History },
+            { name: "PVP", url: "/pvp", icon: Swords },
+            { name: "PVE", url: "/pve", icon: Crosshair },
+            { name: "Compare", url: "/compare", icon: Scale },
+            { name: "Changes", url: "/changes", icon: History },
           ]}
         />
 
@@ -637,6 +684,11 @@ function App() {
           <Routes>
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/pvp" element={<MainApp />} />
+            <Route path="/pve" element={<MainApp />} />
+            <Route path="/compare" element={<MainApp />} />
+            <Route path="/changes" element={<MainApp />} />
+            <Route path="/" element={<MainApp />} />
             <Route path="*" element={<MainApp />} />
           </Routes>
         </main>

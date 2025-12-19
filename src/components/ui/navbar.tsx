@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Link, useSearchParams } from "react-router-dom";
+import { useMemo } from "react";
+import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +17,14 @@ interface NavBarProps {
 
 export function NavBar({ items, className }: NavBarProps) {
   const [searchParams] = useSearchParams();
-  const modeParam = searchParams.get('mode')?.toLowerCase() ?? 'regular';
+  const location = useLocation();
+
+  const modeParam = useMemo(() => {
+    const path = location.pathname.toLowerCase().replace(/^\/+/, "");
+    if (path === "pvp") return "regular";
+    if (path === "pve" || path === "compare" || path === "changes") return path;
+    return searchParams.get("mode")?.toLowerCase() || "regular";
+  }, [location.pathname, searchParams]);
 
   return (
     <div className={cn("flex justify-center w-full", className)}>
@@ -24,18 +32,23 @@ export function NavBar({ items, className }: NavBarProps) {
         {items.map((item) => {
           const Icon = item.icon;
           // Special case for PVP tab which uses 'regular' in the URL
-          const isActive = item.name === 'PVP' 
-            ? modeParam === 'regular' 
-            : item.name.toLowerCase() === modeParam;
+          const isActive =
+            item.name === "PVP"
+              ? modeParam === "regular"
+              : item.name.toLowerCase() === modeParam;
 
           // Preserve existing filters when switching modes
           const nextParams = new URLSearchParams(searchParams);
-          const targetMode = item.name === 'PVP' ? 'regular' : item.name.toLowerCase();
-          nextParams.set('mode', targetMode);
-          const to = `/?${nextParams.toString()}`;
+          nextParams.delete("mode"); // Remove mode from query params
+          const targetMode =
+            item.name === "PVP" ? "pvp" : item.name.toLowerCase();
+          const query = nextParams.toString();
+          const to = `/${targetMode}${query ? `?${query}` : ""}`;
 
           return (
-            <Link key={item.name} to={to}
+            <Link
+              key={item.name}
+              to={to}
               className={cn(
                 "relative cursor-pointer text-sm font-semibold px-3 sm:px-6 py-2 rounded-full transition-colors",
                 "text-foreground/80 hover:text-primary",
