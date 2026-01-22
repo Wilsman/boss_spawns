@@ -26,11 +26,11 @@ export function VersionLabel() {
               href="https://buymeacoffee.com/wilsman77"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-purple-400 hover:text-purple-300 transition-colors duration-200"
+              className="text-amber-400 hover:text-amber-300 transition-colors duration-200"
             >
               Wilsman77
             </a>{" "}
-            updated on 25/11/2025
+            updated on 22/01/2026
           </span>
         </div>
       </div>
