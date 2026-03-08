@@ -181,6 +181,10 @@ export const Header = memo(function Header({
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
+                  (08/03/2026): Reshala on Customs updated from 75% to 100%;
+                  refreshed notice card.
+                </span>
+                <span className="block mb-1">
                   (02/09/2025): redesign of table layout for easier reading.
                 </span>
                 <span className="block mb-1">

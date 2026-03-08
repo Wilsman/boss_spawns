@@ -42,7 +42,7 @@ export const BOSS_OVERRIDES: BossOverride[] = [
       { name: "New Gas Station", chance: 0.2 },
       { name: "Dorms", chance: 0.2 },
     ],
-    spawnChance: 0.75, // 75%
+    spawnChance: 1, // 100%
     gameMode: "pve" // PVP & PvE
   },
   {
