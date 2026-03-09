@@ -181,8 +181,8 @@ export const Header = memo(function Header({
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
-                  (09/03/2026): tightened the boss update notice layout and
-                  removed stale callout copy.
+                  (09/03/2026): Reshala reverted to 75%; notice now tracks the
+                  Interchange 100% Killa and Tagilla update only.
                 </span>
                 <span className="block mb-1">
                   (02/09/2025): redesign of table layout for easier reading.
