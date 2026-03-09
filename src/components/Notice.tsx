@@ -3,14 +3,20 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 
-const noticeImages = [
+interface NoticeImage {
+  src: string;
+  alt: string;
+  imageClassName?: string;
+}
+
+const noticeImages: NoticeImage[] = [
   { src: "/eft_boss_killer.webp", alt: "Killa" },
   {
     src: "/eft_boss_tagilla.webp",
     alt: "Tagilla",
     imageClassName: "object-[62%_center]",
   },
-] as const;
+];
 
 const changeRows = [
   { label: "Killa", from: "75%", to: "100%" },
