@@ -24,7 +24,7 @@ export const BOSS_OVERRIDES: BossOverride[] = [
   {
     mapName: "Interchange",
     bossName: "Killa",
-    spawnChance: 0.75, // 75%
+    spawnChance: 1, // 100%
     spawnLocations: [
       { name: "Center", chance: 0.4 }, //Center40%OLI20%IDEA20%Goshan20%
       { name: "OLI", chance: 0.2 },
@@ -63,7 +63,7 @@ export const BOSS_OVERRIDES: BossOverride[] = [
     spawnLocations: [
       { name: "Parking garage below Goshan store", chance: 1 },
     ],
-    spawnChance: 0.5, // 50%
+    spawnChance: 1, // 100%
     gameMode: "pve" // PVP & PvE
   },
   {
