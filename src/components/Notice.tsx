@@ -19,9 +19,11 @@ const noticeImages: NoticeImage[] = [
 ];
 
 const changeRows = [
-  { label: "Killa", from: "75%", to: "100%" },
-  { label: "Tagilla", from: "50%", to: "100%" },
+  { label: "Killa", from: "100%", to: "75%" },
+  { label: "Tagilla", from: "100%", to: "50%" },
 ] as const;
+
+const changeTimestamp = new Date("2026-03-10T10:25:00Z");
 
 export function Notice() {
   const [isVisible, setIsVisible] = useState(false);
@@ -33,6 +35,17 @@ export function Notice() {
 
     return () => window.clearTimeout(timer);
   }, []);
+
+  const localTimeLabel = new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(changeTimestamp);
+
+  const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   return (
     <section
@@ -49,7 +62,9 @@ export function Notice() {
           <h2 className="text-base font-semibold text-zinc-100">
             Boss spawn update
           </h2>
-          <span className="text-xs text-zinc-500">Updated: March 9, 2026</span>
+          <span className="text-xs text-zinc-500">
+            Updated: March 10, 2026
+          </span>
         </div>
 
         <article className="rounded-lg border border-zinc-800 bg-zinc-900/30 px-3 py-3">
@@ -78,10 +93,10 @@ export function Notice() {
 
               <dt className="text-zinc-500">Status</dt>
               <dd className="text-zinc-100">
-                Killa and Tagilla remain at 100%.
+                Killa and Tagilla have both dropped back from 100% on Interchange.
               </dd>
 
-              <dt className="text-zinc-500">Changes</dt>
+              <dt className="text-zinc-500">Rates</dt>
               <dd className="space-y-1 text-zinc-300">
                 {changeRows.map((change) => (
                   <div
@@ -100,6 +115,15 @@ export function Notice() {
                     </span>
                   </div>
                 ))}
+              </dd>
+
+              <dt className="text-zinc-500">Changed</dt>
+              <dd className="text-zinc-300">
+                {localTimeLabel}
+                <span className="text-zinc-500">
+                  {" "}
+                  ({localTimezone}, from 10:25 AM GMT)
+                </span>
               </dd>
 
               <dt className="text-zinc-500">Locations</dt>

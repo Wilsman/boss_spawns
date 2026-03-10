@@ -181,8 +181,9 @@ export const Header = memo(function Header({
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
-                  (09/03/2026): Reshala reverted to 75%; notice now tracks the
-                  Interchange 100% Killa and Tagilla update only.
+                  (10/03/2026): the 100% Interchange boss event ended at
+                  10:25 AM GMT; Killa dropped to 75% and Tagilla dropped to
+                  50%.
                 </span>
                 <span className="block mb-1">
                   (02/09/2025): redesign of table layout for easier reading.
