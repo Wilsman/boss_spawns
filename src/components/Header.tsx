@@ -181,9 +181,8 @@ export const Header = memo(function Header({
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
-                  (10/03/2026): the 100% Interchange boss event ended at
-                  10:25 AM GMT; Killa dropped to 75% and Tagilla dropped to
-                  50%.
+                  (11/03/2026): Glukhar on Reserve increased from 75% to 100%
+                  in Regular and PVE.
                 </span>
                 <span className="block mb-1">
                   (02/09/2025): redesign of table layout for easier reading.

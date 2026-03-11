@@ -10,20 +10,16 @@ interface NoticeImage {
 }
 
 const noticeImages: NoticeImage[] = [
-  { src: "/eft_boss_killer.webp", alt: "Killa" },
   {
-    src: "/eft_boss_tagilla.webp",
-    alt: "Tagilla",
-    imageClassName: "object-[62%_center]",
+    src: "https://assets.tarkov.dev/glukhar-portrait.png",
+    alt: "Glukhar",
   },
 ];
 
 const changeRows = [
-  { label: "Killa", from: "100%", to: "75%" },
-  { label: "Tagilla", from: "100%", to: "50%" },
+  { label: "Glukhar", from: "75%", to: "100%" },
 ] as const;
-
-const changeTimestamp = new Date("2026-03-10T10:25:00Z");
+const changeDateLabel = "March 11, 2026";
 
 export function Notice() {
   const [isVisible, setIsVisible] = useState(false);
@@ -35,17 +31,6 @@ export function Notice() {
 
     return () => window.clearTimeout(timer);
   }, []);
-
-  const localTimeLabel = new Intl.DateTimeFormat(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZoneName: "short",
-  }).format(changeTimestamp);
-
-  const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   return (
     <section
@@ -63,7 +48,7 @@ export function Notice() {
             Boss spawn update
           </h2>
           <span className="text-xs text-zinc-500">
-            Updated: March 10, 2026
+            Updated: {changeDateLabel}
           </span>
         </div>
 
@@ -89,11 +74,11 @@ export function Notice() {
 
             <dl className="grid min-w-0 flex-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-[96px_minmax(0,1fr)]">
               <dt className="text-zinc-500">Map</dt>
-              <dd className="text-zinc-100">Interchange</dd>
+              <dd className="text-zinc-100">Reserve</dd>
 
               <dt className="text-zinc-500">Status</dt>
               <dd className="text-zinc-100">
-                Killa and Tagilla have both dropped back from 100% on Interchange.
+                Glukhar is now back at 100% on Reserve in Regular and PVE.
               </dd>
 
               <dt className="text-zinc-500">Rates</dt>
@@ -118,18 +103,11 @@ export function Notice() {
               </dd>
 
               <dt className="text-zinc-500">Changed</dt>
-              <dd className="text-zinc-300">
-                {localTimeLabel}
-                <span className="text-zinc-500">
-                  {" "}
-                  ({localTimezone}, from 10:25 AM GMT)
-                </span>
-              </dd>
+              <dd className="text-zinc-300">{changeDateLabel}</dd>
 
               <dt className="text-zinc-500">Locations</dt>
               <dd className="text-zinc-300">
-                Killa: center mall, OLI, IDEA, Goshan. Tagilla: garage below
-                Goshan.
+                K Buildings, Black Knight, White Knight, and Train Station.
               </dd>
             </dl>
           </div>
