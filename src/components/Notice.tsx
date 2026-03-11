@@ -16,9 +16,7 @@ const noticeImages: NoticeImage[] = [
   },
 ];
 
-const changeRows = [
-  { label: "Glukhar", from: "75%", to: "100%" },
-] as const;
+const changeRows = [{ label: "Glukhar", from: "75%", to: "100%" }] as const;
 const changeDateLabel = "March 11, 2026";
 
 export function Notice() {
@@ -37,7 +35,7 @@ export function Notice() {
       className={cn(
         "mt-3 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4",
         "opacity-0 transition-opacity duration-200 ease-out",
-        isVisible && "opacity-100"
+        isVisible && "opacity-100",
       )}
       role="status"
       aria-live="polite"
@@ -65,7 +63,7 @@ export function Notice() {
                     alt={image.alt}
                     className={cn(
                       "h-full w-full object-contain p-1",
-                      image.imageClassName
+                      image.imageClassName,
                     )}
                   />
                 </div>
@@ -78,7 +76,7 @@ export function Notice() {
 
               <dt className="text-zinc-500">Status</dt>
               <dd className="text-zinc-100">
-                Glukhar is now back at 100% on Reserve in Regular and PVE.
+                Glukhar is now at 100% on Reserve in PvP and PvE.
               </dd>
 
               <dt className="text-zinc-500">Rates</dt>
