@@ -17,6 +17,7 @@ import { ChangesTable } from "@/components/ChangesTable";
 import { exportChanges, getStoredChanges } from "@/lib/changes";
 import { VersionLabel } from "@/components/VersionLabel";
 import { NavBar } from "@/components/ui/navbar";
+import { ChangeNotificationControls } from "@/components/ChangeNotificationControls";
 import { Swords, Crosshair, Scale, History } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { PatchToast } from "@/components/patch-toast";
@@ -24,6 +25,7 @@ import type { DataMode } from "@/types";
 import { BossEventConfig } from "@/types/bossEvents";
 import bossEvents from "@/config/bossEvents";
 import { About, Privacy } from "@/pages";
+import { useChangeMonitor } from "@/hooks/useChangeMonitor";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -36,6 +38,7 @@ function MainApp() {
   const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false); // For background refresh indicator
   const [changes, setChanges] = useState<DataChange[]>([]);
+  const [changesLoaded, setChangesLoaded] = useState(false);
   const [fatalError, setFatalError] = useState(false);
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -213,29 +216,17 @@ function MainApp() {
     };
   }, [loadData, loading, fatalError]);
 
-  // Single effect for loading changes data when mode switches to changes
   useEffect(() => {
-    if (mode === "changes") {
-      // Only show full loading on initial load, use refreshing indicator for subsequent loads
-      if (hasChangesRef.current) {
-        setIsRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      getStoredChanges()
-        .then((changesData) => {
-          setChanges(changesData);
-          hasChangesRef.current = true;
-        })
-        .catch((error) => {
-          console.error("Failed to fetch changes:", error);
-        })
-        .finally(() => {
-          setLoading(false);
-          setIsRefreshing(false);
-        });
-    }
-  }, [mode]);
+    void getStoredChanges()
+      .then((changesData) => {
+        setChanges(changesData);
+        setChangesLoaded(true);
+        hasChangesRef.current = true;
+      })
+      .catch((error) => {
+        console.error("Failed to fetch changes:", error);
+      });
+  }, []);
 
   // Dynamic SEO management
   useEffect(() => {
@@ -274,24 +265,58 @@ function MainApp() {
     if (ogDesc) ogDesc.setAttribute("content", currentDesc);
   }, [mode]);
 
-  const handleChangesUpdate = useCallback(async () => {
-    try {
-      // Always use refreshing indicator for manual updates (user already has data)
-      if (hasChangesRef.current) {
-        setIsRefreshing(true);
-      } else {
-        setLoading(true);
+  const handleChangesUpdate = useCallback(
+    async (options?: { force?: boolean; silent?: boolean }) => {
+      try {
+        if (!options?.silent) {
+          if (hasChangesRef.current) {
+            setIsRefreshing(true);
+          } else {
+            setLoading(true);
+          }
+        }
+        const data = await getStoredChanges(options);
+        setChanges(data);
+        setChangesLoaded(true);
+        hasChangesRef.current = true;
+      } catch (error) {
+        console.error("Failed to update changes:", error);
+      } finally {
+        if (!options?.silent) {
+          setLoading(false);
+          setIsRefreshing(false);
+        }
       }
-      const data = await getStoredChanges();
-      setChanges(data);
-      hasChangesRef.current = true;
-    } catch (error) {
-      console.error("Failed to update changes:", error);
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
-  }, []);
+    },
+    []
+  );
+
+  const refreshChangesSilently = useCallback(
+    (options?: { force?: boolean }) =>
+      handleChangesUpdate({ ...options, silent: true }),
+    [handleChangesUpdate]
+  );
+
+  const {
+    autoRefreshEnabled,
+    markAllRead,
+    notificationError,
+    notificationsEnabled,
+    notificationsSupported,
+    resetNotificationSettings,
+    soundEnabled,
+    testNotification,
+    toggleAutoRefresh,
+    toggleNotifications,
+    toggleSound,
+    unreadCount,
+    visitSummary,
+  } = useChangeMonitor({
+    changes,
+    changesLoaded,
+    isChangesPage: mode === "changes",
+    refreshChanges: refreshChangesSilently,
+  });
 
   const handleExport = () => {
     if (mode === "changes") {
@@ -545,9 +570,34 @@ function MainApp() {
             { name: "PVP", url: "/pvp", icon: Swords },
             { name: "PVE", url: "/pve", icon: Crosshair },
             { name: "Compare", url: "/compare", icon: Scale },
-            { name: "Changes", url: "/changes", icon: History },
+            {
+              name: "Changes",
+              url: "/changes",
+              icon: History,
+              badgeCount: unreadCount,
+            },
           ]}
         />
+
+        <div className="flex justify-center">
+          <ChangeNotificationControls
+            autoRefreshEnabled={autoRefreshEnabled}
+            canMarkAllRead={unreadCount > 0}
+            errorText={notificationError}
+            notificationsEnabled={notificationsEnabled}
+            notificationsSupported={notificationsSupported}
+            onMarkAllRead={markAllRead}
+            onResetSettings={resetNotificationSettings}
+            onTestNotification={
+              import.meta.env.DEV ? testNotification : undefined
+            }
+            onToggleAutoRefresh={toggleAutoRefresh}
+            onToggleNotifications={toggleNotifications}
+            onToggleSound={toggleSound}
+            soundEnabled={soundEnabled}
+            unreadCount={unreadCount}
+          />
+        </div>
 
         <div className="p-2 rounded-lg bg-black/30">
           <FilterBar
@@ -617,6 +667,13 @@ function MainApp() {
                 </div>
               </div>
             </div>
+          ) : mode === "changes" && !changesLoaded ? (
+            <div className="flex flex-col justify-center items-center h-[150px] gap-4">
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-gray-400 text-sm">
+                Loading recent changes...
+              </p>
+            </div>
           ) : mode === "changes" ? (
             <ChangesTable
               changes={changes}
@@ -626,6 +683,7 @@ function MainApp() {
                 search: searchQuery,
               }}
               onChangesUpdate={handleChangesUpdate}
+              visitSummary={visitSummary}
             />
           ) : (
             <ModernTable

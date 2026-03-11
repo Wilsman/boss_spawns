@@ -1,8 +1,8 @@
 import { fetchChanges } from "./api"
 import { DataChange } from "./diff"
 
-export async function getStoredChanges(): Promise<DataChange[]> {
-  return await fetchChanges()
+export async function getStoredChanges(options: { force?: boolean } = {}): Promise<DataChange[]> {
+  return await fetchChanges(options)
 }
 
 export function exportChanges(): void {

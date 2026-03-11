@@ -9,7 +9,7 @@ export default {
         // CORS headers
         const corsHeaders = {
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type',
         };
 
@@ -47,39 +47,16 @@ export default {
                     });
                 }
 
-                if (request.method === 'POST') {
-                    const changes = await request.json();
-
-                    if (!Array.isArray(changes)) {
-                        throw new Error('Invalid request body');
-                    }
-
-                    const stmt = await env.DB.prepare(`
-            INSERT INTO data_changes (game_mode, map, boss, field, old_value, new_value, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `);
-
-                    const batch = changes.map(change =>
-                        stmt.bind(
-                            change.gameMode,
-                            change.map,
-                            change.boss,
-                            change.field,
-                            change.oldValue,
-                            change.newValue,
-                            change.timestamp
-                        )
-                    );
-
-                    await env.DB.batch(batch);
-
-                    return new Response(JSON.stringify({ success: true }), {
+                return new Response(
+                    JSON.stringify({ error: 'Method Not Allowed' }),
+                    {
+                        status: 405,
                         headers: {
                             'Content-Type': 'application/json',
                             ...corsHeaders
                         }
-                    });
-                }
+                    }
+                );
             } catch (error) {
                 return new Response(
                     JSON.stringify({ error: error instanceof Error ? error.message : 'Internal Server Error' }),

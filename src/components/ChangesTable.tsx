@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DataChange } from "@/lib/diff";
-import { ArrowUpDown, RefreshCcw, AlertTriangle, BellPlus, BellOff } from "lucide-react";
+import { ArrowUpDown, RefreshCcw, AlertTriangle } from "lucide-react";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
+import type { ChangeVisitSummary } from "@/hooks/useChangeMonitor";
+import { readChangeStorageNumber } from "@/lib/change-storage";
 
 interface ChangesTableProps {
   changes: DataChange[];
@@ -10,7 +12,11 @@ interface ChangesTableProps {
     boss: string;
     search: string;
   };
-  onChangesUpdate: () => Promise<void>;
+  onChangesUpdate: (options?: {
+    force?: boolean;
+    silent?: boolean;
+  }) => Promise<void>;
+  visitSummary: ChangeVisitSummary | null;
 }
 
 type SortField =
@@ -27,13 +33,11 @@ type DateRange = "all" | "24h" | "7d" | "30d";
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Check if we're in development mode
-const isDev = import.meta.env.DEV;
-
 export function ChangesTable({
   changes = [],
   filters,
   onChangesUpdate,
+  visitSummary,
 }: ChangesTableProps) {
   const [sortField, setSortField] = useState<SortField>("timestamp");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -42,41 +46,11 @@ export function ChangesTable({
   const [modeFilter, setModeFilter] = useState<string>(""); // Add mode filter state
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(
-    () => {
-      return localStorage.getItem("notifications_enabled") === "true";
-    }
-  );
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
-    return localStorage.getItem("sound_enabled") === "true";
-  });
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState<boolean>(() => {
-    return localStorage.getItem("auto_refresh_enabled") === "true";
-  });
-  // Fixed 5-minute auto-refresh interval
-  const autoRefreshInterval = 300000; // 5 minutes in milliseconds
-  const notificationSound = useRef<HTMLAudioElement | null>(null);
-  // Guard to prevent firing notifications on initial load
-  const notificationsInitializedRef = useRef<boolean>(false);
-  const [lastSeenChangeCount, setLastSeenChangeCount] = useState<number>(() => {
-    return parseInt(localStorage.getItem("last_seen_change_count") || "0", 10);
-  });
-  // Track the latest seen change timestamp to avoid false positives on reloads/tab switches
-  const [lastSeenLatestTimestamp, setLastSeenLatestTimestamp] =
-    useState<number>(() => {
-      return parseInt(localStorage.getItem("last_seen_latest_ts") || "0", 10);
-    });
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(() => {
-    return parseInt(
-      localStorage.getItem("changes_timestamp") || Date.now().toString(),
-      10
-    );
+    return readChangeStorageNumber("cacheTimestamp") || Date.now();
   });
   const [nextRefreshAllowed, setNextRefreshAllowed] = useState<number>(() => {
-    const timestamp = parseInt(
-      localStorage.getItem("changes_timestamp") || "0",
-      10
-    );
+    const timestamp = readChangeStorageNumber("cacheTimestamp");
     return timestamp + CACHE_DURATION;
   });
   const [timeUntilRefresh, setTimeUntilRefresh] = useState<number>(
@@ -85,85 +59,17 @@ export function ChangesTable({
   const lastRefreshedTimeDisplay = useRelativeTime(lastRefreshTime);
   const canRefresh = timeUntilRefresh === 0;
 
-  // Compute the latest timestamp in the current changes list
-  const latestTimestamp = useMemo(() => {
-    return changes && changes.length
-      ? Math.max(...changes.map((c) => c.timestamp))
-      : 0;
-  }, [changes]);
-
-  // Track last page visibility change to suppress notifications right after switching tabs
-  const lastVisibilityChangeRef = useRef<number>(Date.now());
   useEffect(() => {
-    const onVisibilityChange = () => {
-      lastVisibilityChangeRef.current = Date.now();
-    };
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-  }, []);
+    const storedRefreshTime = readChangeStorageNumber("cacheTimestamp");
 
-  // Toggle auto-refresh
-  const toggleAutoRefresh = useCallback(() => {
-    const newState = !autoRefreshEnabled;
-    setAutoRefreshEnabled(newState);
-    localStorage.setItem("auto_refresh_enabled", newState.toString());
-  }, [autoRefreshEnabled]);
-
-  // Using fixed 5-minute interval, no need for change handler
-
-  const toggleNotifications = useCallback(async () => {
-    if (notificationsEnabled) {
-      // Turn off notifications
-      setNotificationsEnabled(false);
-      localStorage.setItem("notifications_enabled", "false");
-      // Also turn off sound when notifications are disabled
-      setSoundEnabled(false);
-      localStorage.setItem("sound_enabled", "false");
-      return;
+    if (storedRefreshTime > 0) {
+      setLastRefreshTime(storedRefreshTime);
+      setNextRefreshAllowed(storedRefreshTime + CACHE_DURATION);
+      setTimeUntilRefresh(
+        Math.max(0, storedRefreshTime + CACHE_DURATION - Date.now())
+      );
     }
-
-    // Request permission if not granted
-    if (Notification.permission !== "granted") {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        // User denied permission
-        return;
-      }
-    }
-
-    // Enable notifications and store current change count
-    setNotificationsEnabled(true);
-    localStorage.setItem("notifications_enabled", "true");
-    // Enable sound by default when notifications are enabled
-    setSoundEnabled(true);
-    localStorage.setItem("sound_enabled", "true");
-    setLastSeenChangeCount(changes.length);
-    localStorage.setItem("last_seen_change_count", changes.length.toString());
-    // Also sync the latest timestamp so we don't fire immediately after enabling
-    setLastSeenLatestTimestamp(latestTimestamp);
-    localStorage.setItem("last_seen_latest_ts", latestTimestamp.toString());
-  }, [notificationsEnabled, changes.length, latestTimestamp]);
-
-  // Toggle sound notifications separately
-  const toggleSound = useCallback(() => {
-    const newSoundState = !soundEnabled;
-    setSoundEnabled(newSoundState);
-    localStorage.setItem("sound_enabled", newSoundState.toString());
-    // No longer automatically play sound when toggling
-  }, [soundEnabled]);
-
-  // Test sound function
-  const testSound = useCallback(() => {
-    if (notificationSound.current) {
-      notificationSound.current.currentTime = 0;
-      notificationSound.current
-        .play()
-        .catch((err) =>
-          console.error("Error playing notification sound:", err)
-        );
-    }
-  }, []);
+  }, [changes]);
 
   const handleManualRefresh = useCallback(async () => {
     const now = Date.now();
@@ -173,10 +79,12 @@ export function ChangesTable({
     setError(null);
 
     try {
-      await onChangesUpdate();
-      const currentTime = Date.now();
+      await onChangesUpdate({ force: true });
+      const currentTime =
+        readChangeStorageNumber("cacheTimestamp") || Date.now();
       setLastRefreshTime(currentTime);
       setNextRefreshAllowed(currentTime + CACHE_DURATION);
+      setTimeUntilRefresh(CACHE_DURATION);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to fetch changes");
     } finally {
@@ -194,121 +102,6 @@ export function ChangesTable({
       return () => clearInterval(interval);
     }
   }, [nextRefreshAllowed, canRefresh]);
-
-  // Auto-refresh effect
-  useEffect(() => {
-    if (!autoRefreshEnabled || !canRefresh) return;
-
-    const interval = setInterval(() => {
-      if (canRefresh && !isRefreshing) {
-        handleManualRefresh();
-        // Ensure timestamp is updated even if no new changes
-        const currentTime = Date.now();
-        setLastRefreshTime(currentTime);
-        localStorage.setItem("changes_timestamp", currentTime.toString());
-      }
-    }, autoRefreshInterval);
-
-    return () => clearInterval(interval);
-  }, [autoRefreshEnabled, canRefresh, isRefreshing, autoRefreshInterval]);
-
-  // Initialize notification sound
-  useEffect(() => {
-    notificationSound.current = new Audio("/notification2.wav");
-    return () => {
-      if (notificationSound.current) {
-        notificationSound.current = null;
-      }
-    };
-  }, []);
-
-  // Trigger notifications when genuinely new changes arrive
-  useEffect(() => {
-    if (!notificationsEnabled) return;
-
-    // On first run after enabling/mount, initialize without notifying
-    if (!notificationsInitializedRef.current) {
-      notificationsInitializedRef.current = true;
-      // Sync counters silently to avoid initial spam
-      if (changes.length !== lastSeenChangeCount) {
-        setLastSeenChangeCount(changes.length);
-        localStorage.setItem(
-          "last_seen_change_count",
-          changes.length.toString()
-        );
-      }
-      if (latestTimestamp && latestTimestamp !== lastSeenLatestTimestamp) {
-        setLastSeenLatestTimestamp(latestTimestamp);
-        localStorage.setItem("last_seen_latest_ts", latestTimestamp.toString());
-      }
-      return;
-    }
-
-    // Suppress right after tab becomes visible to avoid false positives on refocus
-    const now = Date.now();
-    if (
-      document.visibilityState === "visible" &&
-      now - lastVisibilityChangeRef.current < 1500
-    ) {
-      // Sync silently
-      if (latestTimestamp > lastSeenLatestTimestamp) {
-        setLastSeenLatestTimestamp(latestTimestamp);
-        localStorage.setItem("last_seen_latest_ts", latestTimestamp.toString());
-      }
-      if (changes.length !== lastSeenChangeCount) {
-        setLastSeenChangeCount(changes.length);
-        localStorage.setItem(
-          "last_seen_change_count",
-          changes.length.toString()
-        );
-      }
-      return;
-    }
-
-    // Only notify when we see changes newer than the last seen timestamp
-    if (latestTimestamp > lastSeenLatestTimestamp) {
-      const newChangesCount = changes.filter(
-        (c) => c.timestamp > lastSeenLatestTimestamp
-      ).length;
-
-      if (newChangesCount > 0) {
-        // Browser notification
-        if (Notification.permission === "granted") {
-          new Notification("New Changes Detected", {
-            body: `${newChangesCount} new change${
-              newChangesCount !== 1 ? "s" : ""
-            } detected.`,
-            icon: "/favicon.ico",
-          });
-        }
-
-        // Optional sound
-        if (soundEnabled && notificationSound.current) {
-          notificationSound.current.currentTime = 0;
-          notificationSound.current.play().catch((err) => {
-            console.error("Error playing notification sound:", err);
-          });
-        }
-
-        // Persist the new seen markers
-        setLastSeenLatestTimestamp(latestTimestamp);
-        localStorage.setItem("last_seen_latest_ts", latestTimestamp.toString());
-        setLastSeenChangeCount(changes.length);
-        localStorage.setItem(
-          "last_seen_change_count",
-          changes.length.toString()
-        );
-      }
-    }
-  }, [
-    changes,
-    changes.length,
-    latestTimestamp,
-    notificationsEnabled,
-    soundEnabled,
-    lastSeenChangeCount,
-    lastSeenLatestTimestamp,
-  ]);
 
   // Apply date range filter before other filters
   const filteredChanges = useMemo(() => {
@@ -495,10 +288,10 @@ export function ChangesTable({
     }
 
     return (
-      <div className="overflow-x-auto rounded-lg border border-gray-700">
+      <div className="overflow-x-auto rounded-xl border border-gray-700/60 bg-[#0c1117]/60">
         <table className="w-full">
           <thead>
-            <tr className="bg-gray-800">
+            <tr className="bg-gray-900/40">
               <SortHeader field="timestamp">Time</SortHeader>
               <SortHeader field="gameMode">Mode</SortHeader>
               <SortHeader field="map">Map</SortHeader>
@@ -512,7 +305,7 @@ export function ChangesTable({
             {changes.map((change, index) => (
               <tr
                 key={`${change.map}-${change.boss}-${change.field}-${index}`}
-                className="border-t border-gray-800 hover:bg-gray-800/50 transition-colors duration-200"
+                className="border-t border-gray-800/70 hover:bg-gray-800/30 transition-colors duration-200"
               >
                 <TimestampCell timestamp={change.timestamp} />
                 <td className="px-6 py-4 whitespace-nowrap text-orange-300">
@@ -559,53 +352,6 @@ export function ChangesTable({
             Retry
           </button>
         </div>
-        <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
-          <span className="text-sm text-gray-400">
-            {notificationsEnabled
-              ? "Notifications enabled"
-              : "Get notified of changes"}
-          </span>
-          <button
-            onClick={toggleNotifications}
-            className="p-1 rounded-full hover:bg-gray-700/50 transition-colors"
-            title={
-              notificationsEnabled
-                ? "Disable notifications"
-                : "Enable notifications"
-            }
-          >
-            {notificationsEnabled ? (
-              <BellOff className="w-4 h-4 text-purple-400" />
-            ) : (
-              <BellPlus className="w-4 h-4 text-gray-400" />
-            )}
-          </button>
-          {isDev && (
-            <button
-              onClick={() => {
-                if (Notification.permission === "granted") {
-                  new Notification("Test Notification", {
-                    body: "This is a test notification for developers",
-                    icon: "/favicon.ico",
-                  });
-                } else {
-                  Notification.requestPermission().then((permission) => {
-                    if (permission === "granted") {
-                      new Notification("Test Notification", {
-                        body: "This is a test notification for developers",
-                        icon: "/favicon.ico",
-                      });
-                    }
-                  });
-                }
-              }}
-              className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 ml-2"
-              title="Test notification (for developers)"
-            >
-              Test
-            </button>
-          )}
-        </div>
       </div>
     );
   }
@@ -636,34 +382,14 @@ export function ChangesTable({
                 "Check for changes"
               )}
             </button>
-            {error && <p className="text-red-400 text-sm mt-2">{error}</p>}
-          </div>
-          <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
-            <span className="text-sm text-gray-400">
-              {notificationsEnabled
-                ? "Notifications enabled"
-                : "Get notified of changes"}
-            </span>
-            <button
-              onClick={toggleNotifications}
-              className="p-1 rounded-full hover:bg-gray-700/50 transition-colors"
-              title={
-                notificationsEnabled
-                  ? "Disable notifications"
-                  : "Enable notifications"
-              }
-            >
-              {notificationsEnabled ? (
-                <BellOff className="w-4 h-4 text-purple-400" />
-              ) : (
-                <BellPlus className="w-4 h-4 text-gray-400" />
-              )}
-            </button>
+            {error && (
+              <p className="text-red-400 text-sm mt-2">{error}</p>
+            )}
           </div>
         </div>
 
         {/* Informational content for AdSense compliance */}
-        <div className="bg-gray-800/30 rounded-lg p-6">
+        <div className="rounded-xl border border-gray-700/60 bg-[#0c1117]/60 p-6">
           <h3 className="text-lg font-semibold text-white mb-3">
             About Boss Spawn Changes
           </h3>
@@ -708,50 +434,50 @@ export function ChangesTable({
         </div>
 
         {/* Boss quick reference */}
-        <div className="bg-gray-800/30 rounded-lg p-6">
+        <div className="rounded-xl border border-gray-700/60 bg-[#0c1117]/60 p-6">
           <h3 className="text-lg font-semibold text-white mb-3">
             Tarkov Bosses Quick Reference
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-            <div className="bg-gray-800/50 rounded p-3">
+            <div className="rounded-lg bg-gray-900/40 p-3">
               <span className="text-purple-400 font-semibold block">
                 Reshala
               </span>
               <span className="text-gray-500">Customs</span>
             </div>
-            <div className="bg-gray-800/50 rounded p-3">
+            <div className="rounded-lg bg-gray-900/40 p-3">
               <span className="text-purple-400 font-semibold block">Killa</span>
               <span className="text-gray-500">Interchange</span>
             </div>
-            <div className="bg-gray-800/50 rounded p-3">
+            <div className="rounded-lg bg-gray-900/40 p-3">
               <span className="text-purple-400 font-semibold block">
                 Glukhar
               </span>
               <span className="text-gray-500">Reserve</span>
             </div>
-            <div className="bg-gray-800/50 rounded p-3">
+            <div className="rounded-lg bg-gray-900/40 p-3">
               <span className="text-purple-400 font-semibold block">
                 Shturman
               </span>
               <span className="text-gray-500">Woods</span>
             </div>
-            <div className="bg-gray-800/50 rounded p-3">
+            <div className="rounded-lg bg-gray-900/40 p-3">
               <span className="text-purple-400 font-semibold block">
                 Sanitar
               </span>
               <span className="text-gray-500">Shoreline</span>
             </div>
-            <div className="bg-gray-800/50 rounded p-3">
+            <div className="rounded-lg bg-gray-900/40 p-3">
               <span className="text-purple-400 font-semibold block">
                 Tagilla
               </span>
               <span className="text-gray-500">Factory</span>
             </div>
-            <div className="bg-gray-800/50 rounded p-3">
+            <div className="rounded-lg bg-gray-900/40 p-3">
               <span className="text-purple-400 font-semibold block">Kaban</span>
               <span className="text-gray-500">Streets</span>
             </div>
-            <div className="bg-gray-800/50 rounded p-3">
+            <div className="rounded-lg bg-gray-900/40 p-3">
               <span className="text-purple-400 font-semibold block">
                 The Goons
               </span>
@@ -788,13 +514,19 @@ export function ChangesTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row p-4 bg-gray-800/50 rounded-lg gap-4">
+      {visitSummary && (
+        <LastVisitSummary
+          count={visitSummary.count}
+          previousViewedAt={visitSummary.previousViewedAt}
+        />
+      )}
+      <div className="flex flex-col gap-4 rounded-xl border border-gray-700/60 bg-[#0c1117]/60 p-4 md:flex-row">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           {/* Date Range Filter */}
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value as DateRange)}
-            className="px-3 py-2 text-sm bg-gray-800 rounded-md border border-gray-700"
+            className="rounded-lg border border-gray-700/60 bg-gray-900/40 px-3 py-2 text-sm text-gray-200"
           >
             <option value="all">All Time ({dateRangeCounts.all})</option>
             <option value="24h">
@@ -810,7 +542,7 @@ export function ChangesTable({
           <select
             value={modeFilter}
             onChange={(e) => setModeFilter(e.target.value)}
-            className="px-3 py-2 text-sm bg-gray-800 rounded-md border border-gray-700"
+            className="rounded-lg border border-gray-700/60 bg-gray-900/40 px-3 py-2 text-sm text-gray-200"
           >
             <option value="">All Modes</option>
             <option value="PvP">PvP</option>
@@ -821,7 +553,7 @@ export function ChangesTable({
           <select
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-            className="px-3 py-2 text-sm bg-gray-800 rounded-md border border-gray-700"
+            className="rounded-lg border border-gray-700/60 bg-gray-900/40 px-3 py-2 text-sm text-gray-200"
           >
             <option value="none">No Grouping</option>
             <option value="day">Group by Day</option>
@@ -863,113 +595,7 @@ export function ChangesTable({
                 </span>
               )}
             </div>
-
-            <div className="flex items-center gap-2 md:ml-4 md:border-l md:border-gray-700 md:pl-4">
-              <span className="text-xs text-gray-400">Auto-refresh:</span>
-              <button
-                onClick={toggleAutoRefresh}
-                className={`px-2 py-1 text-xs rounded ${
-                  autoRefreshEnabled
-                    ? "bg-purple-600 text-white"
-                    : "bg-gray-700 text-gray-300"
-                }`}
-                title={
-                  autoRefreshEnabled
-                    ? "Disable auto-refresh (5 min)"
-                    : "Enable auto-refresh (5 min)"
-                }
-              >
-                {autoRefreshEnabled ? "ON (5m)" : "OFF"}
-              </button>
-            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30 md:flex-wrap">
-          <span className="text-sm text-gray-400">
-            {notificationsEnabled
-              ? "Notifications enabled"
-              : "Get notified of changes"}
-          </span>
-          <button
-            onClick={toggleNotifications}
-            className="p-1 rounded-full hover:bg-gray-700/50 transition-colors"
-            title={
-              notificationsEnabled
-                ? "Disable notifications"
-                : "Enable notifications"
-            }
-          >
-            {notificationsEnabled ? (
-              <BellOff className="w-4 h-4 text-purple-400" />
-            ) : (
-              <BellPlus className="w-4 h-4 text-gray-400" />
-            )}
-          </button>
-          {notificationsEnabled && (
-            <button
-              onClick={toggleSound}
-              className={`p-1 rounded-full hover:bg-gray-700/50 transition-colors ${
-                soundEnabled ? "text-purple-400" : "text-gray-400"
-              }`}
-              title={soundEnabled ? "Disable sound" : "Enable sound"}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4"
-              >
-                {soundEnabled ? (
-                  <>
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                  </>
-                ) : (
-                  <>
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                    <line x1="23" y1="9" x2="17" y2="15" />
-                    <line x1="17" y1="9" x2="23" y2="15" />
-                  </>
-                )}
-              </svg>
-            </button>
-          )}
-          {isDev && (
-            <button
-              onClick={() => {
-                // Play the sound notification
-                testSound();
-
-                // Also show a browser notification if permission is granted
-                if (Notification.permission === "granted") {
-                  new Notification("Test Notification", {
-                    body: "Parmesan is a great cheese",
-                    icon: "/favicon.ico",
-                  });
-                } else {
-                  Notification.requestPermission().then((permission) => {
-                    if (permission === "granted") {
-                      new Notification("Test Notification", {
-                        body: "Parmesan is a bad cheese",
-                        icon: "/favicon.ico",
-                      });
-                    }
-                  });
-                }
-              }}
-              className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 ml-2"
-              title="Test notification (for developers)"
-            >
-              Test
-            </button>
-          )}
         </div>
       </div>
 
@@ -990,6 +616,29 @@ export function ChangesTable({
               </div>
             ))
         : renderTable(sortedChanges)}
+    </div>
+  );
+}
+
+function LastVisitSummary({
+  count,
+  previousViewedAt,
+}: {
+  count: number;
+  previousViewedAt: number;
+}) {
+  const previousVisitRelativeTime = useRelativeTime(previousViewedAt);
+
+  return (
+    <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+      <div className="flex flex-col gap-1 text-sm">
+        <span className="font-medium text-emerald-200">
+          {count} change{count === 1 ? "" : "s"} landed since your last visit
+        </span>
+        <span className="text-emerald-100/70">
+          Last viewed {previousVisitRelativeTime || "recently"}.
+        </span>
+      </div>
     </div>
   );
 }

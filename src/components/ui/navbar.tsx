@@ -8,6 +8,7 @@ interface NavItem {
   name: string;
   url: string;
   icon: LucideIcon;
+  badgeCount?: number;
 }
 
 interface NavBarProps {
@@ -58,6 +59,11 @@ export function NavBar({ items, className }: NavBarProps) {
               <span className="flex items-center gap-2">
                 <Icon size={18} strokeWidth={2.5} />
                 {item.name}
+                {!!item.badgeCount && (
+                  <span className="min-w-5 rounded-full bg-purple-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-purple-100">
+                    {item.badgeCount > 99 ? "99+" : item.badgeCount}
+                  </span>
+                )}
               </span>
               {isActive && (
                 <motion.div

@@ -2,18 +2,54 @@ import { SpawnData } from "@/types";
 import { DataChange } from "./diff";
 import tempBossDataFromFile from "./temp-bosses.json"; // Added import for temp bosses
 import { BOSS_OVERRIDES, ENABLE_OVERRIDES } from "@/config/boss-overrides";
+import {
+  readChangeStorageNumber,
+  readChangeStorageRaw,
+  writeChangeStorage,
+} from "@/lib/change-storage";
 
 
 export type { SpawnData };
 
 const CACHE_VERSION = 8;
 const CHANGES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for changes data (can be adjusted independently)
+const DEFAULT_CHANGES_API_BASE_URL = "https://bossdata.cultistcircle.workers.dev";
+const CHANGES_API_PATH = "/api/changes";
+const CHANGES_API_LIMIT = 1000;
 
-// Change to use the cultistcircle API
-const CHANGES_API_URL = "https://bossdata.cultistcircle.workers.dev/changes";
+function normalizeChangesApiBaseUrl(rawValue?: string): string {
+  const candidate = rawValue?.trim();
 
-// If environment variable is not set, use the cultistcircle API as fallback
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || CHANGES_API_URL;
+  if (!candidate) {
+    return DEFAULT_CHANGES_API_BASE_URL;
+  }
+
+  const normalized = candidate
+    .replace(/\/$/, "")
+    .replace(/\/api\/changes$/, "")
+    .replace(/\/changes$/, "");
+
+  if (normalized.startsWith("/")) {
+    return normalized;
+  }
+
+  try {
+    return new URL(normalized).toString().replace(/\/$/, "");
+  } catch (error) {
+    console.warn(
+      "Invalid changes API base URL, falling back to default:",
+      normalized,
+      error
+    );
+    return DEFAULT_CHANGES_API_BASE_URL;
+  }
+}
+
+const CHANGES_API_BASE_URL = normalizeChangesApiBaseUrl(
+  import.meta.env.VITE_CHANGES_API_BASE_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    DEFAULT_CHANGES_API_BASE_URL
+);
 
 // Type for the cultistcircle API response
 
@@ -283,23 +319,80 @@ export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): P
   return finalData;
 }
 
-export async function fetchChanges(): Promise<DataChange[]> {
+function buildChangesApiUrl(since?: number): string {
+  const url = CHANGES_API_BASE_URL.startsWith("/")
+    ? new URL(CHANGES_API_BASE_URL, window.location.origin)
+    : new URL(CHANGES_API_BASE_URL);
+
+  url.pathname = `${url.pathname.replace(/\/$/, "")}${CHANGES_API_PATH}`;
+  url.searchParams.set("limit", CHANGES_API_LIMIT.toString());
+
+  if (typeof since === "number" && Number.isFinite(since) && since > 0) {
+    url.searchParams.set("since", since.toString());
+  }
+
+  return url.toString();
+}
+
+function getCachedChanges(): DataChange[] {
+  const cached = readChangeStorageRaw("cache");
+
+  if (!cached) {
+    return [];
+  }
+
   try {
-    // Check cache first
-    const cached = localStorage.getItem("changes_data");
-    const timestamp = parseInt(
-      localStorage.getItem("changes_timestamp") || "0",
-      10
-    );
+    const parsed = JSON.parse(cached);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error("Failed to parse cached changes:", error);
+    return [];
+  }
+}
+
+function getLatestChangeTimestamp(changes: DataChange[]): number {
+  return changes.length ? Math.max(...changes.map((change) => change.timestamp)) : 0;
+}
+
+function mergeChanges(existingChanges: DataChange[], newChanges: DataChange[]): DataChange[] {
+  if (!newChanges.length) {
+    return existingChanges;
+  }
+
+  const seen = new Set(
+    existingChanges.map(
+      (change) =>
+        `${change.timestamp}|${change.gameMode}|${change.map}|${change.boss}|${change.field}|${change.oldValue}|${change.newValue}`
+    )
+  );
+
+  const merged = [...existingChanges];
+
+  for (const change of newChanges) {
+    const signature = `${change.timestamp}|${change.gameMode}|${change.map}|${change.boss}|${change.field}|${change.oldValue}|${change.newValue}`;
+
+    if (!seen.has(signature)) {
+      seen.add(signature);
+      merged.push(change);
+    }
+  }
+
+  return merged.sort((a, b) => b.timestamp - a.timestamp);
+}
+
+export async function fetchChanges(options: { force?: boolean } = {}): Promise<DataChange[]> {
+  try {
+    const { force = false } = options;
+    const cachedChanges = getCachedChanges();
+    const timestamp = readChangeStorageNumber("cacheTimestamp");
     const now = Date.now();
 
-    if (cached && now - timestamp < CHANGES_CACHE_DURATION) {
-      return JSON.parse(cached);
+    if (!force && cachedChanges.length && now - timestamp < CHANGES_CACHE_DURATION) {
+      return cachedChanges;
     }
 
-    const url = new URL(CHANGES_API_URL);
-
-    const response = await fetch(url.toString(), {
+    const latestCachedTimestamp = getLatestChangeTimestamp(cachedChanges);
+    const response = await fetch(buildChangesApiUrl(latestCachedTimestamp || undefined), {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -308,14 +401,19 @@ export async function fetchChanges(): Promise<DataChange[]> {
     });
 
     if (!response.ok) {
+      if (response.status === 404) {
+        writeChangeStorage("cacheTimestamp", now.toString());
+        return cachedChanges;
+      }
+
       console.error(
         "Failed to fetch changes:",
         response.status,
         response.statusText
       );
       // If fetch fails but we have cached data, return it even if expired
-      if (cached) {
-        return JSON.parse(cached);
+      if (cachedChanges.length) {
+        return cachedChanges;
       }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -324,8 +422,8 @@ export async function fetchChanges(): Promise<DataChange[]> {
 
     if (!Array.isArray(data)) {
       console.error("Invalid response format:", data);
-      if (cached) {
-        return JSON.parse(cached);
+      if (cachedChanges.length) {
+        return cachedChanges;
       }
       return [];
     }
@@ -353,32 +451,21 @@ export async function fetchChanges(): Promise<DataChange[]> {
       }))
       .sort((a, b) => b.timestamp - a.timestamp); // Sort by newest first
 
-    // Update cache
-    localStorage.setItem("changes_data", JSON.stringify(transformedData));
-    localStorage.setItem("changes_timestamp", now.toString());
+    const mergedChanges = latestCachedTimestamp
+      ? mergeChanges(cachedChanges, transformedData)
+      : transformedData;
 
-    return transformedData;
+    writeChangeStorage("cache", JSON.stringify(mergedChanges));
+    writeChangeStorage("cacheTimestamp", now.toString());
+
+    return mergedChanges;
   } catch (error) {
     console.error("Error fetching changes:", error);
     // If there's an error and we have cached data, return it even if expired
-    const cached = localStorage.getItem("changes_data");
-    if (cached) {
-      return JSON.parse(cached);
+    const cachedChanges = getCachedChanges();
+    if (cachedChanges.length) {
+      return cachedChanges;
     }
     throw error;
-  }
-}
-
-export async function submitChanges(changes: DataChange[]): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/changes`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(changes),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to submit changes");
   }
 }
