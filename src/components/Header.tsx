@@ -181,8 +181,8 @@ export const Header = memo(function Header({
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
-                  (11/03/2026): Glukhar on Reserve increased from 75% to 100%
-                  in Regular and PVE.
+                  (12/03/2026): Cultist Priest on Night Factory increased from
+                  2% to 12%.
                 </span>
                 <span className="block mb-1">
                   (02/09/2025): redesign of table layout for easier reading.

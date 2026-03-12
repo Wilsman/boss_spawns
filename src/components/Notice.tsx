@@ -11,13 +11,15 @@ interface NoticeImage {
 
 const noticeImages: NoticeImage[] = [
   {
-    src: "https://assets.tarkov.dev/glukhar-portrait.png",
-    alt: "Glukhar",
+    src: "https://assets.tarkov.dev/cultist-priest-portrait.webp",
+    alt: "Cultist Priest",
   },
 ];
 
-const changeRows = [{ label: "Glukhar", from: "75%", to: "100%" }] as const;
-const changeDateLabel = "March 11, 2026";
+const changeRows = [
+  { label: "Cultist Priest", from: "2%", to: "12%" },
+] as const;
+const changeDateLabel = "March 12, 2026";
 
 export function Notice() {
   const [isVisible, setIsVisible] = useState(false);
@@ -72,11 +74,11 @@ export function Notice() {
 
             <dl className="grid min-w-0 flex-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-[96px_minmax(0,1fr)]">
               <dt className="text-zinc-500">Map</dt>
-              <dd className="text-zinc-100">Reserve</dd>
+              <dd className="text-zinc-100">Night Factory</dd>
 
               <dt className="text-zinc-500">Status</dt>
               <dd className="text-zinc-100">
-                Glukhar is now at 100% on Reserve in PvP and PvE.
+                Cultist Priest on Night Factory increased from 2% to 12%.
               </dd>
 
               <dt className="text-zinc-500">Rates</dt>
@@ -105,7 +107,7 @@ export function Notice() {
 
               <dt className="text-zinc-500">Locations</dt>
               <dd className="text-zinc-300">
-                K Buildings, Black Knight, White Knight, and Train Station.
+                Night Factory cultist spawn locations.
               </dd>
             </dl>
           </div>
