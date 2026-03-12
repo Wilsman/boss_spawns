@@ -181,8 +181,10 @@ export const Header = memo(function Header({
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
-                  (12/03/2026): Cultist Priest on Night Factory increased from
-                  2% to 12%.
+                  (12/03/2026): Smuggler now spawns at 100% on Customs, Ground
+                  Zero, Interchange, Lighthouse, Shoreline, Streets of Tarkov,
+                  and Woods; Reserve now has Glukhar, Kaban, Killa, Kollontay,
+                  Reshala, Sanitar, Shturman, and Tagilla all at 100%.
                 </span>
                 <span className="block mb-1">
                   (02/09/2025): redesign of table layout for easier reading.

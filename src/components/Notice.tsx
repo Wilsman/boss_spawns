@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { ArrowRight } from "lucide-react";
 
 interface NoticeImage {
   src: string;
@@ -11,15 +10,33 @@ interface NoticeImage {
 
 const noticeImages: NoticeImage[] = [
   {
-    src: "https://assets.tarkov.dev/cultist-priest-portrait.webp",
-    alt: "Cultist Priest",
+    src: "https://assets.tarkov.dev/unknown-npc-portrait.webp",
+    alt: "Smuggler",
   },
 ];
 
-const changeRows = [
-  { label: "Cultist Priest", from: "2%", to: "12%" },
+const smugglerMaps = [
+  "Customs",
+  "Ground Zero",
+  "Interchange",
+  "Lighthouse",
+  "Shoreline",
+  "Streets of Tarkov",
+  "Woods",
 ] as const;
-const changeDateLabel = "March 12, 2026";
+
+const reserveBosses = [
+  "Glukhar",
+  "Kaban",
+  "Killa",
+  "Kollontay",
+  "Reshala",
+  "Sanitar",
+  "Shturman",
+  "Tagilla",
+] as const;
+
+const changeDateLabel = "March 12, 2026 4:30 PM GMT";
 
 export function Notice() {
   const [isVisible, setIsVisible] = useState(false);
@@ -74,41 +91,24 @@ export function Notice() {
 
             <dl className="grid min-w-0 flex-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-[96px_minmax(0,1fr)]">
               <dt className="text-zinc-500">Map</dt>
-              <dd className="text-zinc-100">Night Factory</dd>
+              <dd className="text-zinc-100">Multiple maps</dd>
 
               <dt className="text-zinc-500">Status</dt>
               <dd className="text-zinc-100">
-                Cultist Priest on Night Factory increased from 2% to 12%.
+                Smuggler now has 100% spawns on seven maps, and Reserve now
+                has every listed boss at 100%.
               </dd>
 
-              <dt className="text-zinc-500">Rates</dt>
-              <dd className="space-y-1 text-zinc-300">
-                {changeRows.map((change) => (
-                  <div
-                    key={change.label}
-                    className="flex flex-wrap items-center gap-2"
-                  >
-                    <span className="min-w-[58px] text-zinc-400">
-                      {change.label}
-                    </span>
-                    <span className="text-zinc-500 line-through">
-                      {change.from}
-                    </span>
-                    <ArrowRight className="h-4 w-4 text-zinc-600" />
-                    <span className="font-semibold text-zinc-100">
-                      {change.to}
-                    </span>
-                  </div>
-                ))}
+              <dt className="text-zinc-500">Smuggler</dt>
+              <dd className="text-zinc-300">{smugglerMaps.join(", ")}.</dd>
+
+              <dt className="text-zinc-500">Reserve</dt>
+              <dd className="text-zinc-300">
+                {reserveBosses.join(", ")}.
               </dd>
 
               <dt className="text-zinc-500">Changed</dt>
               <dd className="text-zinc-300">{changeDateLabel}</dd>
-
-              <dt className="text-zinc-500">Locations</dt>
-              <dd className="text-zinc-300">
-                Night Factory cultist spawn locations.
-              </dd>
             </dl>
           </div>
         </article>
