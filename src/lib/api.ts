@@ -11,7 +11,7 @@ import {
 
 export type { SpawnData };
 
-const CACHE_VERSION = 8;
+const CACHE_VERSION = 9;
 const CHANGES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for changes data (can be adjusted independently)
 const DEFAULT_CHANGES_API_BASE_URL = "https://bossdata.cultistcircle.workers.dev";
 const CHANGES_API_PATH = "/api/changes";
