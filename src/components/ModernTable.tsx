@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 import { SpawnData, Boss, DataMode, Health, Escort } from "@/types";
+import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
 import {
   HoverCard,
   HoverCardContent,
@@ -137,10 +138,10 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
           const r = rBoss.spawnChance;
           const p = pBoss.spawnChance;
           if (r !== p) {
-            const bossName =
-              rBoss.boss.name === "infected"
-                ? "Infected(Zombie)"
-                : rBoss.boss.name;
+            const bossName = getCanonicalBossName(
+              rBoss.boss.name,
+              rBoss.spawnChance
+            );
             const key = `${rMap.name}-${bossName}`;
             unique.set(key, {
               map: rMap.name,
@@ -171,14 +172,14 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
           return false;
         if (
           filters.boss &&
-          entry.boss.toLowerCase() !== filters.boss.toLowerCase()
+          !bossMatchesQuery(entry.boss, filters.boss)
         )
           return false;
         if (filters.search) {
           const s = filters.search.toLowerCase();
           return (
             entry.map.toLowerCase().includes(s) ||
-            entry.boss.toLowerCase().includes(s)
+            bossMatchesQuery(entry.boss, s)
           );
         }
         return true;
@@ -193,16 +194,16 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
           return [];
         const byKey = new Map<string, BossEntry>();
         map.bosses.forEach((b) => {
-          const bossName = b.boss.name;
+          const bossName = getCanonicalBossName(b.boss.name, b.spawnChance);
           if (
             filters.boss &&
-            !bossName.toLowerCase().includes(filters.boss.toLowerCase())
+            !bossMatchesQuery(b.boss.name, filters.boss, b.spawnChance)
           )
             return;
           if (filters.search) {
             const s = filters.search.toLowerCase();
             const matchMap = map.name.toLowerCase().includes(s);
-            const matchBoss = bossName.toLowerCase().includes(s);
+            const matchBoss = bossMatchesQuery(b.boss.name, s, b.spawnChance);
             const matchLoc = b.spawnLocations?.some((loc) =>
               loc.name.toLowerCase().includes(s)
             );

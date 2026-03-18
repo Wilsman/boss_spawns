@@ -2,6 +2,7 @@ import { SpawnData, Boss, DataMode, Health, SpawnLocation, Escort } from "@/type
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
+import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
 
 type CompareData = {
   regular: SpawnData[];
@@ -160,10 +161,10 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
           const pveChance = pveBoss.spawnChance;
 
           if (regularChance !== pveChance) {
-            const bossName =
-              regularBoss.boss.name === "infected"
-                ? "Infected(Zombie)"
-                : regularBoss.boss.name;
+            const bossName = getCanonicalBossName(
+              regularBoss.boss.name,
+              regularBoss.spawnChance
+            );
             const key = `${regularMap.name}-${bossName}`;
 
             const locations: Location[] = [
@@ -197,14 +198,14 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
           return false;
         if (
           filters.boss &&
-          entry.boss.toLowerCase() !== filters.boss.toLowerCase()
+          !bossMatchesQuery(entry.boss, filters.boss)
         )
           return false;
         if (filters.search) {
           const search = filters.search.toLowerCase();
           return (
             entry.map.toLowerCase().includes(search) ||
-            entry.boss.toLowerCase().includes(search)
+            bossMatchesQuery(entry.boss, search)
           );
         }
         return true;
@@ -224,18 +225,23 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
 
         map.bosses.forEach((bossEntry: Boss) => {
           const bossData = bossEntry.boss;
-          const bossName = bossData.name;
+          const bossName = getCanonicalBossName(
+            bossData.name,
+            bossEntry.spawnChance
+          );
 
           if (filters.boss) {
-            const filterLower = filters.boss.toLowerCase();
-            const bossLower = bossName.toLowerCase();
-            if (!bossLower.includes(filterLower)) return;
+            if (!bossMatchesQuery(bossData.name, filters.boss, bossEntry.spawnChance)) return;
           }
 
           if (filters.search) {
             const search = filters.search.toLowerCase();
             const matchesMap = map.name.toLowerCase().includes(search);
-            const matchesBoss = bossName.toLowerCase().includes(search);
+            const matchesBoss = bossMatchesQuery(
+              bossData.name,
+              search,
+              bossEntry.spawnChance
+            );
             const matchesLocation = bossEntry.spawnLocations?.some((loc: SpawnLocation) =>
               loc.name.toLowerCase().includes(search)
             );

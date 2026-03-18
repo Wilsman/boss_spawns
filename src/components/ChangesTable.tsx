@@ -4,6 +4,7 @@ import { ArrowUpDown, RefreshCcw, AlertTriangle } from "lucide-react";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import type { ChangeVisitSummary } from "@/hooks/useChangeMonitor";
 import { readChangeStorageNumber } from "@/lib/change-storage";
+import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
 
 interface ChangesTableProps {
   changes: DataChange[];
@@ -142,14 +143,14 @@ export function ChangesTable({
         return false;
       if (
         filters.boss &&
-        !change.boss.toLowerCase().includes(filters.boss.toLowerCase())
+        !bossMatchesQuery(change.boss, filters.boss)
       )
         return false;
       if (filters.search) {
         const search = filters.search.toLowerCase();
         return (
           change.map.toLowerCase().includes(search) ||
-          change.boss.toLowerCase().includes(search) ||
+          bossMatchesQuery(change.boss, search) ||
           change.oldValue.toLowerCase().includes(search) ||
           change.newValue.toLowerCase().includes(search)
         );
@@ -187,7 +188,7 @@ export function ChangesTable({
           case "map":
             return change.map;
           case "boss":
-            return change.boss;
+            return getCanonicalBossName(change.boss);
           case "field":
             return change.field;
           case "oldValue":
@@ -213,7 +214,10 @@ export function ChangesTable({
 
       const comparison = (aValue as number) - (bValue as number);
       return comparison === 0
-        ? a.map.localeCompare(b.map) || a.boss.localeCompare(b.boss)
+        ? a.map.localeCompare(b.map) ||
+          getCanonicalBossName(a.boss).localeCompare(
+            getCanonicalBossName(b.boss)
+          )
         : comparison * direction;
     });
   }, [filteredChanges, sortField, sortDirection]);
@@ -315,7 +319,7 @@ export function ChangesTable({
                   {change.map}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-blue-300">
-                  {change.boss}
+                  {getCanonicalBossName(change.boss)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-gray-300">
                   {change.field}

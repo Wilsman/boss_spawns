@@ -1,10 +1,6 @@
 import { Search, FileDown, Map, User } from "lucide-react";
 import { SpawnData } from "@/types";
-
-// Import the helper function from DataTable or move it to a shared utils file
-function getInfectedBossName(spawnChance: number) {
-  return spawnChance < 1 ? "Infected(Tagilla)" : "Infected(Zombie)";
-}
+import { getCanonicalBossName } from "@/lib/boss-aliases";
 
 interface FilterBarProps {
   mapFilter: string;
@@ -31,9 +27,7 @@ export function FilterBar({
   const bosses = new Set(
     data?.flatMap((map) =>
       map.bosses.map((boss) =>
-        boss.boss.name === "infected"
-          ? getInfectedBossName(boss.spawnChance)
-          : boss.boss.name
+        getCanonicalBossName(boss.boss.name, boss.spawnChance)
       )
     )
   );
