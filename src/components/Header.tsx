@@ -181,6 +181,13 @@ export const Header = memo(function Header({
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
+                  (19/03/2026): The temporary Smuggler 100% and Reserve
+                  full-roster event has ended. Smuggler was removed from the
+                  boosted maps, Reserve returned to a normal pool, and the
+                  current rotation shifted back to bosses like Tagilla, Killa,
+                  Reshala, Shturman, Sanitar, Kaban, and Kollontay.
+                </span>
+                <span className="block mb-1">
                   (12/03/2026): Smuggler now spawns at 100% on Customs, Ground
                   Zero, Interchange, Lighthouse, Shoreline, Streets of Tarkov,
                   and Woods; Reserve now has Glukhar, Kaban, Killa, Kollontay,

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NoticeImage {
@@ -36,7 +37,16 @@ const reserveBosses = [
   "Tagilla",
 ] as const;
 
-const changeDateLabel = "March 12, 2026 4:30 PM GMT";
+const changeDateLabel = "March 19, 2026 9:30 AM GMT";
+
+const followUpBosses = [
+  "Reshala (Customs 75%)",
+  "Tagilla (Factory 50%, Interchange 50%)",
+  "Killa (Interchange 75%)",
+  "Shturman (Woods 75%)",
+  "Sanitar (Shoreline 75%)",
+  "Kaban + Kollontay (Streets 75%)",
+] as const;
 
 export function Notice() {
   const [isVisible, setIsVisible] = useState(false);
@@ -52,7 +62,7 @@ export function Notice() {
   return (
     <section
       className={cn(
-        "mt-3 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-4",
+        "mt-3 w-full rounded-lg border border-amber-500/30 bg-gradient-to-br from-zinc-950 via-zinc-950 to-amber-950/20 px-4 py-4",
         "opacity-0 transition-opacity duration-200 ease-out",
         isVisible && "opacity-100",
       )}
@@ -60,28 +70,34 @@ export function Notice() {
       aria-live="polite"
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-800 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-3">
           <h2 className="text-base font-semibold text-zinc-100">
             Boss spawn update
           </h2>
-          <span className="text-xs text-zinc-500">
-            Updated: {changeDateLabel}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-200">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Event finished
+            </span>
+            <span className="text-xs text-zinc-500">
+              Updated: {changeDateLabel}
+            </span>
+          </div>
         </div>
 
-        <article className="rounded-lg border border-zinc-800 bg-zinc-900/30 px-3 py-3">
+        <article className="rounded-lg border border-amber-500/20 bg-zinc-900/40 px-3 py-3">
           <div className="flex flex-col gap-3 md:flex-row md:items-start">
             <div className="flex gap-2 md:shrink-0">
               {noticeImages.map((image) => (
                 <div
                   key={image.alt}
-                  className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-md border border-zinc-800 bg-zinc-950"
+                  className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-md border border-amber-500/20 bg-zinc-950"
                 >
                   <img
                     src={image.src}
                     alt={image.alt}
                     className={cn(
-                      "h-full w-full object-contain p-1",
+                      "h-full w-full object-contain p-1 grayscale opacity-75",
                       image.imageClassName,
                     )}
                   />
@@ -94,20 +110,24 @@ export function Notice() {
               <dd className="text-zinc-100">Multiple maps</dd>
 
               <dt className="text-zinc-500">Status</dt>
-              <dd className="text-zinc-100">
-                Smuggler now has 100% spawns on seven maps, and Reserve now
-                has every listed boss at 100%.
+              <dd className="text-amber-100">
+                The temporary Smuggler and Reserve boss event has ended. Those
+                boosted 100% spawns are no longer active.
               </dd>
 
-              <dt className="text-zinc-500">Smuggler</dt>
-              <dd className="text-zinc-300">{smugglerMaps.join(", ")}.</dd>
-
-              <dt className="text-zinc-500">Reserve</dt>
+              <dt className="text-zinc-500">Ended event</dt>
               <dd className="text-zinc-300">
-                {reserveBosses.join(", ")}.
+                Smuggler had 100% spawns on {smugglerMaps.join(", ")}, and
+                Reserve temporarily featured {reserveBosses.join(", ")} at
+                boosted rates.
               </dd>
 
-              <dt className="text-zinc-500">Changed</dt>
+              <dt className="text-zinc-500">Current rotation</dt>
+              <dd className="text-zinc-300">
+                {followUpBosses.join("; ")}.
+              </dd>
+
+              <dt className="text-zinc-500">Ended</dt>
               <dd className="text-zinc-300">{changeDateLabel}</dd>
             </dl>
           </div>
