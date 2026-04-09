@@ -6,7 +6,10 @@ export interface LatestChangeNotice {
   bossDisplayName: string;
   changedAt: number;
   maps: string[];
-  mapsWithValues: string[];
+  mapDetails: Array<{
+    mapName: string;
+    value: string;
+  }>;
   modes: string[];
   statusLine: string;
   title: string;
@@ -115,14 +118,19 @@ export function getLatestChangeNotice(changes: DataChange[]): LatestChangeNotice
       Math.abs(change.timestamp - latestChange.timestamp) <= CLUSTER_WINDOW_MS
   );
 
-  const maps = uniquePreservingOrder(
-    clusterChanges.map((change) => formatMapName(change.map))
-  );
-  const mapsWithValues = uniquePreservingOrder(
+  const mapDetails = uniquePreservingOrder(
     clusterChanges.map(
-      (change) => `${formatMapName(change.map)} (${change.newValue})`
+      (change) => `${formatMapName(change.map)}|${change.newValue}`
     )
-  );
+  ).map((entry) => {
+    const [mapName, value = ""] = entry.split("|");
+
+    return {
+      mapName,
+      value,
+    };
+  });
+  const maps = mapDetails.map((detail) => detail.mapName);
   const modes = uniquePreservingOrder(clusterChanges.map((change) => change.gameMode));
   const bossDisplayName = formatBossName(latestChange.boss);
   const statusLine = getStatusLine(latestChange, modes);
@@ -137,7 +145,7 @@ export function getLatestChangeNotice(changes: DataChange[]): LatestChangeNotice
     bossDisplayName,
     changedAt: latestChange.timestamp,
     maps,
-    mapsWithValues,
+    mapDetails,
     modes,
     statusLine,
     title:

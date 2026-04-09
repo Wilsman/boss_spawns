@@ -12,6 +12,7 @@ import { Notice } from "./Notice";
 import type { BossEventConfig } from "@/types/bossEvents";
 import type { DataChange } from "@/lib/diff";
 import { getLatestChangeNotice } from "@/lib/change-notice";
+import type { SpawnData } from "@/types";
 
 // Change this to "maintenance" when we need to swap out the boss notice for the maintenance message
 const NOTICE_VARIANT: "boss" | "maintenance" = "maintenance";
@@ -39,6 +40,8 @@ interface HeaderProps {
   allBossEvents?: BossEventConfig[];
   changes?: DataChange[];
   changesLoaded?: boolean;
+  regularData?: SpawnData[] | null;
+  pveData?: SpawnData[] | null;
 }
 
 export const Header = memo(function Header({
@@ -46,6 +49,8 @@ export const Header = memo(function Header({
   allBossEvents = [],
   changes = [],
   changesLoaded = false,
+  regularData,
+  pveData,
 }: HeaderProps) {
   // Memoize the random image so it doesn't change on every render
   const bossImage = useMemo(() => getRandomBossImage(), []);
@@ -153,10 +158,20 @@ export const Header = memo(function Header({
             {NOTICE_VARIANT === "maintenance" ? (
               <>
                 {/* <MaintenanceNotice /> */}
-                <Notice changes={changes} changesLoaded={changesLoaded} />
+                <Notice
+                  changes={changes}
+                  changesLoaded={changesLoaded}
+                  regularData={regularData}
+                  pveData={pveData}
+                />
               </>
             ) : USE_NOTICE_COMPONENT ? (
-              <Notice changes={changes} changesLoaded={changesLoaded} />
+              <Notice
+                changes={changes}
+                changesLoaded={changesLoaded}
+                regularData={regularData}
+                pveData={pveData}
+              />
             ) : (
               primaryDisplayEvent && (
                 <BossNotice

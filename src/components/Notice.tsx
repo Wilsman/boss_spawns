@@ -4,19 +4,78 @@ import { BellRing, Radar, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DataChange } from "@/lib/diff";
 import { getLatestChangeNotice } from "@/lib/change-notice";
+import type { SpawnData } from "@/types";
+import { getCanonicalBossName } from "@/lib/boss-aliases";
 
 interface NoticeProps {
   changes?: DataChange[];
   changesLoaded?: boolean;
+  regularData?: SpawnData[] | null;
+  pveData?: SpawnData[] | null;
 }
 
 const PILLAGER_PORTRAIT_URL = "https://assets.tarkov.dev/pillager-portrait.webp";
 
-export function Notice({ changes = [], changesLoaded = false }: NoticeProps) {
+function uniquePreservingOrder(values: string[]): string[] {
+  return Array.from(new Set(values));
+}
+
+function getLocationRows(
+  bossDisplayName: string,
+  mapDetails: Array<{ mapName: string; value: string }>,
+  regularData?: SpawnData[] | null,
+  pveData?: SpawnData[] | null,
+) {
+  const allMaps = [...(regularData ?? []), ...(pveData ?? [])];
+  const targetBossName = getCanonicalBossName(bossDisplayName).toLowerCase();
+
+  return mapDetails.map(({ mapName, value }) => {
+    const locations = uniquePreservingOrder(
+      allMaps
+        .filter((map) => map.name === mapName)
+        .flatMap((map) =>
+          map.bosses
+            .filter(
+              (bossEntry) =>
+                getCanonicalBossName(bossEntry.boss.name).toLowerCase() ===
+                targetBossName,
+            )
+            .flatMap((bossEntry) =>
+              bossEntry.spawnLocations.map((location) => location.name),
+            ),
+        ),
+    );
+
+    return {
+      locations,
+      mapName,
+      value,
+    };
+  });
+}
+
+export function Notice({
+  changes = [],
+  changesLoaded = false,
+  regularData,
+  pveData,
+}: NoticeProps) {
   const [isVisible, setIsVisible] = useState(false);
   const latestNotice = useMemo(() => getLatestChangeNotice(changes), [changes]);
   const noticeImageUrl =
     latestNotice?.bossDisplayName === "Pillager" ? PILLAGER_PORTRAIT_URL : null;
+  const locationRows = useMemo(
+    () =>
+      latestNotice
+        ? getLocationRows(
+            latestNotice.bossDisplayName,
+            latestNotice.mapDetails,
+            regularData,
+            pveData,
+          )
+        : [],
+    [latestNotice, pveData, regularData],
+  );
   const changeDateLabel = latestNotice
     ? new Intl.DateTimeFormat("en-GB", {
         dateStyle: "long",
@@ -84,8 +143,26 @@ export function Notice({ changes = [], changesLoaded = false }: NoticeProps) {
                   <dd className="text-amber-100">{latestNotice.statusLine}</dd>
 
                   <dt className="text-zinc-500">Maps</dt>
-                  <dd className="text-zinc-300">
-                    {latestNotice.mapsWithValues.join(", ")}
+                  <dd className="space-y-1 text-zinc-300">
+                    {locationRows.length ? (
+                      locationRows.map((row) => (
+                        <div key={row.mapName}>
+                          <span className="text-zinc-100">
+                            {row.mapName} ({row.value})
+                          </span>
+                          {": "}
+                          {row.locations.length
+                            ? row.locations.join(", ")
+                            : "locations not available"}
+                        </div>
+                      ))
+                    ) : (
+                      latestNotice.mapDetails.map((row) => (
+                        <div key={row.mapName}>
+                          {row.mapName} ({row.value})
+                        </div>
+                      ))
+                    )}
                   </dd>
 
                   <dt className="text-zinc-500">Modes</dt>

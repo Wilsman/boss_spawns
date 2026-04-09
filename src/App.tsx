@@ -565,6 +565,8 @@ function MainApp() {
           allBossEvents={CURRENT_BOSS_CONFIGS}
           changes={changes}
           changesLoaded={changesLoaded}
+          regularData={regularData}
+          pveData={pveData}
         />
 
         <NavBar
