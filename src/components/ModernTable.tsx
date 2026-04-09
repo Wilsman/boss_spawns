@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 import { SpawnData, Boss, DataMode, Health, Escort } from "@/types";
 import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
+import { mergeSpawnLocations } from "@/lib/spawn-location-utils";
 import {
   HoverCard,
   HoverCardContent,
@@ -225,6 +226,8 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
               escorts: b.escorts ?? null,
             });
           } else {
+            const mergedLocations = mergeSpawnLocations(existing.locations, locs);
+
             // Merge escorts from duplicate entries
             const existingEscorts = existing.escorts || [];
             const newEscorts = b.escorts || [];
@@ -254,6 +257,11 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
 
             byKey.set(key, {
               ...existing,
+              spawnChance: Math.max(existing.spawnChance, b.spawnChance),
+              locations: mergedLocations,
+              health: existing.health ?? b.boss.health ?? null,
+              imagePortraitLink:
+                existing.imagePortraitLink ?? b.boss.imagePortraitLink ?? null,
               escorts: uniqueEscorts,
             });
           }

@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
+import { mergeSpawnLocations } from "@/lib/spawn-location-utils";
 
 type CompareData = {
   regular: SpawnData[];
@@ -334,7 +335,11 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
 
             uniqueBossEntries.set(key, {
               ...existingEntry,
-              locations: updatedLocations,
+              spawnChance: Math.max(existingEntry.spawnChance, bossEntry.spawnChance),
+              locations: mergeSpawnLocations(updatedLocations, validLocations),
+              health: existingEntry.health ?? bossData.health ?? null,
+              imagePortraitLink:
+                existingEntry.imagePortraitLink ?? bossData.imagePortraitLink ?? null,
               escorts: uniqueEscorts,
             });
           }
