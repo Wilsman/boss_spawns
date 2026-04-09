@@ -563,6 +563,8 @@ function MainApp() {
         <Header
           primaryDisplayEvent={primaryDisplayEvent}
           allBossEvents={CURRENT_BOSS_CONFIGS}
+          changes={changes}
+          changesLoaded={changesLoaded}
         />
 
         <NavBar

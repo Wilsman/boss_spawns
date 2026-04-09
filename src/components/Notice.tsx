@@ -1,55 +1,28 @@
 "use client";
-import { useEffect, useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BellRing, Radar, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { DataChange } from "@/lib/diff";
+import { getLatestChangeNotice } from "@/lib/change-notice";
 
-interface NoticeImage {
-  src: string;
-  alt: string;
-  imageClassName?: string;
+interface NoticeProps {
+  changes?: DataChange[];
+  changesLoaded?: boolean;
 }
 
-const noticeImages: NoticeImage[] = [
-  {
-    src: "https://assets.tarkov.dev/unknown-npc-portrait.webp",
-    alt: "Smuggler",
-  },
-];
+const PILLAGER_PORTRAIT_URL = "https://assets.tarkov.dev/pillager-portrait.webp";
 
-const smugglerMaps = [
-  "Customs",
-  "Ground Zero",
-  "Interchange",
-  "Lighthouse",
-  "Shoreline",
-  "Streets of Tarkov",
-  "Woods",
-] as const;
-
-const reserveBosses = [
-  "Glukhar",
-  "Kaban",
-  "Killa",
-  "Kollontay",
-  "Reshala",
-  "Sanitar",
-  "Shturman",
-  "Tagilla",
-] as const;
-
-const changeDateLabel = "March 19, 2026 9:30 AM GMT";
-
-const followUpBosses = [
-  "Reshala (Customs 75%)",
-  "Tagilla (Factory 50%, Interchange 50%)",
-  "Killa (Interchange 75%)",
-  "Shturman (Woods 75%)",
-  "Sanitar (Shoreline 75%)",
-  "Kaban + Kollontay (Streets 75%)",
-] as const;
-
-export function Notice() {
+export function Notice({ changes = [], changesLoaded = false }: NoticeProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const latestNotice = useMemo(() => getLatestChangeNotice(changes), [changes]);
+  const noticeImageUrl =
+    latestNotice?.bossDisplayName === "Pillager" ? PILLAGER_PORTRAIT_URL : null;
+  const changeDateLabel = latestNotice
+    ? new Intl.DateTimeFormat("en-GB", {
+        dateStyle: "long",
+        timeStyle: "short",
+      }).format(latestNotice.changedAt)
+    : null;
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -72,63 +45,68 @@ export function Notice() {
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-3">
           <h2 className="text-base font-semibold text-zinc-100">
-            Boss spawn update
+            {latestNotice?.title ?? "Watching for boss event rollouts"}
           </h2>
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-200">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Event finished
+              <Sparkles className="h-3.5 w-3.5" />
+              {latestNotice?.badgeLabel ?? "Live from changes API"}
             </span>
-            <span className="text-xs text-zinc-500">
-              Updated: {changeDateLabel}
-            </span>
+            {changeDateLabel ? (
+              <span className="text-xs text-zinc-500">
+                Updated: {changeDateLabel}
+              </span>
+            ) : null}
           </div>
         </div>
 
         <article className="rounded-lg border border-amber-500/20 bg-zinc-900/40 px-3 py-3">
           <div className="flex flex-col gap-3 md:flex-row md:items-start">
-            <div className="flex gap-2 md:shrink-0">
-              {noticeImages.map((image) => (
-                <div
-                  key={image.alt}
-                  className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-md border border-amber-500/20 bg-zinc-950"
-                >
-                  <img
-                    src={image.src}
-                    alt={image.alt}
-                    className={cn(
-                      "h-full w-full object-contain p-1 grayscale opacity-75",
-                      image.imageClassName,
-                    )}
-                  />
-                </div>
-              ))}
+            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-md border border-amber-500/20 bg-zinc-950 text-amber-200 md:shrink-0">
+              {noticeImageUrl ? (
+                <img
+                  src={noticeImageUrl}
+                  alt={`${latestNotice?.bossDisplayName} portrait`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <BellRing className="h-9 w-9" />
+              )}
             </div>
 
             <dl className="grid min-w-0 flex-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-[96px_minmax(0,1fr)]">
-              <dt className="text-zinc-500">Map</dt>
-              <dd className="text-zinc-100">Multiple maps</dd>
+              {latestNotice ? (
+                <>
+                  <dt className="text-zinc-500">Boss</dt>
+                  <dd className="text-zinc-100">{latestNotice.bossDisplayName}</dd>
 
-              <dt className="text-zinc-500">Status</dt>
-              <dd className="text-amber-100">
-                The temporary Smuggler and Reserve boss event has ended. Those
-                boosted 100% spawns are no longer active.
-              </dd>
+                  <dt className="text-zinc-500">Status</dt>
+                  <dd className="text-amber-100">{latestNotice.statusLine}</dd>
 
-              <dt className="text-zinc-500">Ended event</dt>
-              <dd className="text-zinc-300">
-                Smuggler had 100% spawns on {smugglerMaps.join(", ")}, and
-                Reserve temporarily featured {reserveBosses.join(", ")} at
-                boosted rates.
-              </dd>
+                  <dt className="text-zinc-500">Maps</dt>
+                  <dd className="text-zinc-300">
+                    {latestNotice.mapsWithValues.join(", ")}
+                  </dd>
 
-              <dt className="text-zinc-500">Current rotation</dt>
-              <dd className="text-zinc-300">
-                {followUpBosses.join("; ")}.
-              </dd>
+                  <dt className="text-zinc-500">Modes</dt>
+                  <dd className="text-zinc-300">{latestNotice.modes.join(", ")}</dd>
+                </>
+              ) : (
+                <>
+                  <dt className="text-zinc-500">Status</dt>
+                  <dd className="text-amber-100">
+                    {changesLoaded
+                      ? "No grouped boss event changes detected in the latest API payload yet."
+                      : "Loading the latest change cluster from the changes API."}
+                  </dd>
 
-              <dt className="text-zinc-500">Ended</dt>
-              <dd className="text-zinc-300">{changeDateLabel}</dd>
+                  <dt className="text-zinc-500">Monitor</dt>
+                  <dd className="text-zinc-300 flex items-center gap-2">
+                    <Radar className="h-4 w-4 text-amber-300" />
+                    Watching for newly added, removed, or sharply changed boss spawns.
+                  </dd>
+                </>
+              )}
             </dl>
           </div>
         </article>

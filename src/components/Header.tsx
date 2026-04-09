@@ -10,6 +10,8 @@ import { BossNotice } from "./BossNotice";
 import { Notice } from "./Notice";
 // import { MaintenanceNotice } from "./MaintenanceNotice";
 import type { BossEventConfig } from "@/types/bossEvents";
+import type { DataChange } from "@/lib/diff";
+import { getLatestChangeNotice } from "@/lib/change-notice";
 
 // Change this to "maintenance" when we need to swap out the boss notice for the maintenance message
 const NOTICE_VARIANT: "boss" | "maintenance" = "maintenance";
@@ -35,14 +37,19 @@ function getRandomBossImage(): string {
 interface HeaderProps {
   primaryDisplayEvent: BossEventConfig | null;
   allBossEvents?: BossEventConfig[];
+  changes?: DataChange[];
+  changesLoaded?: boolean;
 }
 
 export const Header = memo(function Header({
   primaryDisplayEvent,
   allBossEvents = [],
+  changes = [],
+  changesLoaded = false,
 }: HeaderProps) {
   // Memoize the random image so it doesn't change on every render
   const bossImage = useMemo(() => getRandomBossImage(), []);
+  const latestNotice = useMemo(() => getLatestChangeNotice(changes), [changes]);
 
   return (
     <div className="">
@@ -146,10 +153,10 @@ export const Header = memo(function Header({
             {NOTICE_VARIANT === "maintenance" ? (
               <>
                 {/* <MaintenanceNotice /> */}
-                <Notice />
+                <Notice changes={changes} changesLoaded={changesLoaded} />
               </>
             ) : USE_NOTICE_COMPONENT ? (
-              <Notice />
+              <Notice changes={changes} changesLoaded={changesLoaded} />
             ) : (
               primaryDisplayEvent && (
                 <BossNotice
@@ -180,6 +187,13 @@ export const Header = memo(function Header({
                 Recent Updates
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
+                {latestNotice ? (
+                  <span className="block mb-1">{latestNotice.updateLine}</span>
+                ) : changesLoaded ? (
+                  <span className="block mb-1">
+                    Latest change feed is connected. No grouped event-style update is available yet.
+                  </span>
+                ) : null}
                 <span className="block mb-1">
                   (19/03/2026): The temporary Smuggler 100% and Reserve
                   full-roster event has ended. Smuggler was removed from the
