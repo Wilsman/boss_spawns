@@ -18,6 +18,20 @@ const PILLAGER_PORTRAIT_URL = "https://assets.tarkov.dev/pillager-portrait.webp"
 const CUSTOMS_GANG_EVENT_END = Date.UTC(2026, 4, 12, 7, 0, 0);
 const CUSTOMS_GANG_EVENT_STATUS =
   "Glukhar is raiding Customs after Reshala's crew hit Reserve. PvP/PvE until May 12, 08:00 BST / 03:00 EST. Player Scavs reduced.";
+const CUSTOMS_GANG_EVENT_MAP_ROWS = [
+  {
+    bossName: "Reshala",
+    locations: "Customs Warehouse, Stronghold",
+    mapName: "Customs",
+    value: "100%",
+  },
+  {
+    bossName: "Glukhar",
+    locations: "Dorms, New Gas Station",
+    mapName: "Customs",
+    value: "100%",
+  },
+];
 
 function uniquePreservingOrder(values: string[]): string[] {
   return Array.from(new Set(values));
@@ -94,6 +108,9 @@ export function Notice({
   const statusLine = isCustomsGangEvent
     ? CUSTOMS_GANG_EVENT_STATUS
     : latestNotice?.statusLine;
+  const bossDisplayName = isCustomsGangEvent
+    ? "Reshala and Glukhar"
+    : latestNotice?.bossDisplayName;
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -149,14 +166,23 @@ export function Notice({
               {latestNotice ? (
                 <>
                   <dt className="text-zinc-500">Boss</dt>
-                  <dd className="text-zinc-100">{latestNotice.bossDisplayName}</dd>
+                  <dd className="text-zinc-100">{bossDisplayName}</dd>
 
                   <dt className="text-zinc-500">Status</dt>
                   <dd className="text-amber-100">{statusLine}</dd>
 
                   <dt className="text-zinc-500">Maps</dt>
                   <dd className="space-y-1 text-zinc-300">
-                    {locationRows.length ? (
+                    {isCustomsGangEvent ? (
+                      CUSTOMS_GANG_EVENT_MAP_ROWS.map((row) => (
+                        <div key={row.bossName}>
+                          <span className="text-zinc-100">
+                            {row.mapName} ({row.value})
+                          </span>
+                          {` - ${row.bossName}: ${row.locations}`}
+                        </div>
+                      ))
+                    ) : locationRows.length ? (
                       locationRows.map((row) => (
                         <div key={row.mapName}>
                           <span className="text-zinc-100">
