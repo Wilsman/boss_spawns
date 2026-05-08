@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DataChange } from "@/lib/diff";
 import { ArrowUpDown, RefreshCcw, AlertTriangle } from "lucide-react";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
@@ -33,6 +33,7 @@ type GroupBy = "none" | "day" | "week";
 type DateRange = "all" | "24h" | "7d" | "30d";
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CHANGE_BATCH_SIZE = 75;
 
 export function ChangesTable({
   changes = [],
@@ -46,6 +47,8 @@ export function ChangesTable({
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [modeFilter, setModeFilter] = useState<string>(""); // Add mode filter state
   const [changeTypeFilter, setChangeTypeFilter] = useState<string>("");
+  const [visibleChangeCount, setVisibleChangeCount] =
+    useState(CHANGE_BATCH_SIZE);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(() => {
@@ -60,6 +63,7 @@ export function ChangesTable({
   );
   const lastRefreshedTimeDisplay = useRelativeTime(lastRefreshTime);
   const canRefresh = timeUntilRefresh === 0;
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const storedRefreshTime = readChangeStorageNumber("cacheTimestamp");
@@ -233,12 +237,56 @@ export function ChangesTable({
     });
   }, [filteredChanges, sortField, sortDirection]);
 
+  useEffect(() => {
+    setVisibleChangeCount(CHANGE_BATCH_SIZE);
+  }, [
+    changeTypeFilter,
+    dateRange,
+    filters.boss,
+    filters.map,
+    filters.search,
+    groupBy,
+    modeFilter,
+    sortDirection,
+    sortField,
+  ]);
+
+  const visibleChanges = useMemo(
+    () => sortedChanges.slice(0, visibleChangeCount),
+    [sortedChanges, visibleChangeCount]
+  );
+  const hasMoreChanges = visibleChangeCount < sortedChanges.length;
+  const loadMoreChanges = useCallback(() => {
+    setVisibleChangeCount((currentCount) =>
+      Math.min(currentCount + CHANGE_BATCH_SIZE, sortedChanges.length)
+    );
+  }, [sortedChanges.length]);
+
+  useEffect(() => {
+    if (!hasMoreChanges) return;
+
+    const target = loadMoreRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          loadMoreChanges();
+        }
+      },
+      { root: null, rootMargin: "600px 0px", threshold: 0 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMoreChanges, loadMoreChanges]);
+
   // Group changes if needed
   const groupedChanges = useMemo(() => {
     return groupBy === "none"
       ? null
-      : groupChangesByDate(sortedChanges, groupBy);
-  }, [sortedChanges, groupBy]);
+      : groupChangesByDate(visibleChanges, groupBy);
+  }, [visibleChanges, groupBy]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -648,7 +696,30 @@ export function ChangesTable({
                 {renderTable(groupChanges)}
               </div>
             ))
-        : renderTable(sortedChanges)}
+        : renderTable(visibleChanges)}
+
+      {sortedChanges.length > 0 && (
+        <div
+          ref={loadMoreRef}
+          className="flex flex-col items-center justify-center gap-2 py-5 text-xs text-gray-500"
+        >
+          <span>
+            Showing {visibleChanges.length.toLocaleString()} of{" "}
+            {sortedChanges.length.toLocaleString()} changes
+          </span>
+          {hasMoreChanges ? (
+            <button
+              type="button"
+              onClick={loadMoreChanges}
+              className="rounded-md border border-gray-700/70 bg-gray-900/50 px-3 py-1.5 text-gray-300 transition-colors hover:border-purple-500/60 hover:text-purple-300"
+            >
+              Load more
+            </button>
+          ) : (
+            <span>All matching changes loaded</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
