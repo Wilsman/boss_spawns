@@ -42,7 +42,7 @@ export function ChangesTable({
 }: ChangesTableProps) {
   const [sortField, setSortField] = useState<SortField>("timestamp");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [groupBy, setGroupBy] = useState<GroupBy>("none");
+  const [groupBy, setGroupBy] = useState<GroupBy>("day");
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [modeFilter, setModeFilter] = useState<string>(""); // Add mode filter state
   const [changeTypeFilter, setChangeTypeFilter] = useState<string>("");
