@@ -45,6 +45,7 @@ export function ChangesTable({
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [modeFilter, setModeFilter] = useState<string>(""); // Add mode filter state
+  const [changeTypeFilter, setChangeTypeFilter] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(() => {
@@ -135,6 +136,11 @@ export function ChangesTable({
         return false;
       }
 
+      // Apply change type filter
+      if (changeTypeFilter && change.field !== changeTypeFilter) {
+        return false;
+      }
+
       // Apply text filters
       if (
         filters.map &&
@@ -157,7 +163,7 @@ export function ChangesTable({
       }
       return true;
     });
-  }, [changes, dateRange, filters, modeFilter]);
+  }, [changes, changeTypeFilter, dateRange, filters, modeFilter]);
 
   // Memoize date range counts
   const dateRangeCounts = useMemo(() => {
@@ -175,6 +181,11 @@ export function ChangesTable({
       ).length,
     };
   }, [changes]);
+
+  const changeTypeOptions = useMemo(
+    () => Array.from(new Set(changes.map((change) => change.field))).sort(),
+    [changes]
+  );
 
   // Memoize sorted changes
   const sortedChanges = useMemo(() => {
@@ -264,7 +275,11 @@ export function ChangesTable({
     if (!changes.length) {
       // Check if we have filters applied
       const hasFilters =
-        filters.map || filters.boss || filters.search || modeFilter;
+        filters.map ||
+        filters.boss ||
+        filters.search ||
+        modeFilter ||
+        changeTypeFilter;
       const message = hasFilters
         ? "No changes match your current filters"
         : "No changes have been detected yet";
@@ -551,6 +566,20 @@ export function ChangesTable({
             <option value="">All Modes</option>
             <option value="PvP">PvP</option>
             <option value="PvE">PvE</option>
+          </select>
+
+          {/* Change Type Filter */}
+          <select
+            value={changeTypeFilter}
+            onChange={(e) => setChangeTypeFilter(e.target.value)}
+            className="rounded-lg border border-gray-700/60 bg-gray-900/40 px-3 py-2 text-sm text-gray-200"
+          >
+            <option value="">All Change Types</option>
+            {changeTypeOptions.map((changeType) => (
+              <option key={changeType} value={changeType}>
+                {changeType}
+              </option>
+            ))}
           </select>
 
           {/* Grouping Options */}

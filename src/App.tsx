@@ -621,7 +621,9 @@ function MainApp() {
           <div className="flex justify-center">
             <CacheStatus
               onExpired={() => loadData("both", { forceRefresh: true })}
+              onManualRefresh={() => loadData("both", { forceRefresh: true })}
               isRefreshing={isRefreshing}
+              disabled={loading}
             />
           </div>
 
