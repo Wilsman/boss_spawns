@@ -15,6 +15,9 @@ interface NoticeProps {
 }
 
 const PILLAGER_PORTRAIT_URL = "https://assets.tarkov.dev/pillager-portrait.webp";
+const CUSTOMS_GANG_EVENT_END = Date.UTC(2026, 4, 12, 7, 0, 0);
+const CUSTOMS_GANG_EVENT_STATUS =
+  "Glukhar is raiding Customs after Reshala's crew hit Reserve. PvP/PvE until May 12, 08:00 BST / 03:00 EST. Player Scavs reduced.";
 
 function uniquePreservingOrder(values: string[]): string[] {
   return Array.from(new Set(values));
@@ -82,6 +85,15 @@ export function Notice({
         timeStyle: "short",
       }).format(latestNotice.changedAt)
     : null;
+  const isCustomsGangEvent =
+    latestNotice &&
+    Date.now() < CUSTOMS_GANG_EVENT_END &&
+    latestNotice.maps.includes("Customs") &&
+    latestNotice.modes.includes("PvP") &&
+    latestNotice.modes.includes("PvE");
+  const statusLine = isCustomsGangEvent
+    ? CUSTOMS_GANG_EVENT_STATUS
+    : latestNotice?.statusLine;
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -140,7 +152,7 @@ export function Notice({
                   <dd className="text-zinc-100">{latestNotice.bossDisplayName}</dd>
 
                   <dt className="text-zinc-500">Status</dt>
-                  <dd className="text-amber-100">{latestNotice.statusLine}</dd>
+                  <dd className="text-amber-100">{statusLine}</dd>
 
                   <dt className="text-zinc-500">Maps</dt>
                   <dd className="space-y-1 text-zinc-300">
