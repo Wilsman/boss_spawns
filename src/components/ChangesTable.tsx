@@ -64,6 +64,7 @@ export function ChangesTable({
   const lastRefreshedTimeDisplay = useRelativeTime(lastRefreshTime);
   const canRefresh = timeUntilRefresh === 0;
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const loadMoreIntersectingRef = useRef(false);
 
   useEffect(() => {
     const storedRefreshTime = readChangeStorageNumber("cacheTimestamp");
@@ -270,8 +271,11 @@ export function ChangesTable({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry.isIntersecting && !loadMoreIntersectingRef.current) {
+          loadMoreIntersectingRef.current = true;
           loadMoreChanges();
+        } else if (!entry.isIntersecting) {
+          loadMoreIntersectingRef.current = false;
         }
       },
       { root: null, rootMargin: "600px 0px", threshold: 0 }
