@@ -11,6 +11,6 @@ export default defineConfig({
   },
   server: {
     host: true, // Expose to all network interfaces
-    port: 3000,
+    port: 5173,
   },
 }) 

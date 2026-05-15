@@ -489,8 +489,6 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
                       const locs = [...row.locations].sort(
                         (a: any, b: any) => b.chance - a.chance
                       );
-                      const top = locs.slice(0, 4);
-                      const more = locs.length - top.length;
                       return (
                         <div
                           key={row.boss}
@@ -516,12 +514,12 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
                             </div>
                           </div>
                           <div className="col-span-6 sm:col-span-4 flex flex-wrap gap-1">
-                            {top.length === 0 ? (
+                            {locs.length === 0 ? (
                               <span className="italic text-gray-500">
                                 (No specific location)
                               </span>
                             ) : (
-                              top.map((l, idx) => (
+                              locs.map((l, idx) => (
                                 <span
                                   key={`${l.name}-${idx}`}
                                   className={`px-2 py-1 rounded bg-slate-800/70 ring-1 ring-slate-700/50 text-slate-100 ${getLocationClasses(
@@ -537,11 +535,6 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
                                   </span>
                                 </span>
                               ))
-                            )}
-                            {more > 0 && (
-                              <span className="px-2 py-1 rounded bg-slate-800/70 ring-1 ring-slate-700/50 text-gray-300">
-                                +{more} more
-                              </span>
                             )}
                           </div>
                         </div>

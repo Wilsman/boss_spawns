@@ -32,6 +32,34 @@ const CUSTOMS_GANG_EVENT_MAP_ROWS = [
     value: "100%",
   },
 ];
+const CURRENT_EVENT_UPDATE_STATUS =
+  "New event task active. Goons are off Customs, Lighthouse, and Woods; now 100% on Shoreline.";
+const CURRENT_EVENT_UPDATE_MAP_ROWS = [
+  {
+    bossName: "Goons",
+    mapName: "Shoreline",
+    value: "100%",
+    locations: "off Customs, Lighthouse, and Woods",
+  },
+  {
+    bossName: "Rogues",
+    mapName: "Lighthouse, Reserve, Shoreline",
+    value: "100%",
+    locations: "event spawns",
+  },
+  {
+    bossName: "Glukhar",
+    mapName: "Reserve",
+    value: "100%",
+    locations: "event spawn",
+  },
+  {
+    bossName: "Sanitar",
+    mapName: "Shoreline",
+    value: "75%",
+    locations: "event spawn",
+  },
+];
 
 function uniquePreservingOrder(values: string[]): string[] {
   return Array.from(new Set(values));
@@ -105,12 +133,25 @@ export function Notice({
     latestNotice.maps.includes("Customs") &&
     latestNotice.modes.includes("PvP") &&
     latestNotice.modes.includes("PvE");
+  const isCurrentEventUpdate =
+    latestNotice?.bossDisplayName === "Knight" &&
+    latestNotice?.badgeLabel === "Event ended";
   const statusLine = isCustomsGangEvent
     ? CUSTOMS_GANG_EVENT_STATUS
+    : isCurrentEventUpdate
+      ? CURRENT_EVENT_UPDATE_STATUS
     : latestNotice?.statusLine;
   const bossDisplayName = isCustomsGangEvent
     ? "Reshala and Glukhar"
+    : isCurrentEventUpdate
+      ? "Goons, Rogues, Glukhar, Sanitar"
     : latestNotice?.bossDisplayName;
+  const badgeLabel = isCurrentEventUpdate
+    ? "Event update"
+    : latestNotice?.badgeLabel;
+  const noticeTitle = isCurrentEventUpdate
+    ? "New Event Task & Boss Spawn Update"
+    : latestNotice?.title;
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -133,12 +174,12 @@ export function Notice({
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-3">
           <h2 className="text-base font-semibold text-zinc-100">
-            {latestNotice?.title ?? "Watching for boss event rollouts"}
+            {noticeTitle ?? "Watching for boss event rollouts"}
           </h2>
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-200">
               <Sparkles className="h-3.5 w-3.5" />
-              {latestNotice?.badgeLabel ?? "Live from changes API"}
+              {badgeLabel ?? "Live from changes API"}
             </span>
             {changeDateLabel ? (
               <span className="text-xs text-zinc-500">
@@ -173,7 +214,16 @@ export function Notice({
 
                   <dt className="text-zinc-500">Maps</dt>
                   <dd className="space-y-1 text-zinc-300">
-                    {isCustomsGangEvent ? (
+                    {isCurrentEventUpdate ? (
+                      CURRENT_EVENT_UPDATE_MAP_ROWS.map((row) => (
+                        <div key={`${row.bossName}-${row.mapName}`}>
+                          <span className="text-zinc-100">
+                            {row.bossName} - {row.mapName} ({row.value})
+                          </span>
+                          {` - ${row.locations}`}
+                        </div>
+                      ))
+                    ) : isCustomsGangEvent ? (
                       CUSTOMS_GANG_EVENT_MAP_ROWS.map((row) => (
                         <div key={row.bossName}>
                           <span className="text-zinc-100">
