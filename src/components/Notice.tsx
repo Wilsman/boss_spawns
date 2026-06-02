@@ -15,6 +15,7 @@ interface NoticeProps {
 }
 
 const PILLAGER_PORTRAIT_URL = "https://assets.tarkov.dev/pillager-portrait.webp";
+const SANITAR_PORTRAIT_URL = "https://assets.tarkov.dev/sanitar-portrait.png";
 const CUSTOMS_GANG_EVENT_END = Date.UTC(2026, 4, 12, 7, 0, 0);
 const CUSTOMS_GANG_EVENT_STATUS =
   "Glukhar is raiding Customs after Reshala's crew hit Reserve. PvP/PvE until May 12, 08:00 BST / 03:00 EST. Player Scavs reduced.";
@@ -33,7 +34,17 @@ const CUSTOMS_GANG_EVENT_MAP_ROWS = [
   },
 ];
 const CURRENT_EVENT_UPDATE_STATUS =
-  "New event task active. Goons are off Customs, Lighthouse, and Woods; now 100% on Shoreline.";
+  "Latest Shoreline update: Sanitar moved from 75% to 70%. He now splits between Pier and Greenhouses at 50% each.";
+const ICEBREAKER_SANITAR_EVENT_STATUS =
+  "Icebreaker event update: Sanitar is now spawning on Shoreline at Pier and Greenhouses.";
+const ICEBREAKER_SANITAR_EVENT_MAP_ROWS = [
+  {
+    bossName: "Sanitar",
+    mapName: "Shoreline",
+    value: "70%",
+    locations: "Pier 50%, Greenhouses 50%",
+  },
+];
 const CURRENT_EVENT_UPDATE_MAP_ROWS = [
   {
     bossName: "Goons",
@@ -56,8 +67,8 @@ const CURRENT_EVENT_UPDATE_MAP_ROWS = [
   {
     bossName: "Sanitar",
     mapName: "Shoreline",
-    value: "75%",
-    locations: "event spawn",
+    value: "70%",
+    locations: "Pier 50%, Greenhouses 50%",
   },
 ];
 
@@ -107,8 +118,6 @@ export function Notice({
 }: NoticeProps) {
   const [isVisible, setIsVisible] = useState(false);
   const latestNotice = useMemo(() => getLatestChangeNotice(changes), [changes]);
-  const noticeImageUrl =
-    latestNotice?.bossDisplayName === "Pillager" ? PILLAGER_PORTRAIT_URL : null;
   const locationRows = useMemo(
     () =>
       latestNotice
@@ -136,20 +145,37 @@ export function Notice({
   const isCurrentEventUpdate =
     latestNotice?.bossDisplayName === "Knight" &&
     latestNotice?.badgeLabel === "Event ended";
+  const isIcebreakerSanitarEvent =
+    latestNotice?.bossDisplayName === "Sanitar" &&
+    latestNotice?.badgeLabel === "New event detected" &&
+    latestNotice?.maps.includes("Terminal");
+  const noticeImageUrl = isIcebreakerSanitarEvent
+    ? SANITAR_PORTRAIT_URL
+    : latestNotice?.bossDisplayName === "Pillager"
+      ? PILLAGER_PORTRAIT_URL
+      : null;
   const statusLine = isCustomsGangEvent
     ? CUSTOMS_GANG_EVENT_STATUS
+    : isIcebreakerSanitarEvent
+      ? ICEBREAKER_SANITAR_EVENT_STATUS
     : isCurrentEventUpdate
       ? CURRENT_EVENT_UPDATE_STATUS
     : latestNotice?.statusLine;
   const bossDisplayName = isCustomsGangEvent
     ? "Reshala and Glukhar"
+    : isIcebreakerSanitarEvent
+      ? "Sanitar"
     : isCurrentEventUpdate
       ? "Goons, Rogues, Glukhar, Sanitar"
     : latestNotice?.bossDisplayName;
-  const badgeLabel = isCurrentEventUpdate
+  const badgeLabel = isIcebreakerSanitarEvent
+    ? "Icebreaker event"
+    : isCurrentEventUpdate
     ? "Event update"
     : latestNotice?.badgeLabel;
-  const noticeTitle = isCurrentEventUpdate
+  const noticeTitle = isIcebreakerSanitarEvent
+    ? "Icebreaker Event: Sanitar Spawn Update"
+    : isCurrentEventUpdate
     ? "New Event Task & Boss Spawn Update"
     : latestNotice?.title;
 
@@ -214,7 +240,16 @@ export function Notice({
 
                   <dt className="text-zinc-500">Maps</dt>
                   <dd className="space-y-1 text-zinc-300">
-                    {isCurrentEventUpdate ? (
+                    {isIcebreakerSanitarEvent ? (
+                      ICEBREAKER_SANITAR_EVENT_MAP_ROWS.map((row) => (
+                        <div key={`${row.bossName}-${row.mapName}`}>
+                          <span className="text-zinc-100">
+                            {row.mapName} ({row.value})
+                          </span>
+                          {`: ${row.bossName} - ${row.locations}`}
+                        </div>
+                      ))
+                    ) : isCurrentEventUpdate ? (
                       CURRENT_EVENT_UPDATE_MAP_ROWS.map((row) => (
                         <div key={`${row.bossName}-${row.mapName}`}>
                           <span className="text-zinc-100">
