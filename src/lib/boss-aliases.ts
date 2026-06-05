@@ -2,6 +2,7 @@ const BOSS_ALIAS_MAP = {
   bossbully: "Reshala",
   boar: "Kaban",
   kojaniy: "Shturman",
+  arenafighter: "Arena Fighter",
 } as const;
 
 function sanitizeBossToken(value: string): string {

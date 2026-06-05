@@ -16,6 +16,8 @@ interface NoticeProps {
 
 const PILLAGER_PORTRAIT_URL = "https://assets.tarkov.dev/pillager-portrait.webp";
 const SANITAR_PORTRAIT_URL = "https://assets.tarkov.dev/sanitar-portrait.png";
+const ARENA_FIGHTER_PORTRAIT_URL =
+  "https://assets.tarkov.dev/arenafighter-portrait.webp";
 const CUSTOMS_GANG_EVENT_END = Date.UTC(2026, 4, 12, 7, 0, 0);
 const CUSTOMS_GANG_EVENT_STATUS =
   "Glukhar is raiding Customs after Reshala's crew hit Reserve. PvP/PvE until May 12, 08:00 BST / 03:00 EST. Player Scavs reduced.";
@@ -43,6 +45,28 @@ const ICEBREAKER_SANITAR_EVENT_MAP_ROWS = [
     mapName: "Shoreline",
     value: "70%",
     locations: "Pier 50%, Greenhouses 50%",
+  },
+];
+const TARKOV_HOSPITALITY_EVENT_STATUS =
+  "Tarkov Hospitality event: Arena Fighter is now spawning at 100% on Customs, Woods, and Shoreline in PvP and PvE.";
+const TARKOV_HOSPITALITY_EVENT_MAP_ROWS = [
+  {
+    bossName: "Arena Fighter",
+    mapName: "Customs",
+    value: "100%",
+    locations: "Dorms",
+  },
+  {
+    bossName: "Arena Fighter",
+    mapName: "Woods",
+    value: "100%",
+    locations: "Scav House/Checkpoint Road",
+  },
+  {
+    bossName: "Arena Fighter",
+    mapName: "Shoreline",
+    value: "100%",
+    locations: "Smuggler's Depot",
   },
 ];
 const CURRENT_EVENT_UPDATE_MAP_ROWS = [
@@ -118,6 +142,28 @@ export function Notice({
 }: NoticeProps) {
   const [isVisible, setIsVisible] = useState(false);
   const latestNotice = useMemo(() => getLatestChangeNotice(changes), [changes]);
+  const hospitalityArenaFighterTimestamp = useMemo(() => {
+    const arenaFighterChanges = changes.filter(
+      (change) =>
+        change.boss.toLowerCase() === "arenafighter" &&
+        ["customs", "woods", "shoreline"].includes(change.map),
+    );
+    const latestArenaFighterChange = [...arenaFighterChanges].sort(
+      (left, right) => right.timestamp - left.timestamp,
+    )[0];
+
+    if (latestArenaFighterChange?.field !== "bossAdded") {
+      return null;
+    }
+
+    const eventChanges = arenaFighterChanges.filter(
+      (change) => change.field === "bossAdded" && change.newValue === "100%",
+    );
+
+    return eventChanges.length
+      ? Math.max(...eventChanges.map((change) => change.timestamp))
+      : null;
+  }, [changes]);
   const locationRows = useMemo(
     () =>
       latestNotice
@@ -130,12 +176,15 @@ export function Notice({
         : [],
     [latestNotice, pveData, regularData],
   );
-  const changeDateLabel = latestNotice
+  const displayChangedAt =
+    hospitalityArenaFighterTimestamp ?? latestNotice?.changedAt;
+  const changeDateLabel = displayChangedAt
     ? new Intl.DateTimeFormat("en-GB", {
         dateStyle: "long",
         timeStyle: "short",
-      }).format(latestNotice.changedAt)
+      }).format(displayChangedAt)
     : null;
+  const isTarkovHospitalityEvent = hospitalityArenaFighterTimestamp !== null;
   const isCustomsGangEvent =
     latestNotice &&
     Date.now() < CUSTOMS_GANG_EVENT_END &&
@@ -149,13 +198,17 @@ export function Notice({
     latestNotice?.bossDisplayName === "Sanitar" &&
     latestNotice?.badgeLabel === "New event detected" &&
     latestNotice?.maps.includes("Terminal");
-  const noticeImageUrl = isIcebreakerSanitarEvent
+  const noticeImageUrl = isTarkovHospitalityEvent
+    ? ARENA_FIGHTER_PORTRAIT_URL
+    : isIcebreakerSanitarEvent
     ? SANITAR_PORTRAIT_URL
     : latestNotice?.bossDisplayName === "Pillager"
       ? PILLAGER_PORTRAIT_URL
       : null;
   const statusLine = isCustomsGangEvent
     ? CUSTOMS_GANG_EVENT_STATUS
+    : isTarkovHospitalityEvent
+      ? TARKOV_HOSPITALITY_EVENT_STATUS
     : isIcebreakerSanitarEvent
       ? ICEBREAKER_SANITAR_EVENT_STATUS
     : isCurrentEventUpdate
@@ -163,17 +216,23 @@ export function Notice({
     : latestNotice?.statusLine;
   const bossDisplayName = isCustomsGangEvent
     ? "Reshala and Glukhar"
+    : isTarkovHospitalityEvent
+      ? "Arena Fighter"
     : isIcebreakerSanitarEvent
       ? "Sanitar"
     : isCurrentEventUpdate
       ? "Goons, Rogues, Glukhar, Sanitar"
     : latestNotice?.bossDisplayName;
-  const badgeLabel = isIcebreakerSanitarEvent
+  const badgeLabel = isTarkovHospitalityEvent
+    ? "Tarkov Hospitality"
+    : isIcebreakerSanitarEvent
     ? "Icebreaker event"
     : isCurrentEventUpdate
     ? "Event update"
     : latestNotice?.badgeLabel;
-  const noticeTitle = isIcebreakerSanitarEvent
+  const noticeTitle = isTarkovHospitalityEvent
+    ? "Tarkov Hospitality: Arena Fighter Event"
+    : isIcebreakerSanitarEvent
     ? "Icebreaker Event: Sanitar Spawn Update"
     : isCurrentEventUpdate
     ? "New Event Task & Boss Spawn Update"
@@ -221,7 +280,7 @@ export function Notice({
               {noticeImageUrl ? (
                 <img
                   src={noticeImageUrl}
-                  alt={`${latestNotice?.bossDisplayName} portrait`}
+                  alt={`${bossDisplayName ?? latestNotice?.bossDisplayName} portrait`}
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -240,7 +299,16 @@ export function Notice({
 
                   <dt className="text-zinc-500">Maps</dt>
                   <dd className="space-y-1 text-zinc-300">
-                    {isIcebreakerSanitarEvent ? (
+                    {isTarkovHospitalityEvent ? (
+                      TARKOV_HOSPITALITY_EVENT_MAP_ROWS.map((row) => (
+                        <div key={`${row.bossName}-${row.mapName}`}>
+                          <span className="text-zinc-100">
+                            {row.mapName} ({row.value})
+                          </span>
+                          {`: ${row.bossName} - ${row.locations}`}
+                        </div>
+                      ))
+                    ) : isIcebreakerSanitarEvent ? (
                       ICEBREAKER_SANITAR_EVENT_MAP_ROWS.map((row) => (
                         <div key={`${row.bossName}-${row.mapName}`}>
                           <span className="text-zinc-100">
@@ -289,7 +357,11 @@ export function Notice({
                   </dd>
 
                   <dt className="text-zinc-500">Modes</dt>
-                  <dd className="text-zinc-300">{latestNotice.modes.join(", ")}</dd>
+                  <dd className="text-zinc-300">
+                    {isTarkovHospitalityEvent
+                      ? "PvP, PvE"
+                      : latestNotice.modes.join(", ")}
+                  </dd>
                 </>
               ) : (
                 <>
