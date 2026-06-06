@@ -49,8 +49,6 @@ export const Header = memo(function Header({
   allBossEvents = [],
   changes = [],
   changesLoaded = false,
-  regularData,
-  pveData,
 }: HeaderProps) {
   // Memoize the random image so it doesn't change on every render
   const bossImage = useMemo(() => getRandomBossImage(), []);
@@ -158,20 +156,10 @@ export const Header = memo(function Header({
             {NOTICE_VARIANT === "maintenance" ? (
               <>
                 {/* <MaintenanceNotice /> */}
-                <Notice
-                  changes={changes}
-                  changesLoaded={changesLoaded}
-                  regularData={regularData}
-                  pveData={pveData}
-                />
+                <Notice />
               </>
             ) : USE_NOTICE_COMPONENT ? (
-              <Notice
-                changes={changes}
-                changesLoaded={changesLoaded}
-                regularData={regularData}
-                pveData={pveData}
-              />
+              <Notice />
             ) : (
               primaryDisplayEvent && (
                 <BossNotice
