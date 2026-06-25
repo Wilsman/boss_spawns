@@ -17,32 +17,21 @@ export interface ManualNoticeConfig {
 }
 
 export const manualNotice: ManualNoticeConfig = {
-  badgeLabel: "Tarkov Hospitality",
-  bossDisplayName: "Arena Fighter",
-  changedAt: "2026-06-05T14:50:00.000Z",
-  imageUrl: "https://assets.tarkov.dev/arenafighter-portrait.webp",
+  badgeLabel: "Wild Wild Woods",
+  bossDisplayName: "Shturman",
+  changedAt: "2026-06-25T16:15:04.612Z",
+  imageUrl: "https://assets.tarkov.dev/shturman-portrait.png",
   mapRows: [
     {
-      bossName: "Arena Fighter",
-      mapName: "Customs",
-      value: "100%",
-      locations: "Dorms",
-    },
-    {
-      bossName: "Arena Fighter",
+      bossName: "Shturman",
       mapName: "Woods",
       value: "100%",
-      locations: "Scav House/Checkpoint Road",
-    },
-    {
-      bossName: "Arena Fighter",
-      mapName: "Shoreline",
-      value: "100%",
-      locations: "Smuggler's Depot",
+      locations:
+        "Wild Wild Woods event active until 29 June, 09:00 BST / 04:00 EDT.",
     },
   ],
   modes: ["PvP", "PvE"],
   statusLine:
-    "Tarkov Hospitality event: Arena Fighter is now spawning at 100% on Customs, Woods, and Shoreline in PvP and PvE.",
-  title: "Tarkov Hospitality: Arena Fighter Event",
+    "Wild Wild Woods is live until 29 June, 09:00 BST / 04:00 EDT. Shturman is now spawning at 100% on Woods.",
+  title: "Wild Wild Woods Event",
 };
