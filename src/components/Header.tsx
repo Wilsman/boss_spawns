@@ -198,43 +198,34 @@ export const Header = memo(function Header({
                   </span>
                 ) : null}
                 <span className="block mb-1">
-                  (19/03/2026): The temporary Smuggler 100% and Reserve
-                  full-roster event has ended. Smuggler was removed from the
-                  boosted maps, Reserve returned to a normal pool, and the
-                  current rotation shifted back to bosses like Tagilla, Killa,
-                  Reshala, Shturman, Sanitar, Kaban, and Kollontay.
+                  (2026/07/08): Switched boss spawn data from Tarkov.dev
+                  GraphQL to the faster JSON API, with cleaner map, boss,
+                  spawn-location, escort, and health data.
                 </span>
                 <span className="block mb-1">
-                  (12/03/2026): Smuggler now spawns at 100% on Customs, Ground
-                  Zero, Interchange, Lighthouse, Shoreline, Streets of Tarkov,
-                  and Woods; Reserve now has Glukhar, Kaban, Killa, Kollontay,
-                  Reshala, Sanitar, Shturman, and Tagilla all at 100%.
+                  (2026/07/08): Fixed boss hover-card health labels after the
+                  JSON API switch.
                 </span>
                 <span className="block mb-1">
-                  (02/09/2025): redesign of table layout for easier reading.
+                  (2026/05/08): Added expanded Recent Changes tools with
+                  incremental loading, day grouping, change-type filtering, and
+                  refresh controls.
                 </span>
                 <span className="block mb-1">
-                  (07/08/2025): notifications fix; compare mode adds Δ column
-                  with inline bars and wider layout.
+                  (2026/04/09): Added dynamic latest-change notices and merged
+                  duplicate spawn locations in boss tables.
                 </span>
                 <span className="block mb-1">
-                  (20/05/2025): refactor: reduced API calls by combining regular
-                  and PVE data; changed refresh interval to every 5 minutes in
-                  real-time
+                  (2026/03/11): Added change monitoring with unread badges,
+                  notification controls, and background checks.
                 </span>
                 <span className="block mb-1">
-                  (10/05/2025): Added weekly boss rotation notice.
+                  (2025/09/02): Reworked the table layout with the modern
+                  grouped boss view.
                 </span>
                 <span className="block mb-1">
-                  (13/04/2025): (hover card) Added total health.
-                </span>
-                <span className="block mb-1">
-                  (12/04/2025): shadow-of-tagilla-disciple renamed to
-                  labyrinthian.
-                </span>
-                <span className="block mb-1">
-                  (01/04/2025): Reworked table layouts and added hover cards
-                  when hovering boss names.
+                  (2025/08/07): Fixed notifications and improved compare mode
+                  with delta columns, bars, and wider layout.
                 </span>
               </AccordionContent>
             </AccordionItem>
