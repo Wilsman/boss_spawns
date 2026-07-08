@@ -11,7 +11,7 @@ import {
 
 export type { SpawnData };
 
-const CACHE_VERSION = 10;
+const CACHE_VERSION = 11;
 const CHANGES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for changes data (can be adjusted independently)
 const DEFAULT_CHANGES_API_BASE_URL = "https://bossdata.cultistcircle.workers.dev";
 const CHANGES_API_PATH = "/api/changes";
@@ -292,6 +292,26 @@ function getMobDisplayName(mobKey?: string | null, mob?: TarkovJsonMob): string 
   return getTranslatedName(mobKey);
 }
 
+function getBodyPartDisplayName(bodyPart?: string | null): string {
+  if (!bodyPart) {
+    return "Unknown";
+  }
+
+  const rawName = bodyPart.split("/").filter(Boolean).pop() ?? bodyPart;
+  return titleCase(rawName);
+}
+
+function normalizeHealth(health?: Health[] | null): Health[] | null {
+  if (!health?.length) {
+    return null;
+  }
+
+  return health.map((part) => ({
+    ...part,
+    bodyPart: getBodyPartDisplayName(part.bodyPart),
+  }));
+}
+
 function normalizeSpawnLocations(
   locations?: TarkovJsonSpawnLocation[]
 ): SpawnLocation[] {
@@ -316,7 +336,7 @@ function normalizeEscorts(
         })),
         boss: {
           name: getMobDisplayName(escort.mob, escortMob),
-          health: escortMob?.health ?? null,
+          health: normalizeHealth(escortMob?.health),
           imagePortraitLink: escortMob?.imagePortraitLink ?? null,
         },
       };
@@ -332,7 +352,7 @@ function normalizeBoss(
   return {
     boss: {
       name: getMobDisplayName(boss.mob, mob),
-      health: mob?.health ?? null,
+      health: normalizeHealth(mob?.health),
       imagePortraitLink: mob?.imagePortraitLink ?? null,
     },
     spawnChance: boss.spawnChance ?? 0,
