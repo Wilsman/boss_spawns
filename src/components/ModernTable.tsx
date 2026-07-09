@@ -53,6 +53,28 @@ interface BossEntry {
   escorts: Escort[] | null;
 }
 
+function getEscortCount(escort: Escort): number {
+  return Math.max(0, ...escort.amount.map((amount) => amount.count));
+}
+
+function mergeEscorts(escorts: Escort[]): Escort[] {
+  return escorts.reduce((uniqueEscorts: Escort[], escort) => {
+    const existingIndex = uniqueEscorts.findIndex(
+      (existing) => existing.boss.name === escort.boss.name
+    );
+
+    if (existingIndex === -1) {
+      uniqueEscorts.push(escort);
+    } else if (
+      getEscortCount(escort) > getEscortCount(uniqueEscorts[existingIndex])
+    ) {
+      uniqueEscorts[existingIndex] = escort;
+    }
+
+    return uniqueEscorts;
+  }, []);
+}
+
 export function ModernTable({ data, mode, filters }: DataTableProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const isCompare = mode === "compare";
@@ -223,37 +245,15 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
               locations: locs.map((l) => ({ name: l.name, chance: l.chance })),
               health: b.boss.health ?? null,
               imagePortraitLink: b.boss.imagePortraitLink ?? null,
-              escorts: b.escorts ?? null,
+              escorts: mergeEscorts(b.escorts ?? []),
             });
           } else {
             const mergedLocations = mergeSpawnLocations(existing.locations, locs);
 
-            // Merge escorts from duplicate entries
-            const existingEscorts = existing.escorts || [];
-            const newEscorts = b.escorts || [];
-            const allEscorts = [...existingEscorts, ...newEscorts];
-
-            // Remove duplicates by escort boss name
-            const uniqueEscorts = allEscorts.reduce(
-              (acc: Escort[], escort: Escort) => {
-                const existingIndex = acc.findIndex(
-                  (e) => e.boss.name === escort.boss.name
-                );
-                if (existingIndex === -1) {
-                  acc.push(escort);
-                } else {
-                  // If escort already exists, update the count to the higher value
-                  const existingCount =
-                    acc[existingIndex].amount[0]?.count || 0;
-                  const newCount = escort.amount[0]?.count || 0;
-                  if (newCount > existingCount) {
-                    acc[existingIndex] = escort;
-                  }
-                }
-                return acc;
-              },
-              []
-            );
+            const uniqueEscorts = mergeEscorts([
+              ...(existing.escorts ?? []),
+              ...(b.escorts ?? []),
+            ]);
 
             byKey.set(key, {
               ...existing,
@@ -490,53 +490,55 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
                         (a: any, b: any) => b.chance - a.chance
                       );
                       return (
-                        <div
-                          key={row.boss}
-                          className="grid grid-cols-12 gap-3 items-center px-3 py-3 hover:bg-gray-800/30 rounded-md"
-                        >
-                          <div className="col-span-12 sm:col-span-5">
-                            <BossCell boss={row} />
-                          </div>
-                          <div className="col-span-6 sm:col-span-3">
-                            <div className="relative h-5 rounded bg-slate-900/40">
-                              <div
-                                className="absolute left-0 top-0 h-full bg-slate-400/50"
-                                style={{
-                                  width: `${Math.max(
-                                    0,
-                                    Math.min(100, row.spawnChance * 100)
-                                  )}%`,
-                                }}
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center text-slate-100 text-sm">
-                                {(row.spawnChance * 100).toFixed(0)}%
+                        <div key={row.boss} className="rounded-md">
+                          <div className="grid grid-cols-12 gap-3 items-center px-3 py-3 hover:bg-gray-800/30 rounded-md">
+                            <div className="col-span-12 sm:col-span-5">
+                              <BossCell boss={row} />
+                            </div>
+                            <div className="col-span-6 sm:col-span-3">
+                              <div className="relative h-5 rounded bg-slate-900/40">
+                                <div
+                                  className="absolute left-0 top-0 h-full bg-slate-400/50"
+                                  style={{
+                                    width: `${Math.max(
+                                      0,
+                                      Math.min(100, row.spawnChance * 100)
+                                    )}%`,
+                                  }}
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center text-slate-100 text-sm">
+                                  {(row.spawnChance * 100).toFixed(0)}%
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="col-span-6 sm:col-span-4 flex flex-wrap gap-1">
-                            {locs.length === 0 ? (
-                              <span className="italic text-gray-500">
-                                (No specific location)
-                              </span>
-                            ) : (
-                              locs.map((l, idx) => (
-                                <span
-                                  key={`${l.name}-${idx}`}
-                                  className={`px-2 py-1 rounded bg-slate-800/70 ring-1 ring-slate-700/50 text-slate-100 ${getLocationClasses(
-                                    l.name,
-                                    l.chance
-                                  )}`}
-                                >
-                                  {l.name}
-                                  <span className="ml-1 text-gray-400">
-                                    {l.chance > 0
-                                      ? `${(l.chance * 100).toFixed(0)}%`
-                                      : "-"}
-                                  </span>
+                            <div className="col-span-6 sm:col-span-4 flex flex-wrap gap-1">
+                              {locs.length === 0 ? (
+                                <span className="italic text-gray-500">
+                                  (No specific location)
                                 </span>
-                              ))
-                            )}
+                              ) : (
+                                locs.map((l, idx) => (
+                                  <span
+                                    key={`${l.name}-${idx}`}
+                                    className={`px-2 py-1 rounded bg-slate-800/70 ring-1 ring-slate-700/50 text-slate-100 ${getLocationClasses(
+                                      l.name,
+                                      l.chance
+                                    )}`}
+                                  >
+                                    {l.name}
+                                    <span className="ml-1 text-gray-400">
+                                      {l.chance > 0
+                                        ? `${(l.chance * 100).toFixed(0)}%`
+                                        : "-"}
+                                    </span>
+                                  </span>
+                                ))
+                              )}
+                            </div>
                           </div>
+                          {row.escorts && row.escorts.length > 0 && (
+                            <EscortRows escorts={row.escorts} />
+                          )}
                         </div>
                       );
                     })}
@@ -549,6 +551,88 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
     </div>
   );
 }
+
+const EscortRows = ({ escorts }: { escorts: Escort[] }) => (
+  <div className="border-t border-dashed border-gray-800/80 py-1">
+    {escorts.map((escort) => {
+      const count = getEscortCount(escort);
+
+      return (
+        <HoverCard key={escort.boss.name}>
+          <HoverCardTrigger>
+            <div className="grid grid-cols-12 gap-3 items-center px-3 py-1.5 text-sm text-gray-400 hover:bg-gray-800/20 rounded-md cursor-pointer">
+              <div className="col-span-12 sm:col-span-5 flex items-center gap-2 pl-7">
+                <span aria-hidden="true" className="text-gray-600">
+                  ↳
+                </span>
+                {escort.boss.imagePortraitLink && (
+                  <img
+                    src={escort.boss.imagePortraitLink}
+                    alt={escort.boss.name}
+                    className="h-6 w-6 rounded-full object-cover opacity-85"
+                  />
+                )}
+                <span className="border-b border-dotted border-gray-600">
+                  {escort.boss.name}
+                </span>
+                <span className="text-gray-500">×{count}</span>
+              </div>
+            </div>
+          </HoverCardTrigger>
+          <HoverCardContent
+            align="start"
+            className="w-[320px] bg-gray-800 border-gray-700"
+          >
+            <BossInfo
+              name={escort.boss.name}
+              health={escort.boss.health ?? null}
+              imagePortraitLink={escort.boss.imagePortraitLink ?? null}
+            />
+          </HoverCardContent>
+        </HoverCard>
+      );
+    })}
+  </div>
+);
+
+const BossInfo = ({
+  name,
+  health,
+  imagePortraitLink,
+}: {
+  name: string;
+  health: Health[] | null;
+  imagePortraitLink: string | null;
+}) => (
+  <>
+    <h3 className="font-semibold text-gray-200">{name}</h3>
+    {imagePortraitLink && (
+      <img
+        src={imagePortraitLink}
+        alt={name}
+        className="w-full h-32 object-cover rounded-lg"
+      />
+    )}
+    {health && (
+      <div className="text-sm text-gray-400">
+        <div className="flex justify-between">
+          <span className="font-bold text-gray-200 mb-1">Health:</span>
+          <span className="font-bold text-gray-200">
+            Total: {health.reduce((acc, part) => acc + part.max, 0)}
+          </span>
+        </div>
+        <ul className="space-y-1">
+          {health.map((part) => (
+            <li key={part.bodyPart} className="flex justify-between">
+              <span className="capitalize">{part.bodyPart}</span>
+              <span>{part.max}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </>
+);
 
 // Boss hover cell (duplicated to keep component self-contained)
 const BossCell = ({ boss }: { boss: BossEntry }) => {
@@ -584,37 +668,11 @@ const BossCell = ({ boss }: { boss: BossEntry }) => {
         className="w-[320px] bg-gray-800 border-gray-700"
       >
         <div className="flex flex-col gap-3">
-          <h3 className="font-semibold text-gray-200">{boss.boss}</h3>
-          {boss.imagePortraitLink && (
-            <img
-              src={imageUrl}
-              alt={boss.boss}
-              className="w-full h-32 object-cover rounded-lg"
-            />
-          )}
-
-          {boss.health && (
-            <div className="text-sm text-gray-400">
-              <div className="flex justify-between">
-                <span className="font-bold text-gray-200 mb-1">Health:</span>
-                <span className="font-bold text-gray-200">
-                  Total:{" "}
-                  {boss.health.reduce(
-                    (acc: number, part: Health) => acc + part.max,
-                    0
-                  )}
-                </span>
-              </div>
-              <ul className="space-y-1">
-                {boss.health.map((part: Health) => (
-                  <li key={part.bodyPart} className="flex justify-between">
-                    <span className="capitalize">{part.bodyPart}</span>
-                    <span>{part.max}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <BossInfo
+            name={boss.boss}
+            health={boss.health}
+            imagePortraitLink={imageUrl ?? null}
+          />
 
           {boss.escorts && boss.escorts.length > 0 && (
             <div className="text-sm text-gray-400">
