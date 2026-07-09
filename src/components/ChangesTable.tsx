@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DataChange } from "@/lib/diff";
-import { ArrowUpDown, RefreshCcw, AlertTriangle } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  ArrowUpDown,
+  Filter,
+  Minus,
+  Plus,
+  RefreshCcw,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import type { ChangeVisitSummary } from "@/hooks/useChangeMonitor";
 import { readChangeStorageNumber } from "@/lib/change-storage";
@@ -323,7 +333,7 @@ export function ChangesTable({
     </th>
   );
 
-  function renderTable(changes: DataChange[]) {
+  function renderTable(changes: DataChange[], showHeader = true) {
     if (!changes.length) {
       // Check if we have filters applied
       const hasFilters =
@@ -359,8 +369,9 @@ export function ChangesTable({
     }
 
     return (
-      <div className="overflow-x-auto rounded-xl border border-gray-700/60 bg-[#0c1117]/60">
-        <table className="w-full">
+      <div className="overflow-x-auto rounded-xl border border-white/[0.07] bg-[#0c1117]/70 shadow-[0_14px_40px_rgba(0,0,0,0.14)]">
+        <table className="w-full min-w-[760px]">
+          {showHeader && (
           <thead>
             <tr className="bg-gray-900/40">
               <SortHeader field="timestamp">Time</SortHeader>
@@ -368,34 +379,42 @@ export function ChangesTable({
               <SortHeader field="map">Map</SortHeader>
               <SortHeader field="boss">Boss</SortHeader>
               <SortHeader field="field">Change Type</SortHeader>
-              <SortHeader field="oldValue">Previous Value</SortHeader>
-              <SortHeader field="newValue">New Value</SortHeader>
+              <SortHeader field="newValue">Change</SortHeader>
             </tr>
           </thead>
+          )}
           <tbody>
             {changes.map((change, index) => (
               <tr
                 key={`${change.map}-${change.boss}-${change.field}-${index}`}
-                className="border-t border-gray-800/70 hover:bg-gray-800/30 transition-colors duration-200"
+                className="group border-t border-white/[0.06] transition-colors duration-200 hover:bg-white/[0.035]"
               >
                 <TimestampCell timestamp={change.timestamp} />
-                <td className="px-6 py-4 whitespace-nowrap text-orange-300">
-                  {change.gameMode}
+                <td className="px-4 py-3.5 whitespace-nowrap">
+                  <span className={`inline-flex rounded-md border px-2 py-1 text-[11px] font-bold tracking-wide ${change.gameMode.toLowerCase() === "pve" ? "border-sky-400/20 bg-sky-400/10 text-sky-200" : "border-orange-400/20 bg-orange-400/10 text-orange-200"}`}>
+                    {change.gameMode}
+                  </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-purple-300">
-                  {change.map}
+                <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-violet-200">
+                  {titleCase(change.map)}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-blue-300">
-                  {getCanonicalBossName(change.boss)}
+                <td className="px-4 py-3.5 whitespace-nowrap text-sm font-semibold text-sky-200">
+                  {titleCase(getCanonicalBossName(change.boss))}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-gray-300">
-                  {change.field}
+                <td className="px-4 py-3.5 whitespace-nowrap">
+                  <ChangeTypeBadge field={change.field} />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-red-400">
-                  {change.oldValue}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-green-400">
-                  {change.newValue}
+                <td className="px-4 py-3.5">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="min-w-[52px] text-right font-mono text-rose-300/85 line-through decoration-rose-300/35">
+                      {change.oldValue}
+                    </span>
+                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-600 transition-colors group-hover:text-gray-400" />
+                    <span className="min-w-[52px] font-mono font-semibold text-emerald-300">
+                      {change.newValue}
+                    </span>
+                    <ChangeDirection change={change} />
+                  </div>
                 </td>
               </tr>
             ))}
@@ -591,13 +610,20 @@ export function ChangesTable({
           previousViewedAt={visitSummary.previousViewedAt}
         />
       )}
-      <div className="flex flex-col gap-4 rounded-xl border border-gray-700/60 bg-[#0c1117]/60 p-4 md:flex-row">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
+      <div className="rounded-xl border border-white/[0.07] bg-[#0c1117]/70 p-3.5 shadow-[0_14px_40px_rgba(0,0,0,0.12)] sm:p-4">
+        <div className="mb-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-gray-200">
+            <Filter className="h-4 w-4 text-violet-300" />
+            Refine history
+          </div>
+        </div>
+        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
           {/* Date Range Filter */}
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value as DateRange)}
-            className="rounded-lg border border-gray-700/60 bg-gray-900/40 px-3 py-2 text-sm text-gray-200"
+            aria-label="Date range"
+            className="w-full rounded-lg border border-white/[0.08] bg-gray-900/70 px-3 py-2.5 text-sm text-gray-200 outline-none transition-colors hover:border-violet-400/40 focus:border-violet-400/70 md:w-[190px]"
           >
             <option value="all">All Time ({dateRangeCounts.all})</option>
             <option value="24h">
@@ -613,7 +639,8 @@ export function ChangesTable({
           <select
             value={modeFilter}
             onChange={(e) => setModeFilter(e.target.value)}
-            className="rounded-lg border border-gray-700/60 bg-gray-900/40 px-3 py-2 text-sm text-gray-200"
+            aria-label="Game mode"
+            className="w-full rounded-lg border border-white/[0.08] bg-gray-900/70 px-3 py-2.5 text-sm text-gray-200 outline-none transition-colors hover:border-violet-400/40 focus:border-violet-400/70 md:w-[160px]"
           >
             <option value="">All Modes</option>
             <option value="PvP">PvP</option>
@@ -624,7 +651,8 @@ export function ChangesTable({
           <select
             value={changeTypeFilter}
             onChange={(e) => setChangeTypeFilter(e.target.value)}
-            className="rounded-lg border border-gray-700/60 bg-gray-900/40 px-3 py-2 text-sm text-gray-200"
+            aria-label="Change type"
+            className="w-full rounded-lg border border-white/[0.08] bg-gray-900/70 px-3 py-2.5 text-sm text-gray-200 outline-none transition-colors hover:border-violet-400/40 focus:border-violet-400/70 md:w-[245px]"
           >
             <option value="">All Change Types</option>
             {changeTypeOptions.map((changeType) => (
@@ -638,7 +666,8 @@ export function ChangesTable({
           <select
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-            className="rounded-lg border border-gray-700/60 bg-gray-900/40 px-3 py-2 text-sm text-gray-200"
+            aria-label="Grouping"
+            className="w-full rounded-lg border border-white/[0.08] bg-gray-900/70 px-3 py-2.5 text-sm text-gray-200 outline-none transition-colors hover:border-violet-400/40 focus:border-violet-400/70 md:w-[175px]"
           >
             <option value="none">No Grouping</option>
             <option value="day">Group by Day</option>
@@ -646,7 +675,7 @@ export function ChangesTable({
           </select>
 
           <div className="flex flex-col md:flex-row md:items-center gap-2 text-sm">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 border-t border-white/[0.06] pt-3 md:ml-auto md:border-l md:border-t-0 md:pl-4 md:pt-0">
               <span
                 className={`text-gray-400 ${isRefreshing ? "opacity-50" : ""}`}
               >
@@ -688,16 +717,18 @@ export function ChangesTable({
         ? Object.entries(groupedChanges)
             // Sort groups by date key
             .sort(([a], [b]) => b.localeCompare(a))
-            .map(([date, groupChanges]) => (
-              <div key={date} className="mb-6">
-                <h3 className="mb-2 text-lg font-semibold text-gray-300 flex items-center gap-2">
-                  {formatGroupDate(date)}
-                  <span className="text-sm text-gray-500 font-normal">
+            .map(([date, groupChanges], groupIndex) => (
+              <div key={date} className="mb-6 last:mb-0">
+                <div className="mb-2 flex items-center gap-3 px-1">
+                  <h3 className="text-base font-semibold text-gray-200">
+                    {formatGroupDate(date)}
+                  </h3>
+                  <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 text-xs text-gray-500">
                     ({groupChanges.length} change
                     {groupChanges.length !== 1 ? "s" : ""})
                   </span>
-                </h3>
-                {renderTable(groupChanges)}
+                </div>
+                {renderTable(groupChanges, groupIndex === 0)}
               </div>
             ))
         : renderTable(visibleChanges)}
@@ -749,6 +780,51 @@ function LastVisitSummary({
       </div>
     </div>
   );
+}
+
+function ChangeTypeBadge({ field }: { field: string }) {
+  const normalized = field.toLowerCase();
+  const isAdded = normalized.includes("added") || normalized === "status";
+  const isRemoved = normalized.includes("removed");
+  const Icon = isAdded ? Plus : isRemoved ? Minus : TrendingUp;
+  const label = isAdded ? "Added" : isRemoved ? "Removed" : humanizeChangeType(field);
+  const classes = isAdded
+    ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200"
+    : isRemoved
+    ? "border-rose-400/20 bg-rose-400/10 text-rose-200"
+    : "border-violet-400/20 bg-violet-400/10 text-violet-200";
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-semibold ${classes}`}>
+      <Icon className="h-3 w-3" />
+      {label}
+    </span>
+  );
+}
+
+function ChangeDirection({ change }: { change: DataChange }) {
+  const oldNumber = parseFloat(change.oldValue);
+  const newNumber = parseFloat(change.newValue);
+  if (Number.isNaN(oldNumber) || Number.isNaN(newNumber) || oldNumber === newNumber) return null;
+
+  const increased = newNumber > oldNumber;
+  return (
+    <span className={`ml-1 inline-flex items-center gap-1 text-[11px] font-semibold ${increased ? "text-emerald-300/80" : "text-rose-300/80"}`}>
+      {increased ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+      {Math.abs(newNumber - oldNumber)}{change.newValue.includes("%") ? "%" : ""}
+    </span>
+  );
+}
+
+function humanizeChangeType(field: string) {
+  return field
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[:_]/g, " · ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function titleCase(value: string) {
+  return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 import * as Tooltip from '@radix-ui/react-tooltip';
