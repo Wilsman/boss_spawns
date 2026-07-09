@@ -79,6 +79,13 @@ function MainApp() {
   const setMapFilter = (v: string) => updateParam("map", v);
   const setBossFilter = (v: string) => updateParam("boss", v);
   const setSearchQuery = (v: string) => updateParam("search", v);
+  const clearFilters = () => {
+    const params = new URLSearchParams(searchParams);
+    params.delete("map");
+    params.delete("boss");
+    params.delete("search");
+    setSearchParams(params);
+  };
 
   // Use refs to track data existence without causing re-renders
   const hasDataRef = useRef(false);
@@ -611,6 +618,7 @@ function MainApp() {
             onMapFilterChange={setMapFilter}
             onBossFilterChange={setBossFilter}
             onSearchQueryChange={setSearchQuery}
+            onClearFilters={clearFilters}
             onExport={handleExport}
             data={mode === "regular" ? regularData : pveData}
           />

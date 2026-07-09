@@ -10,6 +10,7 @@ interface FilterBarProps {
   onMapFilterChange: (value: string) => void;
   onBossFilterChange: (value: string) => void;
   onSearchQueryChange: (value: string) => void;
+  onClearFilters: () => void;
   onExport: () => void;
   data: SpawnData[] | null;
 }
@@ -21,6 +22,7 @@ export function FilterBar({
   onMapFilterChange,
   onBossFilterChange,
   onSearchQueryChange,
+  onClearFilters,
   onExport,
   data,
 }: FilterBarProps) {
@@ -123,11 +125,7 @@ export function FilterBar({
       <div className="flex items-center gap-2 sm:gap-3">
         {(mapFilter || bossFilter || searchQuery) && (
           <button
-            onClick={() => {
-              onMapFilterChange("");
-              onBossFilterChange("");
-              onSearchQueryChange("");
-            }}
+            onClick={onClearFilters}
             className="inline-flex items-center gap-2 rounded-lg border border-amber-400/50 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-100 hover:bg-amber-500/20"
           >
             Clear
