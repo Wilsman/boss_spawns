@@ -104,7 +104,7 @@ export const BOSS_OVERRIDES: BossOverride[] = [
   },
   {
     mapName: ["Woods", "Customs", "Shoreline", "Lighthouse"],
-    bossName: "Goons",
+    bossName: "Knight (Goons)",
     spawnChance: 0.4, // 40%
     gameMode: "pve"
   },

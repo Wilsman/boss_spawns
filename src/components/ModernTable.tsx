@@ -53,6 +53,9 @@ interface BossEntry {
   escorts: Escort[] | null;
 }
 
+const HOVER_CARD_CLASS =
+  "w-[350px] overflow-hidden rounded-2xl border border-slate-500/25 bg-[#0b111a]/95 p-2 text-slate-100 shadow-[0_24px_70px_rgba(0,0,0,0.6)] backdrop-blur-xl";
+
 function getEscortCount(escort: Escort): number {
   return Math.max(0, ...escort.amount.map((amount) => amount.count));
 }
@@ -581,7 +584,7 @@ const EscortRows = ({ escorts }: { escorts: Escort[] }) => (
           </HoverCardTrigger>
           <HoverCardContent
             align="start"
-            className="w-[320px] bg-gray-800 border-gray-700"
+            className={HOVER_CARD_CLASS}
           >
             <BossInfo
               name={escort.boss.name}
@@ -603,36 +606,57 @@ const BossInfo = ({
   name: string;
   health: Health[] | null;
   imagePortraitLink: string | null;
-}) => (
-  <>
-    <h3 className="font-semibold text-gray-200">{name}</h3>
-    {imagePortraitLink && (
-      <img
-        src={imagePortraitLink}
-        alt={name}
-        className="w-full h-32 object-cover rounded-lg"
-      />
-    )}
-    {health && (
-      <div className="text-sm text-gray-400">
-        <div className="flex justify-between">
-          <span className="font-bold text-gray-200 mb-1">Health:</span>
-          <span className="font-bold text-gray-200">
-            Total: {health.reduce((acc, part) => acc + part.max, 0)}
-          </span>
+}) => {
+  const totalHealth = health?.reduce((total, part) => total + part.max, 0) ?? 0;
+
+  return (
+    <div className="space-y-3">
+      <div className="relative min-h-32 overflow-hidden rounded-xl border border-slate-400/15 bg-gradient-to-br from-slate-800 via-slate-900 to-[#121b28] px-4 py-3">
+        <div className="absolute -left-8 -top-10 h-28 w-28 rounded-full bg-sky-400/10 blur-2xl" />
+        <div className="relative z-10 flex h-full max-w-[62%] flex-col justify-end gap-2">
+          <h3 className="text-xl font-bold tracking-tight text-white">{name}</h3>
+          {health && (
+            <span className="w-fit rounded-full border border-sky-300/20 bg-sky-400/10 px-2.5 py-1 font-mono text-xs font-bold text-sky-100">
+              TOTAL HP {totalHealth}
+            </span>
+          )}
         </div>
-        <ul className="space-y-1">
-          {health.map((part) => (
-            <li key={part.bodyPart} className="flex justify-between">
-              <span className="capitalize">{part.bodyPart}</span>
-              <span>{part.max}</span>
-            </li>
-          ))}
-        </ul>
+        {imagePortraitLink && (
+          <>
+            <div className="absolute inset-y-0 right-0 w-3/5 bg-gradient-to-r from-[#121b28] via-transparent to-transparent" />
+            <img
+              src={imagePortraitLink}
+              alt={name}
+              className="absolute inset-y-0 right-0 h-full w-[52%] object-cover object-top opacity-85"
+            />
+          </>
+        )}
       </div>
-    )}
-  </>
-);
+
+      {health && (
+        <div className="rounded-xl border border-slate-500/15 bg-slate-950/40 p-2">
+          <div className="mb-2 flex items-center justify-between px-1">
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+              Health profile
+            </span>
+            <span className="h-px w-16 bg-gradient-to-r from-sky-300/40 to-transparent" />
+          </div>
+          <ul className="grid grid-cols-2 gap-1">
+            {health.map((part) => (
+              <li
+                key={part.bodyPart}
+                className="flex items-center justify-between rounded-md bg-slate-800/60 px-2 py-1.5 text-xs"
+              >
+                <span className="capitalize text-slate-400">{part.bodyPart}</span>
+                <span className="font-mono font-bold text-slate-100">{part.max}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // Boss hover cell (duplicated to keep component self-contained)
 const BossCell = ({ boss }: { boss: BossEntry }) => {
@@ -665,7 +689,7 @@ const BossCell = ({ boss }: { boss: BossEntry }) => {
       </HoverCardTrigger>
       <HoverCardContent
         align="start"
-        className="w-[320px] bg-gray-800 border-gray-700"
+        className={HOVER_CARD_CLASS}
       >
         <div className="flex flex-col gap-3">
           <BossInfo
@@ -675,30 +699,35 @@ const BossCell = ({ boss }: { boss: BossEntry }) => {
           />
 
           {boss.escorts && boss.escorts.length > 0 && (
-            <div className="text-sm text-gray-400">
-              <span className="font-bold text-gray-200 mb-2 block">
-                Escorts:
-              </span>
-              <div className="space-y-2">
+            <div className="rounded-xl border border-slate-500/15 bg-slate-950/40 p-2">
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                  Escort detail
+                </span>
+                <span className="font-mono text-[10px] text-sky-300/70">
+                  {boss.escorts.length} UNIT{boss.escorts.length === 1 ? "" : "S"}
+                </span>
+              </div>
+              <div className="space-y-1">
                 {boss.escorts.map((escort: Escort, index: number) => (
                   <div
                     key={index}
-                    className="flex items-start justify-between text-xs"
+                    className="flex items-center justify-between rounded-lg bg-slate-800/60 px-2 py-1.5 text-xs"
                   >
                     <div className="flex items-center gap-2">
                       {escort.boss.imagePortraitLink && (
                         <img
                           src={escort.boss.imagePortraitLink}
                           alt={escort.boss.name}
-                          className="w-5 h-5 rounded-full object-cover"
+                          className="h-6 w-6 rounded-full border border-slate-400/20 object-cover"
                         />
                       )}
                       <div>
-                        <span className="text-gray-300">
+                        <span className="font-medium text-slate-200">
                           {escort.boss.name}
                         </span>
                         {escort.boss.health && (
-                          <div className="text-gray-500 text-xs">
+                          <div className="font-mono text-[10px] text-slate-500">
                             HP:{" "}
                             {escort.boss.health.reduce(
                               (acc: number, part: Health) => acc + part.max,
@@ -708,7 +737,7 @@ const BossCell = ({ boss }: { boss: BossEntry }) => {
                         )}
                       </div>
                     </div>
-                    <span className="text-gray-500">
+                    <span className="font-mono text-sky-200/70">
                       {escort.amount[0]?.count > 1
                         ? `×${escort.amount[0]?.count}`
                         : ""}

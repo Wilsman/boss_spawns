@@ -86,7 +86,7 @@ const DISPLAY_NAME_TRANSLATIONS: Record<string, string> = {
   bossGluhar: "Glukhar",
   bossKilla: "Killa",
   bossKillaAgro: "Vengeful Killa",
-  bossKnight: "Goons",
+  bossKnight: "Knight (Goons)",
   bossKojaniy: "Shturman",
   bossKolontay: "Kollontay",
   bossPartisan: "Partisan",

@@ -2,6 +2,9 @@ const BOSS_ALIAS_MAP = {
   bossbully: "Reshala",
   boar: "Kaban",
   kojaniy: "Shturman",
+  goons: "Knight (Goons)",
+  knight: "Knight (Goons)",
+  knightgoons: "Knight (Goons)",
   arenafighter: "Arena Fighter",
 } as const;
 
