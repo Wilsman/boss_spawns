@@ -10,15 +10,12 @@ import {
 import { SpawnData, fetchAllSpawnData } from "./lib/api";
 import ModernTable from "@/components/ModernTable";
 import { Header } from "@/components/Header";
-import { FilterBar } from "@/components/FilterBar";
-import { CacheStatus } from "@/components/CacheStatus";
 import { DataChange } from "@/lib/diff";
 import { ChangesTable } from "@/components/ChangesTable";
+import { ChangesWorkspace } from "@/components/ChangesWorkspace";
+import { DataWorkspace } from "@/components/DataWorkspace";
 import { exportChanges, getStoredChanges } from "@/lib/changes";
 import { VersionLabel } from "@/components/VersionLabel";
-import { NavBar } from "@/components/ui/navbar";
-import { ChangeNotificationControls } from "@/components/ChangeNotificationControls";
-import { Swords, Crosshair, Scale, History } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { PatchToast } from "@/components/patch-toast";
 import type { DataMode } from "@/types";
@@ -576,22 +573,69 @@ function MainApp() {
           pveData={pveData}
         />
 
-        <NavBar
-          items={[
-            { name: "PVP", url: "/pvp", icon: Swords },
-            { name: "PVE", url: "/pve", icon: Crosshair },
-            { name: "Compare", url: "/compare", icon: Scale },
-            {
-              name: "Changes",
-              url: "/changes",
-              icon: History,
-              badgeCount: unreadCount,
-            },
-          ]}
-        />
-
-        <div className="flex justify-center">
-          <ChangeNotificationControls
+        <div className="flex flex-col gap-4">
+          {mode === "changes" ? (
+            <ChangesWorkspace
+              changes={changes}
+              filterData={[...(regularData || []), ...(pveData || [])]}
+              mapFilter={mapFilter}
+              bossFilter={bossFilter}
+              searchQuery={searchQuery}
+              onMapFilterChange={setMapFilter}
+              onBossFilterChange={setBossFilter}
+              onSearchQueryChange={setSearchQuery}
+              onClearFilters={clearFilters}
+              onExport={handleExport}
+              onChangesUpdate={handleChangesUpdate}
+              isRefreshing={isRefreshing}
+              changesLoaded={changesLoaded}
+              autoRefreshEnabled={autoRefreshEnabled}
+              canMarkAllRead={unreadCount > 0}
+              errorText={notificationError}
+              notificationsEnabled={notificationsEnabled}
+              notificationsSupported={notificationsSupported}
+              onMarkAllRead={markAllRead}
+              onResetSettings={resetNotificationSettings}
+              onTestNotification={
+                import.meta.env.DEV ? testNotification : undefined
+              }
+              onToggleAutoRefresh={toggleAutoRefresh}
+              onToggleNotifications={toggleNotifications}
+              onToggleSound={toggleSound}
+              soundEnabled={soundEnabled}
+              unreadCount={unreadCount}
+              renderContent={(changeFilters) => !changesLoaded ? (
+                <div className="flex flex-col justify-center items-center h-[150px] gap-4">
+                  <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-gray-400 text-sm">Loading recent changes...</p>
+                </div>
+              ) : (
+                <ChangesTable
+                  changes={changes}
+                  filters={{
+                    map: mapFilter,
+                    boss: bossFilter,
+                    search: searchQuery,
+                  }}
+                  changeFilters={changeFilters}
+                  onChangesUpdate={handleChangesUpdate}
+                  visitSummary={visitSummary}
+                />
+              )}
+            />
+          ) : (
+          <DataWorkspace
+            filterData={mode === "compare" ? [...(regularData || []), ...(pveData || [])] : mode === "regular" ? regularData : pveData}
+            mapFilter={mapFilter}
+            bossFilter={bossFilter}
+            searchQuery={searchQuery}
+            onMapFilterChange={setMapFilter}
+            onBossFilterChange={setBossFilter}
+            onSearchQueryChange={setSearchQuery}
+            onExport={handleExport}
+            onRefresh={() => loadData("both", { forceRefresh: true })}
+            isRefreshing={isRefreshing}
+            disabled={loading}
             autoRefreshEnabled={autoRefreshEnabled}
             canMarkAllRead={unreadCount > 0}
             errorText={notificationError}
@@ -599,41 +643,13 @@ function MainApp() {
             notificationsSupported={notificationsSupported}
             onMarkAllRead={markAllRead}
             onResetSettings={resetNotificationSettings}
-            onTestNotification={
-              import.meta.env.DEV ? testNotification : undefined
-            }
+            onTestNotification={import.meta.env.DEV ? testNotification : undefined}
             onToggleAutoRefresh={toggleAutoRefresh}
             onToggleNotifications={toggleNotifications}
             onToggleSound={toggleSound}
             soundEnabled={soundEnabled}
             unreadCount={unreadCount}
-          />
-        </div>
-
-        <div className="p-2 rounded-lg bg-black/30">
-          <FilterBar
-            mapFilter={mapFilter}
-            bossFilter={bossFilter}
-            searchQuery={searchQuery}
-            onMapFilterChange={setMapFilter}
-            onBossFilterChange={setBossFilter}
-            onSearchQueryChange={setSearchQuery}
-            onClearFilters={clearFilters}
-            onExport={handleExport}
-            data={mode === "regular" ? regularData : pveData}
-          />
-        </div>
-
-        <div className="flex flex-col gap-4">
-          {/* Cache status / refresh indicator - positioned near the data */}
-          <div className="flex justify-center">
-            <CacheStatus
-              onExpired={() => loadData("both", { forceRefresh: true })}
-              onManualRefresh={() => loadData("both", { forceRefresh: true })}
-              isRefreshing={isRefreshing}
-              disabled={loading}
-            />
-          </div>
+          >
 
           {loading ? (
             <div className="space-y-6">
@@ -681,24 +697,6 @@ function MainApp() {
                 </div>
               </div>
             </div>
-          ) : mode === "changes" && !changesLoaded ? (
-            <div className="flex flex-col justify-center items-center h-[150px] gap-4">
-              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-gray-400 text-sm">
-                Loading recent changes...
-              </p>
-            </div>
-          ) : mode === "changes" ? (
-            <ChangesTable
-              changes={changes}
-              filters={{
-                map: mapFilter,
-                boss: bossFilter,
-                search: searchQuery,
-              }}
-              onChangesUpdate={handleChangesUpdate}
-              visitSummary={visitSummary}
-            />
           ) : (
             <ModernTable
               data={
@@ -715,6 +713,8 @@ function MainApp() {
                 search: searchQuery,
               }}
             />
+          )}
+          </DataWorkspace>
           )}
         </div>
 

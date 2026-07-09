@@ -4,16 +4,13 @@ import {
   AlertTriangle,
   ArrowRight,
   ArrowUpDown,
-  Filter,
   Minus,
   Plus,
-  RefreshCcw,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import type { ChangeVisitSummary } from "@/hooks/useChangeMonitor";
-import { readChangeStorageNumber } from "@/lib/change-storage";
 import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
 
 interface ChangesTableProps {
@@ -23,11 +20,22 @@ interface ChangesTableProps {
     boss: string;
     search: string;
   };
+  changeFilters: ChangeFilters;
   onChangesUpdate: (options?: {
     force?: boolean;
     silent?: boolean;
   }) => Promise<void>;
   visitSummary: ChangeVisitSummary | null;
+}
+
+export type ChangeGroupBy = "none" | "day" | "week";
+export type ChangeDateRange = "all" | "24h" | "7d" | "30d";
+
+export interface ChangeFilters {
+  groupBy: ChangeGroupBy;
+  dateRange: ChangeDateRange;
+  modeFilter: string;
+  changeTypeFilter: string;
 }
 
 type SortField =
@@ -39,86 +47,21 @@ type SortField =
   | "timestamp"
   | "gameMode";
 type SortDirection = "asc" | "desc";
-type GroupBy = "none" | "day" | "week";
-type DateRange = "all" | "24h" | "7d" | "30d";
-
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const CHANGE_BATCH_SIZE = 75;
 
 export function ChangesTable({
   changes = [],
   filters,
+  changeFilters,
   onChangesUpdate,
   visitSummary,
 }: ChangesTableProps) {
   const [sortField, setSortField] = useState<SortField>("timestamp");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
-  const [groupBy, setGroupBy] = useState<GroupBy>("day");
-  const [dateRange, setDateRange] = useState<DateRange>("all");
-  const [modeFilter, setModeFilter] = useState<string>(""); // Add mode filter state
-  const [changeTypeFilter, setChangeTypeFilter] = useState<string>("");
   const [visibleChangeCount, setVisibleChangeCount] =
     useState(CHANGE_BATCH_SIZE);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [lastRefreshTime, setLastRefreshTime] = useState<number>(() => {
-    return readChangeStorageNumber("cacheTimestamp") || Date.now();
-  });
-  const [nextRefreshAllowed, setNextRefreshAllowed] = useState<number>(() => {
-    const timestamp = readChangeStorageNumber("cacheTimestamp");
-    return timestamp + CACHE_DURATION;
-  });
-  const [timeUntilRefresh, setTimeUntilRefresh] = useState<number>(
-    Math.max(0, nextRefreshAllowed - Date.now())
-  );
-  const lastRefreshedTimeDisplay = useRelativeTime(lastRefreshTime);
-  const canRefresh = timeUntilRefresh === 0;
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const loadMoreIntersectingRef = useRef(false);
-
-  useEffect(() => {
-    const storedRefreshTime = readChangeStorageNumber("cacheTimestamp");
-
-    if (storedRefreshTime > 0) {
-      setLastRefreshTime(storedRefreshTime);
-      setNextRefreshAllowed(storedRefreshTime + CACHE_DURATION);
-      setTimeUntilRefresh(
-        Math.max(0, storedRefreshTime + CACHE_DURATION - Date.now())
-      );
-    }
-  }, [changes]);
-
-  const handleManualRefresh = useCallback(async () => {
-    const now = Date.now();
-    if (isRefreshing || now < nextRefreshAllowed) return;
-
-    setIsRefreshing(true);
-    setError(null);
-
-    try {
-      await onChangesUpdate({ force: true });
-      const currentTime =
-        readChangeStorageNumber("cacheTimestamp") || Date.now();
-      setLastRefreshTime(currentTime);
-      setNextRefreshAllowed(currentTime + CACHE_DURATION);
-      setTimeUntilRefresh(CACHE_DURATION);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch changes");
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [isRefreshing, onChangesUpdate, nextRefreshAllowed]);
-
-  // Calculate time until next refresh
-  useEffect(() => {
-    if (!canRefresh) {
-      const interval = setInterval(() => {
-        const remaining = Math.max(0, nextRefreshAllowed - Date.now());
-        setTimeUntilRefresh(remaining);
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [nextRefreshAllowed, canRefresh]);
 
   // Apply date range filter before other filters
   const filteredChanges = useMemo(() => {
@@ -131,7 +74,7 @@ export function ChangesTable({
       const millisecondsPerDay = 24 * 60 * 60 * 1000;
 
       // Apply date range filter
-      switch (dateRange) {
+      switch (changeFilters.dateRange) {
         case "24h":
           if (diff > millisecondsPerDay) return false;
           break;
@@ -145,14 +88,17 @@ export function ChangesTable({
 
       // Apply mode filter
       if (
-        modeFilter &&
-        change.gameMode.toLowerCase() !== modeFilter.toLowerCase()
+        changeFilters.modeFilter &&
+        change.gameMode.toLowerCase() !== changeFilters.modeFilter.toLowerCase()
       ) {
         return false;
       }
 
       // Apply change type filter
-      if (changeTypeFilter && change.field !== changeTypeFilter) {
+      if (
+        changeFilters.changeTypeFilter &&
+        change.field !== changeFilters.changeTypeFilter
+      ) {
         return false;
       }
 
@@ -178,29 +124,7 @@ export function ChangesTable({
       }
       return true;
     });
-  }, [changes, changeTypeFilter, dateRange, filters, modeFilter]);
-
-  // Memoize date range counts
-  const dateRangeCounts = useMemo(() => {
-    const now = Date.now();
-    const millisecondsPerDay = 24 * 60 * 60 * 1000;
-
-    return {
-      all: changes.length,
-      last24h: changes.filter((c) => now - c.timestamp <= millisecondsPerDay)
-        .length,
-      last7d: changes.filter((c) => now - c.timestamp <= 7 * millisecondsPerDay)
-        .length,
-      last30d: changes.filter(
-        (c) => now - c.timestamp <= 30 * millisecondsPerDay
-      ).length,
-    };
-  }, [changes]);
-
-  const changeTypeOptions = useMemo(
-    () => Array.from(new Set(changes.map((change) => change.field))).sort(),
-    [changes]
-  );
+  }, [changes, changeFilters, filters]);
 
   // Memoize sorted changes
   const sortedChanges = useMemo(() => {
@@ -251,13 +175,13 @@ export function ChangesTable({
   useEffect(() => {
     setVisibleChangeCount(CHANGE_BATCH_SIZE);
   }, [
-    changeTypeFilter,
-    dateRange,
+    changeFilters.changeTypeFilter,
+    changeFilters.dateRange,
     filters.boss,
     filters.map,
     filters.search,
-    groupBy,
-    modeFilter,
+    changeFilters.groupBy,
+    changeFilters.modeFilter,
     sortDirection,
     sortField,
   ]);
@@ -297,10 +221,10 @@ export function ChangesTable({
 
   // Group changes if needed
   const groupedChanges = useMemo(() => {
-    return groupBy === "none"
+    return changeFilters.groupBy === "none"
       ? null
-      : groupChangesByDate(visibleChanges, groupBy);
-  }, [visibleChanges, groupBy]);
+      : groupChangesByDate(visibleChanges, changeFilters.groupBy);
+  }, [visibleChanges, changeFilters.groupBy]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -340,8 +264,9 @@ export function ChangesTable({
         filters.map ||
         filters.boss ||
         filters.search ||
-        modeFilter ||
-        changeTypeFilter;
+        changeFilters.dateRange !== "all" ||
+        changeFilters.modeFilter ||
+        changeFilters.changeTypeFilter;
       const message = hasFilters
         ? "No changes match your current filters"
         : "No changes have been detected yet";
@@ -355,10 +280,7 @@ export function ChangesTable({
           <div className="text-gray-500 text-sm">{suggestion}</div>
           {hasFilters && (
             <button
-              onClick={() => {
-                // Reset filters through parent component
-                onChangesUpdate();
-              }}
+              onClick={() => void onChangesUpdate()}
               className="px-3 py-1 text-sm bg-gray-800 rounded-md hover:bg-gray-700 mt-4"
             >
               Clear filters
@@ -424,28 +346,6 @@ export function ChangesTable({
     );
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <div className="space-y-4">
-          <div className="text-red-400">{error}</div>
-          <div className="text-gray-400 text-sm">
-            {changes.length > 0
-              ? "Showing previously loaded changes. Click retry to fetch latest updates."
-              : "Unable to load changes. Please try again."}
-          </div>
-          <button
-            onClick={handleManualRefresh}
-            className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 mx-auto"
-          >
-            <RefreshCcw className="w-4 h-4" />
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // If we have no changes data, show an appropriate message with substantial content
   if (!changes.length) {
     return (
@@ -459,22 +359,11 @@ export function ChangesTable({
               Changes will appear here when boss spawns are updated
             </p>
             <button
-              onClick={handleManualRefresh}
-              disabled={isRefreshing}
+              onClick={() => void onChangesUpdate({ force: true })}
               className="px-4 py-2 mt-4 text-sm bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isRefreshing ? (
-                <>
-                  <RefreshCcw className="inline w-4 h-4 mr-2 animate-spin" />
-                  Checking for changes...
-                </>
-              ) : (
-                "Check for changes"
-              )}
+              Check for changes
             </button>
-            {error && (
-              <p className="text-red-400 text-sm mt-2">{error}</p>
-            )}
           </div>
         </div>
 
@@ -589,19 +478,6 @@ export function ChangesTable({
     return new Date(dateStr).toLocaleDateString();
   };
 
-  // Update the refresh button in the UI
-  const getRefreshButtonTooltip = () => {
-    if (isRefreshing) return "Refreshing...";
-    if (!canRefresh) {
-      const minutes = Math.floor(timeUntilRefresh / 60000);
-      const seconds = Math.floor((timeUntilRefresh % 60000) / 1000);
-      return `Next refresh available in ${minutes}:${seconds
-        .toString()
-        .padStart(2, "0")}`;
-    }
-    return "Refresh changes";
-  };
-
   return (
     <div className="space-y-4">
       {visitSummary && (
@@ -610,109 +486,6 @@ export function ChangesTable({
           previousViewedAt={visitSummary.previousViewedAt}
         />
       )}
-      <div className="rounded-xl border border-white/[0.07] bg-[#0c1117]/70 p-3.5 shadow-[0_14px_40px_rgba(0,0,0,0.12)] sm:p-4">
-        <div className="mb-2.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-gray-200">
-            <Filter className="h-4 w-4 text-violet-300" />
-            Refine history
-          </div>
-        </div>
-        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
-          {/* Date Range Filter */}
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value as DateRange)}
-            aria-label="Date range"
-            className="w-full rounded-lg border border-white/[0.08] bg-gray-900/70 px-3 py-2.5 text-sm text-gray-200 outline-none transition-colors hover:border-violet-400/40 focus:border-violet-400/70 md:w-[190px]"
-          >
-            <option value="all">All Time ({dateRangeCounts.all})</option>
-            <option value="24h">
-              Last 24 Hours ({dateRangeCounts.last24h})
-            </option>
-            <option value="7d">Last 7 Days ({dateRangeCounts.last7d})</option>
-            <option value="30d">
-              Last 30 Days ({dateRangeCounts.last30d})
-            </option>
-          </select>
-
-          {/* Mode Filter */}
-          <select
-            value={modeFilter}
-            onChange={(e) => setModeFilter(e.target.value)}
-            aria-label="Game mode"
-            className="w-full rounded-lg border border-white/[0.08] bg-gray-900/70 px-3 py-2.5 text-sm text-gray-200 outline-none transition-colors hover:border-violet-400/40 focus:border-violet-400/70 md:w-[160px]"
-          >
-            <option value="">All Modes</option>
-            <option value="PvP">PvP</option>
-            <option value="PvE">PvE</option>
-          </select>
-
-          {/* Change Type Filter */}
-          <select
-            value={changeTypeFilter}
-            onChange={(e) => setChangeTypeFilter(e.target.value)}
-            aria-label="Change type"
-            className="w-full rounded-lg border border-white/[0.08] bg-gray-900/70 px-3 py-2.5 text-sm text-gray-200 outline-none transition-colors hover:border-violet-400/40 focus:border-violet-400/70 md:w-[245px]"
-          >
-            <option value="">All Change Types</option>
-            {changeTypeOptions.map((changeType) => (
-              <option key={changeType} value={changeType}>
-                {changeType}
-              </option>
-            ))}
-          </select>
-
-          {/* Grouping Options */}
-          <select
-            value={groupBy}
-            onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-            aria-label="Grouping"
-            className="w-full rounded-lg border border-white/[0.08] bg-gray-900/70 px-3 py-2.5 text-sm text-gray-200 outline-none transition-colors hover:border-violet-400/40 focus:border-violet-400/70 md:w-[175px]"
-          >
-            <option value="none">No Grouping</option>
-            <option value="day">Group by Day</option>
-            <option value="week">Group by Week</option>
-          </select>
-
-          <div className="flex flex-col md:flex-row md:items-center gap-2 text-sm">
-            <div className="flex items-center gap-2 border-t border-white/[0.06] pt-3 md:ml-auto md:border-l md:border-t-0 md:pl-4 md:pt-0">
-              <span
-                className={`text-gray-400 ${isRefreshing ? "opacity-50" : ""}`}
-              >
-                Last updated: {lastRefreshedTimeDisplay || "just now"}
-              </span>
-              <button
-                onClick={handleManualRefresh}
-                disabled={isRefreshing || !canRefresh}
-                className={`p-1 rounded-full hover:bg-gray-700/50 transition-colors 
-                  ${
-                    isRefreshing || !canRefresh
-                      ? "cursor-not-allowed opacity-50"
-                      : "cursor-pointer"
-                  }`}
-                title={getRefreshButtonTooltip()}
-              >
-                <RefreshCcw
-                  className={`w-4 h-4 ${
-                    isRefreshing
-                      ? "animate-spin text-purple-400"
-                      : "text-gray-400"
-                  }`}
-                />
-              </button>
-              {!canRefresh && (
-                <span className="text-xs text-gray-500">
-                  {Math.floor(timeUntilRefresh / 60000)}:
-                  {Math.floor((timeUntilRefresh % 60000) / 1000)
-                    .toString()
-                    .padStart(2, "0")}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
       {groupedChanges
         ? Object.entries(groupedChanges)
             // Sort groups by date key

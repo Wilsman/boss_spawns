@@ -14,6 +14,7 @@ interface ChangeNotificationControlsProps {
   onToggleSound: () => void;
   soundEnabled: boolean;
   unreadCount?: number;
+  className?: string;
 }
 
 export function ChangeNotificationControls({
@@ -30,9 +31,10 @@ export function ChangeNotificationControls({
   onToggleSound,
   soundEnabled,
   unreadCount = 0,
+  className,
 }: ChangeNotificationControlsProps) {
   return (
-    <div className="flex flex-col gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30">
+    <div className={className ?? "flex flex-col gap-2 p-2 border border-purple-500/30 rounded-lg bg-gray-800/30"}>
       <div className="flex items-center gap-2 md:flex-wrap">
         <span className="text-sm text-gray-400">
           {notificationsEnabled
