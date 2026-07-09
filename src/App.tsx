@@ -492,8 +492,8 @@ function MainApp() {
                 map in both PVP and PVE modes.
               </p>
               <p className="text-gray-300">
-                Data is sourced from the Tarkov.dev API and community reports,
-                updated every 5 minutes to ensure accuracy.
+                Data is sourced from the Tarkov.dev API and updated every 5
+                minutes to keep the tracker current.
               </p>
             </div>
 

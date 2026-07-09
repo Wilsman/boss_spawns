@@ -32,9 +32,8 @@ export function About() {
           </h2>
           <div className="bg-gray-800/50 rounded-lg p-6 space-y-4">
             <p className="text-gray-300 leading-relaxed">
-              EFT Boss Spawns is a community-driven tool that provides real-time information about 
-              boss spawn chances in Escape from Tarkov. We aggregate data from the official game API 
-              and community sources to give you the most accurate and up-to-date spawn information available.
+              EFT Boss Spawns provides real-time information about boss spawn chances in Escape from Tarkov.
+              Spawn data is sourced from the Tarkov.dev API and refreshed regularly to show the latest available information.
             </p>
             <p className="text-gray-300 leading-relaxed">
               Whether you're hunting for Killa in Interchange, avoiding Reshala on Customs, or tracking 
@@ -155,24 +154,16 @@ export function About() {
           <h2 className="text-2xl font-semibold text-white mb-4">Data Sources</h2>
           <div className="bg-gray-800/50 rounded-lg p-6 space-y-3">
             <p className="text-gray-300">
-              Our data is sourced from multiple reliable sources:
+              Boss spawn data is sourced from the Tarkov.dev API:
             </p>
             <ul className="space-y-2 text-gray-400">
               <li className="flex items-start gap-2">
                 <span className="text-purple-400 mt-1">•</span>
-                <span><strong className="text-gray-300">Tarkov.dev API</strong> - Primary data source for spawn information</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-400 mt-1">•</span>
-                <span><strong className="text-gray-300">Community Reports</strong> - Verified player observations and data mining</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-400 mt-1">•</span>
-                <span><strong className="text-gray-300">Official Announcements</strong> - Battlestate Games patch notes and events</span>
+                <span><strong className="text-gray-300">Tarkov.dev API</strong> - The source for the spawn information shown on this site</span>
               </li>
             </ul>
             <p className="text-gray-400 text-sm mt-4">
-              Data is refreshed every 5 minutes to ensure you have the latest information.
+              Data is refreshed every 5 minutes to keep the tracker up to date.
             </p>
           </div>
         </section>
