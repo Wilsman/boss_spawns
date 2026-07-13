@@ -19,16 +19,18 @@ export interface ManualNoticeConfig {
 export const manualNotice: ManualNoticeConfig = {
   badgeLabel: "Blackout",
   bossDisplayName: "TBA",
+  imageUrl: "https://assets.tarkov.dev/black-div-portrait.webp",
   mapRows: [
     {
       bossName: "Blackout",
       mapName: "TBA",
       value: "Coming soon",
-      locations: "Waiting for the event to begin. Start date is currently unknown.",
+      locations:
+        "Expected after patch maintenance ends (starts July 14 at 8:00 AM BST / 3:00 AM EST; 4–6 hours).",
     },
   ],
   modes: ["PvP", "PvE"],
   statusLine:
-    "Waiting for the Blackout event to begin. Start date is currently unknown.",
-  title: "Blackout Event Pending",
+    "Expected after patch maintenance ends (starts July 14 at 8:00 AM BST / 3:00 AM EST; 4–6 hours).",
+  title: "Blackout Event",
 };
