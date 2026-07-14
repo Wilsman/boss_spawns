@@ -168,7 +168,7 @@ export function ChangesWorkspace({
             />
             <div className="flex items-center justify-between gap-2 lg:justify-end">
               <CacheStatus
-                onExpired={() => void onChangesUpdate({ force: true })}
+                onExpired={() => void onChangesUpdate()}
                 onManualRefresh={() => onChangesUpdate({ force: true })}
                 isRefreshing={isRefreshing}
                 disabled={!changesLoaded}

@@ -6,6 +6,7 @@ import {
   readChangeStorageNumber,
   readChangeStorageRaw,
   writeChangeStorage,
+  writeChangeStorageNumber,
 } from "@/lib/change-storage";
 
 
@@ -13,6 +14,7 @@ export type { SpawnData };
 
 const CACHE_VERSION = 11;
 const CHANGES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for changes data (can be adjusted independently)
+const CHANGES_CACHE_VERSION = 1;
 const DEFAULT_CHANGES_API_BASE_URL = "https://bossdata.cultistcircle.workers.dev";
 const CHANGES_API_PATH = "/api/changes";
 const CHANGES_API_LIMIT = 1000;
@@ -681,14 +683,22 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
   try {
     const { force = false } = options;
     const cachedChanges = getCachedChanges();
+    const cacheVersion = readChangeStorageNumber("cacheVersion");
+    const requiresFullSync = force || cacheVersion !== CHANGES_CACHE_VERSION;
     const timestamp = readChangeStorageNumber("cacheTimestamp");
     const now = Date.now();
 
-    if (!force && cachedChanges.length && now - timestamp < CHANGES_CACHE_DURATION) {
+    if (
+      !requiresFullSync &&
+      cachedChanges.length &&
+      now - timestamp < CHANGES_CACHE_DURATION
+    ) {
       return cachedChanges;
     }
 
-    const latestCachedTimestamp = getLatestChangeTimestamp(cachedChanges);
+    const latestCachedTimestamp = requiresFullSync
+      ? 0
+      : getLatestChangeTimestamp(cachedChanges);
     const response = await fetch(buildChangesApiUrl(latestCachedTimestamp || undefined), {
       method: "GET",
       headers: {
@@ -699,6 +709,13 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
 
     if (!response.ok) {
       if (response.status === 404) {
+        if (requiresFullSync) {
+          writeChangeStorage("cache", "[]");
+          writeChangeStorage("cacheTimestamp", now.toString());
+          writeChangeStorageNumber("cacheVersion", CHANGES_CACHE_VERSION);
+          return [];
+        }
+
         writeChangeStorage("cacheTimestamp", now.toString());
         return cachedChanges;
       }
@@ -725,18 +742,42 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
       return [];
     }
 
-    // Transform and validate the API response
+    const isValidChange = (change: unknown): change is {
+      map: string;
+      boss: string;
+      field: string;
+      old_value: string;
+      new_value: string;
+      timestamp: number;
+      game_mode?: string;
+    } => {
+      if (!change || typeof change !== "object") {
+        return false;
+      }
+
+      const candidate = change as Record<string, unknown>;
+      return (
+        typeof candidate.map === "string" &&
+        candidate.map.length > 0 &&
+        typeof candidate.boss === "string" &&
+        candidate.boss.length > 0 &&
+        typeof candidate.field === "string" &&
+        candidate.field.length > 0 &&
+        typeof candidate.old_value === "string" &&
+        candidate.old_value.length > 0 &&
+        typeof candidate.new_value === "string" &&
+        candidate.new_value.length > 0 &&
+        typeof candidate.timestamp === "number" &&
+        Number.isFinite(candidate.timestamp)
+      );
+    };
+
+    if (!data.every(isValidChange)) {
+      console.error("Invalid change record in response:", data);
+      return cachedChanges;
+    }
+
     const transformedData = data
-      .filter(
-        (change) =>
-          // Basic validation of required fields
-          change.map &&
-          change.boss &&
-          change.field &&
-          change.old_value &&
-          change.new_value &&
-          typeof change.timestamp === "number"
-      )
       .map((change) => ({
         map: change.map,
         boss: change.boss,
@@ -748,12 +789,13 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
       }))
       .sort((a, b) => b.timestamp - a.timestamp); // Sort by newest first
 
-    const mergedChanges = latestCachedTimestamp
-      ? mergeChanges(cachedChanges, transformedData)
-      : transformedData;
+    const mergedChanges = requiresFullSync
+      ? transformedData
+      : mergeChanges(cachedChanges, transformedData);
 
     writeChangeStorage("cache", JSON.stringify(mergedChanges));
     writeChangeStorage("cacheTimestamp", now.toString());
+    writeChangeStorageNumber("cacheVersion", CHANGES_CACHE_VERSION);
 
     return mergedChanges;
   } catch (error) {

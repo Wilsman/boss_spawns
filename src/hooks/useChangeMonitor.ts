@@ -281,7 +281,7 @@ export function useChangeMonitor({
         return;
       }
 
-      void refreshChanges({ force: true });
+      void refreshChanges();
     };
 
     const intervalId = window.setInterval(runRefresh, POLL_INTERVAL);
