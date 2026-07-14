@@ -18,19 +18,18 @@ export interface ManualNoticeConfig {
 
 export const manualNotice: ManualNoticeConfig = {
   badgeLabel: "Blackout",
-  bossDisplayName: "TBA",
+  bossDisplayName: "Black Division & The Wedge",
+  changedAt: "2026-07-14T13:15:03.710Z",
   imageUrl: "https://assets.tarkov.dev/black-div-portrait.webp",
   mapRows: [
     {
-      bossName: "Blackout",
-      mapName: "TBA",
-      value: "Coming soon",
-      locations:
-        "Expected after patch maintenance ends (starts July 14 at 8:00 AM BST / 3:00 AM EST; 4–6 hours).",
+      bossName: "Black Division & The Wedge",
+      mapName: "The Lab",
+      value: "100%",
+      locations: "Active now",
     },
   ],
   modes: ["PvP", "PvE"],
-  statusLine:
-    "Expected after patch maintenance ends (starts July 14 at 8:00 AM BST / 3:00 AM EST; 4–6 hours).",
+  statusLine: "Black Division and The Wedge are now active on The Lab at 100%.",
   title: "Blackout Event",
 };
