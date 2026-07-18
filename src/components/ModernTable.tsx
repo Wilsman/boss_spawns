@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
-import { SpawnData, Boss, DataMode, Health, Escort } from "@/types";
+import { ArrowUpDown, ChevronDown, ChevronRight, ChevronUp, Info, X } from "lucide-react";
+import { SpawnData, Boss, DataMode, Health, Escort, GameMode, MobCatalog } from "@/types";
 import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
 import { mergeSpawnLocations } from "@/lib/spawn-location-utils";
+import { BossDetailsPanel } from "@/components/BossDetailsPanel";
 import {
   HoverCard,
   HoverCardContent,
@@ -17,6 +18,7 @@ interface DataTableProps {
   data: NormalizedData | null;
   mode: DataMode;
   filters: { map: string; boss: string; search: string };
+  catalog?: MobCatalog;
 }
 
 function getLocationClasses(location: string, chance: number) {
@@ -39,6 +41,7 @@ function groupData<T extends Record<string, any>>(
 interface Location {
   name: string;
   chance: number;
+  spawnKey?: string | null;
   regularChance?: number;
   pveChance?: number;
   hasDifference?: boolean;
@@ -51,6 +54,7 @@ interface BossEntry {
   health: Health[] | null;
   imagePortraitLink: string | null;
   escorts: Escort[] | null;
+  encounters: Boss[];
 }
 
 const HOVER_CARD_CLASS =
@@ -58,6 +62,14 @@ const HOVER_CARD_CLASS =
 
 function getEscortCount(escort: Escort): number {
   return Math.max(0, ...escort.amount.map((amount) => amount.count));
+}
+
+function formatEscortRange(escort: Escort): string {
+  const counts = escort.amount.map((amount) => amount.count);
+  if (!counts.length) return "×0";
+  const minimum = Math.min(...counts);
+  const maximum = Math.max(...counts);
+  return minimum === maximum ? `×${maximum}` : `×${minimum}–${maximum}`;
 }
 
 function mergeEscorts(escorts: Escort[]): Escort[] {
@@ -78,7 +90,7 @@ function mergeEscorts(escorts: Escort[]): Escort[] {
   }, []);
 }
 
-export function ModernTable({ data, mode, filters }: DataTableProps) {
+export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const isCompare = mode === "compare";
   const urlSort = searchParams.get("sort") || (isCompare ? "delta" : "spawn");
@@ -86,6 +98,7 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
   const [sortKey, setSortKey] = useState<string>(urlSort);
   const [sortDir, setSortDir] = useState<"asc" | "desc">(urlDir);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [expandedByMap, setExpandedByMap] = useState<Record<string, string | null>>({});
 
   const toggleSort = (key: string) => {
     const nextDir =
@@ -185,6 +198,7 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
               health: rBoss.boss.health || null,
               imagePortraitLink: rBoss.boss.imagePortraitLink || null,
               escorts: rBoss.escorts || null,
+              encounters: [],
             });
           }
         });
@@ -245,10 +259,11 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
               map: map.name,
               boss: bossName,
               spawnChance: b.spawnChance,
-              locations: locs.map((l) => ({ name: l.name, chance: l.chance })),
+              locations: locs.map((l) => ({ ...l })),
               health: b.boss.health ?? null,
               imagePortraitLink: b.boss.imagePortraitLink ?? null,
               escorts: mergeEscorts(b.escorts ?? []),
+              encounters: [b],
             });
           } else {
             const mergedLocations = mergeSpawnLocations(existing.locations, locs);
@@ -266,6 +281,7 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
               imagePortraitLink:
                 existing.imagePortraitLink ?? b.boss.imagePortraitLink ?? null,
               escorts: uniqueEscorts,
+              encounters: [...existing.encounters, b],
             });
           }
         });
@@ -297,32 +313,40 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
     <div className="space-y-6">
       {sortedMapNames.map((mapName) => {
         const items = groupedByMap[mapName];
+        const mapDetails = !isCompare
+          ? (normalizedData as SpawnData[]).find((map) => map.name === mapName)
+          : undefined;
         const isCollapsed = collapsed[mapName] ?? false;
         return (
           <section
             key={mapName}
-            className="rounded-xl border border-gray-700/60 overflow-hidden bg-[#0c1117]/60"
+            className="rounded-xl border border-gray-700/60 overflow-visible bg-[#0c1117]/60"
           >
-            <button
-              onClick={() =>
-                setCollapsed((p) => ({ ...p, [mapName]: !isCollapsed }))
-              }
-              className="w-full flex items-center gap-3 px-4 py-3 bg-gray-900/40 hover:bg-gray-900/60 transition-colors"
-              aria-expanded={!isCollapsed}
+            <div
+              className={`flex items-center rounded-t-xl bg-gray-900/40 ${
+                isCollapsed ? "rounded-b-xl" : ""
+              }`}
             >
-              <span className="text-base sm:text-lg font-bold text-white capitalize">
-                {mapName}
-              </span>
-              <span className="ml-auto text-xs text-gray-400">
-                {items.length} bosses
-              </span>
-              <ChevronDown
-                size={18}
-                className={`transition-transform ${
-                  isCollapsed ? "" : "rotate-180"
-                }`}
-              />
-            </button>
+              <button
+                onClick={() =>
+                  setCollapsed((p) => ({ ...p, [mapName]: !isCollapsed }))
+                }
+                className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 hover:bg-gray-900/60 transition-colors"
+                aria-expanded={!isCollapsed}
+              >
+                <span className="text-base sm:text-lg font-bold text-white capitalize">
+                  {mapName}
+                </span>
+                <span className="ml-auto text-xs text-gray-400">
+                  {items.length} {items.length === 1 ? "boss" : "bosses"}
+                </span>
+                <ChevronDown
+                  size={18}
+                  className={`transition-transform ${isCollapsed ? "" : "rotate-180"}`}
+                />
+              </button>
+              {mapDetails && <MapInfo map={mapDetails} />}
+            </div>
             {!isCollapsed && (
               <div className="p-3 sm:p-4">
                 <div className="hidden sm:grid grid-cols-12 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-300 bg-gray-900/50 rounded-md">
@@ -492,11 +516,51 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
                       const locs = [...row.locations].sort(
                         (a: any, b: any) => b.chance - a.chance
                       );
+                      const isExpanded = expandedByMap[mapName] === row.boss;
+                      const toggleExpanded = () =>
+                        setExpandedByMap((current) => ({
+                          ...current,
+                          [mapName]: current[mapName] === row.boss ? null : row.boss,
+                        }));
                       return (
-                        <div key={row.boss} className="rounded-md">
-                          <div className="grid grid-cols-12 gap-3 items-center px-3 py-3 hover:bg-gray-800/30 rounded-md">
-                            <div className="col-span-12 sm:col-span-5">
-                              <BossCell boss={row} />
+                        <div key={row.boss} className="rounded-md overflow-hidden">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`${isExpanded ? "Close" : "Open"} ${row.boss} details`}
+                            aria-expanded={isExpanded}
+                            onClick={toggleExpanded}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                toggleExpanded();
+                              }
+                            }}
+                            className={`group relative grid cursor-pointer grid-cols-12 items-center gap-3 rounded-md px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-400/60 ${
+                              isExpanded
+                                ? "bg-sky-400/[0.055]"
+                                : "hover:bg-sky-400/[0.035]"
+                            }`}
+                          >
+                            <div className="col-span-12 pr-20 sm:col-span-5 sm:pr-0">
+                              <div className="flex min-w-0 items-center gap-2">
+                                <span
+                                  aria-hidden="true"
+                                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${
+                                    isExpanded
+                                      ? "border-sky-300/40 bg-sky-400/15 text-sky-100"
+                                      : "border-slate-700/70 bg-slate-900/60 text-slate-500 group-hover:border-sky-400/30 group-hover:text-sky-200"
+                                  }`}
+                                >
+                                  <ChevronRight
+                                    size={14}
+                                    className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                                  />
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <BossCell boss={row} />
+                                </div>
+                              </div>
                             </div>
                             <div className="col-span-6 sm:col-span-3">
                               <div className="relative h-5 rounded bg-slate-900/40">
@@ -514,7 +578,7 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
                                 </div>
                               </div>
                             </div>
-                            <div className="col-span-6 sm:col-span-4 flex flex-wrap gap-1">
+                            <div className="col-span-6 flex flex-wrap gap-1 sm:col-span-4 sm:pr-20">
                               {locs.length === 0 ? (
                                 <span className="italic text-gray-500">
                                   (No specific location)
@@ -538,9 +602,31 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
                                 ))
                               )}
                             </div>
+                            <span
+                              aria-hidden="true"
+                              className={`pointer-events-none absolute right-3 inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] transition-all top-3 sm:top-1/2 sm:-translate-y-1/2 ${
+                                isExpanded
+                                  ? "border-sky-300/40 bg-sky-400/15 text-sky-100"
+                                  : "border-slate-600/50 bg-slate-800/60 text-slate-400 group-hover:border-sky-400/30 group-hover:bg-sky-400/[0.1] group-hover:text-sky-200"
+                              }`}
+                            >
+                              {isExpanded ? "Hide" : "Details"}
+                              <ChevronRight
+                                size={13}
+                                className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                              />
+                            </span>
                           </div>
                           {row.escorts && row.escorts.length > 0 && (
                             <EscortRows escorts={row.escorts} />
+                          )}
+                          {isExpanded && (
+                            <BossDetailsPanel
+                              bossName={row.boss}
+                              encounters={row.encounters}
+                              catalog={catalog}
+                              mode={mode as GameMode}
+                            />
                           )}
                         </div>
                       );
@@ -558,12 +644,10 @@ export function ModernTable({ data, mode, filters }: DataTableProps) {
 const EscortRows = ({ escorts }: { escorts: Escort[] }) => (
   <div className="border-t border-dashed border-gray-800/80 py-1">
     {escorts.map((escort) => {
-      const count = getEscortCount(escort);
-
       return (
         <HoverCard key={escort.boss.name}>
           <HoverCardTrigger>
-            <div className="grid grid-cols-12 gap-3 items-center px-3 py-1.5 text-sm text-gray-400 hover:bg-gray-800/20 rounded-md cursor-pointer">
+            <div className="grid cursor-help grid-cols-12 items-center gap-3 rounded-md px-3 py-1.5 text-sm text-gray-400 hover:bg-gray-800/20">
               <div className="col-span-12 sm:col-span-5 flex items-center gap-2 pl-7">
                 <span aria-hidden="true" className="text-gray-600">
                   ↳
@@ -578,7 +662,9 @@ const EscortRows = ({ escorts }: { escorts: Escort[] }) => (
                 <span className="border-b border-dotted border-gray-600">
                   {escort.boss.name}
                 </span>
-                <span className="text-gray-500">×{count}</span>
+                <span className="text-gray-500">
+                  {formatEscortRange(escort)}
+                </span>
               </div>
             </div>
           </HoverCardTrigger>
@@ -652,6 +738,60 @@ const BossInfo = ({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const MapInfo = ({ map }: { map: SpawnData }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div
+      className={`relative mr-2 ${open ? "z-50" : "z-10"}`}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="rounded-md p-2 text-slate-500 hover:bg-slate-800 hover:text-sky-200"
+        aria-label={`${map.name} raid information`}
+        aria-expanded={open}
+      >
+        <Info size={16} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-50 mt-1 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-slate-600/40 bg-[#0b111a]/95 p-3 text-left shadow-2xl backdrop-blur-xl">
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-300">Raid information</p>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="ml-auto rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white"
+              aria-label="Close map information"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-1.5 text-center text-xs">
+            <span className="rounded bg-slate-800/80 px-2 py-1.5"><b className="block text-white">{map.raidDuration ?? "?"} min</b>Duration</span>
+            <span className="rounded bg-slate-800/80 px-2 py-1.5"><b className="block text-white">{map.players ?? "?"}</b>Players</span>
+            <span className="rounded bg-slate-800/80 px-2 py-1.5"><b className="block text-white">{map.minPlayerLevel ?? "?"}–{map.maxPlayerLevel ?? "?"}</b>Levels</span>
+          </div>
+          <p className="mt-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">AI roster</p>
+          <div className="mt-1 flex max-h-40 flex-wrap gap-1 overflow-auto">
+            {(map.enemies ?? []).map((enemy) => (
+              <span key={enemy.key} className="rounded bg-slate-800/70 px-2 py-1 text-xs text-slate-300">
+                {enemy.name}
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </div>

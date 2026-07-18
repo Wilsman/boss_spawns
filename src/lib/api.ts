@@ -1,4 +1,14 @@
-import { Boss, Escort, Health, SpawnData, SpawnLocation } from "@/types";
+import {
+  Boss,
+  Escort,
+  GameMode,
+  Health,
+  MobCatalog,
+  MobEquipmentPoolItem,
+  SpawnApiData,
+  SpawnData,
+  SpawnLocation,
+} from "@/types";
 import { DataChange } from "./diff";
 import tempBossDataFromFile from "./temp-bosses.json"; // Added import for temp bosses
 import { BOSS_OVERRIDES, ENABLE_OVERRIDES } from "@/config/boss-overrides";
@@ -12,15 +22,13 @@ import {
 
 export type { SpawnData };
 
-const CACHE_VERSION = 11;
+const CACHE_VERSION = 13;
 const CHANGES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for changes data (can be adjusted independently)
 const CHANGES_CACHE_VERSION = 1;
 const DEFAULT_CHANGES_API_BASE_URL = "https://bossdata.cultistcircle.workers.dev";
 const CHANGES_API_PATH = "/api/changes";
 const CHANGES_API_LIMIT = 1000;
 const TARKOV_JSON_API_BASE_URL = "https://json.tarkov.dev";
-
-type GameMode = "regular" | "pve";
 
 interface TarkovJsonResponse {
   data?: {
@@ -30,9 +38,15 @@ interface TarkovJsonResponse {
 }
 
 interface TarkovJsonMap {
+  id?: string | null;
   wiki?: string | null;
   normalizedName?: string | null;
   nameId?: string | null;
+  enemies?: string[];
+  raidDuration?: number | null;
+  players?: string | null;
+  minPlayerLevel?: number | null;
+  maxPlayerLevel?: number | null;
   bosses?: TarkovJsonBoss[];
 }
 
@@ -41,16 +55,23 @@ interface TarkovJsonBoss {
   spawnChance?: number | null;
   spawnLocations?: TarkovJsonSpawnLocation[];
   escorts?: TarkovJsonEscort[];
+  supports?: string[];
+  spawnTime?: number | null;
+  spawnTimeRandom?: boolean;
+  spawnTrigger?: string | null;
+  switch_id?: string | null;
 }
 
 interface TarkovJsonSpawnLocation {
   name?: string | null;
   chance?: number | null;
+  spawnKey?: string | null;
 }
 
 interface TarkovJsonEscort {
   amount?: Array<{
     count?: number | null;
+    chance?: number | null;
   }>;
   mob?: string | null;
 }
@@ -59,6 +80,28 @@ interface TarkovJsonMob {
   normalizedName?: string | null;
   imagePortraitLink?: string | null;
   health?: Health[] | null;
+  equipment?: TarkovJsonEquipment[];
+  items?: TarkovJsonMobLootItem[];
+}
+
+interface TarkovJsonEquipment {
+  item?: string | null;
+  attributes?: {
+    slot?: string | null;
+  };
+  contains?: Array<{
+    item?: string | null;
+    attributes?: {
+      slotNameId?: string | null;
+    };
+  }>;
+}
+
+interface TarkovJsonMobLootItem {
+  id?: string | null;
+  attributes?: {
+    prevalence?: number | null;
+  };
 }
 
 const MAP_NAME_OVERRIDES: Record<string, string> = {
@@ -72,6 +115,7 @@ const MAP_NAME_OVERRIDES: Record<string, string> = {
   "streets-of-tarkov": "Streets of Tarkov",
   "night-factory": "Night Factory",
   "the-lab": "The Lab",
+  "the-lab-dark": "Dark Labs",
   "ground-zero": "Ground Zero",
   "ground-zero-21": "Ground Zero 21+",
   "the-labyrinth": "The Labyrinth",
@@ -96,6 +140,7 @@ const DISPLAY_NAME_TRANSLATIONS: Record<string, string> = {
   bossTagilla: "Tagilla",
   bossTagillaAgro: "Shadow of Tagilla",
   bossWedge: "The Wedge",
+  bossWedgeLab: "The Wedge (Dark Labs)",
   bossZryachiy: "Zryachiy",
   ExUsec: "Rogue",
   followerBigPipe: "Big Pipe",
@@ -113,6 +158,7 @@ const DISPLAY_NAME_TRANSLATIONS: Record<string, string> = {
   followerKolontaySecurity: "Kollontay Guard (Security)",
   followerSanitar: "Sanitar Guard",
   followerZryachiy: "Zryachiy Guard",
+  followerWedgeLab: "The Wedge Guard (Dark Labs)",
   PmcBot: "Raider",
   pmcBEAR: "BEAR",
   pmcBotBlackDiv: "Black Div. Raider",
@@ -320,6 +366,7 @@ function normalizeSpawnLocations(
   return (locations ?? []).map((location) => ({
     name: getTranslatedName(location.name),
     chance: location.chance ?? 0,
+    spawnKey: location.spawnKey ?? location.name ?? null,
   }));
 }
 
@@ -333,8 +380,10 @@ function normalizeEscorts(
       const escortMob = mobs[escort.mob!];
 
       return {
+        mobKey: escort.mob!,
         amount: (escort.amount ?? []).map((amount) => ({
           count: amount.count ?? 0,
+          chance: amount.chance ?? undefined,
         })),
         boss: {
           name: getMobDisplayName(escort.mob, escortMob),
@@ -352,6 +401,7 @@ function normalizeBoss(
   const mob = boss.mob ? mobs[boss.mob] : undefined;
 
   return {
+    mobKey: boss.mob ?? undefined,
     boss: {
       name: getMobDisplayName(boss.mob, mob),
       health: normalizeHealth(mob?.health),
@@ -360,10 +410,94 @@ function normalizeBoss(
     spawnChance: boss.spawnChance ?? 0,
     spawnLocations: normalizeSpawnLocations(boss.spawnLocations),
     escorts: normalizeEscorts(boss.escorts, mobs),
+    supports: boss.supports ?? [],
+    spawnTime: boss.spawnTime ?? null,
+    spawnTimeRandom: boss.spawnTimeRandom ?? false,
+    spawnTrigger: boss.spawnTrigger ?? null,
+    switchId: boss.switch_id ?? null,
   };
 }
 
-function normalizeMapsPayload(payload: TarkovJsonResponse): SpawnData[] {
+function isAmmunitionContainerSlot(slotName?: string | null): boolean {
+  return Boolean(slotName && /(cartridge|patron|ammo)/i.test(slotName));
+}
+
+function normalizeMobEquipment(
+  equipment: TarkovJsonEquipment[] | undefined
+): MobEquipmentPoolItem[] {
+  const deduplicated = new Map<string, MobEquipmentPoolItem>();
+
+  for (const option of equipment ?? []) {
+    const itemId = option.item?.trim();
+    const slot = option.attributes?.slot?.trim();
+
+    if (!itemId || !slot) {
+      continue;
+    }
+
+    const key = `${slot}|${itemId}`;
+    const current = deduplicated.get(key) ?? { itemId, slot, ammoIds: [] };
+    const ammoIds = new Set(current.ammoIds);
+
+    for (const contained of option.contains ?? []) {
+      if (
+        contained.item &&
+        isAmmunitionContainerSlot(contained.attributes?.slotNameId)
+      ) {
+        ammoIds.add(contained.item);
+      }
+    }
+
+    deduplicated.set(key, { ...current, ammoIds: Array.from(ammoIds) });
+  }
+
+  return Array.from(deduplicated.values()).sort(
+    (left, right) =>
+      left.slot.localeCompare(right.slot) || left.itemId.localeCompare(right.itemId)
+  );
+}
+
+function normalizeMobCatalog(
+  mobs: Record<string, TarkovJsonMob>
+): MobCatalog {
+  return Object.fromEntries(
+    Object.entries(mobs).map(([key, mob]) => {
+      const loot = new Map<string, number>();
+
+      for (const item of mob.items ?? []) {
+        if (!item.id) {
+          continue;
+        }
+
+        loot.set(
+          item.id,
+          Math.max(loot.get(item.id) ?? 0, item.attributes?.prevalence ?? 0)
+        );
+      }
+
+      return [
+        key,
+        {
+          key,
+          name: getMobDisplayName(key, mob),
+          normalizedName: mob.normalizedName ?? undefined,
+          health: normalizeHealth(mob.health),
+          imagePortraitLink: mob.imagePortraitLink ?? null,
+          equipment: normalizeMobEquipment(mob.equipment),
+          loot: Array.from(loot, ([itemId, prevalence]) => ({
+            itemId,
+            prevalence,
+          })).sort((left, right) => right.prevalence - left.prevalence),
+        },
+      ];
+    })
+  );
+}
+
+function normalizeMapsPayload(payload: TarkovJsonResponse): {
+  maps: SpawnData[];
+  catalog: MobCatalog;
+} {
   const maps = payload.data?.maps;
   const mobs = payload.data?.mobs;
 
@@ -371,14 +505,36 @@ function normalizeMapsPayload(payload: TarkovJsonResponse): SpawnData[] {
     throw new Error("Invalid tarkov.dev JSON maps response");
   }
 
-  return Object.values(maps).map((map) => ({
+  return {
+    catalog: normalizeMobCatalog(mobs),
+    maps: Object.values(maps).map((map) => ({
+    id: map.id ?? undefined,
     name: getMapDisplayName(map),
+    normalizedName: map.normalizedName ?? undefined,
+    nameId: map.nameId ?? undefined,
     wiki: map.wiki ?? undefined,
+    enemies: (map.enemies ?? []).map((key) => {
+      const mob = mobs[key];
+      return {
+        key,
+        name: getMobDisplayName(key, mob),
+        health: normalizeHealth(mob?.health),
+        imagePortraitLink: mob?.imagePortraitLink ?? null,
+      };
+    }),
+    raidDuration: map.raidDuration ?? undefined,
+    players: map.players ?? undefined,
+    minPlayerLevel: map.minPlayerLevel ?? undefined,
+    maxPlayerLevel: map.maxPlayerLevel ?? undefined,
     bosses: (map.bosses ?? []).map((boss) => normalizeBoss(boss, mobs)),
-  }));
+    })),
+  };
 }
 
-async function fetchJsonMaps(mode: GameMode): Promise<SpawnData[]> {
+async function fetchJsonMaps(mode: GameMode): Promise<{
+  maps: SpawnData[];
+  catalog: MobCatalog;
+}> {
   const response = await fetch(`${TARKOV_JSON_API_BASE_URL}/${mode}/maps`, {
     method: "GET",
     headers: {
@@ -398,7 +554,7 @@ async function fetchJsonMaps(mode: GameMode): Promise<SpawnData[]> {
 
 function getExpiredCachedData(
   cached: string | null
-): { regular: SpawnData[]; pve: SpawnData[] } | null {
+): SpawnApiData | null {
   if (!cached) {
     return null;
   }
@@ -406,10 +562,11 @@ function getExpiredCachedData(
   try {
     const { data } = JSON.parse(cached);
 
-    if (data?.regular && data?.pve) {
+    if (data?.regular && data?.pve && data?.catalogs?.regular && data?.catalogs?.pve) {
       return {
         regular: applyLocalData(data.regular, "regular"),
         pve: applyLocalData(data.pve, "pve"),
+        catalogs: data.catalogs,
       };
     }
   } catch (error) {
@@ -529,10 +686,9 @@ export function applyLocalData(currentData: SpawnData[], mode: "regular" | "pve"
   return mergedData;
 }
 
-export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): Promise<{
-  regular: SpawnData[];
-  pve: SpawnData[];
-}> {
+export async function fetchAllSpawnData(options?: {
+  forceRefresh?: boolean;
+}): Promise<SpawnApiData> {
   const CACHE_KEY = "maps_combined";
 
   // Check cache version and clear if outdated
@@ -562,10 +718,17 @@ export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): P
         const FIVE_MINUTES = 5 * 60 * 1000;
         
         // Return cached data only if it's less than 5 minutes old
-        if (data?.regular && data?.pve && cacheAge < FIVE_MINUTES) {
+        if (
+          data?.regular &&
+          data?.pve &&
+          data?.catalogs?.regular &&
+          data?.catalogs?.pve &&
+          cacheAge < FIVE_MINUTES
+        ) {
           return {
             regular: applyLocalData(data.regular, "regular"),
             pve: applyLocalData(data.pve, "pve"),
+            catalogs: data.catalogs,
           };
         }
       } catch (error) {
@@ -578,11 +741,11 @@ export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): P
   // cache can exceed localStorage quota on shared localhost origins.
   clearLegacySpawnCacheSnapshots();
 
-  let regularData: SpawnData[];
-  let pveData: SpawnData[];
+  let regularResult: Awaited<ReturnType<typeof fetchJsonMaps>>;
+  let pveResult: Awaited<ReturnType<typeof fetchJsonMaps>>;
 
   try {
-    [regularData, pveData] = await Promise.all([
+    [regularResult, pveResult] = await Promise.all([
       fetchJsonMaps("regular"),
       fetchJsonMaps("pve"),
     ]);
@@ -600,9 +763,19 @@ export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): P
 
   console.log("API fetch successful");
 
-  const finalData = {
-    regular: applyLocalData(regularData, "regular"),
-    pve: applyLocalData(pveData, "pve"),
+  const cacheData: SpawnApiData = {
+    regular: regularResult.maps,
+    pve: pveResult.maps,
+    catalogs: {
+      regular: regularResult.catalog,
+      pve: pveResult.catalog,
+    },
+  };
+
+  const finalData: SpawnApiData = {
+    ...cacheData,
+    regular: applyLocalData(cacheData.regular, "regular"),
+    pve: applyLocalData(cacheData.pve, "pve"),
   };
 
   // Update cache with transformed data. Persistence is best-effort; fresh data
@@ -610,7 +783,7 @@ export async function fetchAllSpawnData(options?: { forceRefresh?: boolean }): P
   writeSpawnCache(
     CACHE_KEY,
     JSON.stringify({
-      data: finalData,
+      data: cacheData,
       timestamp: new Date().getTime(),
     })
   );

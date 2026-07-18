@@ -1,6 +1,7 @@
 interface BasicLocation {
   name: string;
   chance: number;
+  spawnKey?: string | null;
 }
 
 export function mergeSpawnLocations<T extends BasicLocation>(
@@ -26,6 +27,7 @@ export function mergeSpawnLocations<T extends BasicLocation>(
     merged.set(location.name, {
       ...current,
       chance: Math.max(current.chance, location.chance),
+      spawnKey: current.spawnKey ?? location.spawnKey,
     });
   });
 

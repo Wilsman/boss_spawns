@@ -18,7 +18,7 @@ import { exportChanges, getStoredChanges } from "@/lib/changes";
 import { VersionLabel } from "@/components/VersionLabel";
 import { Toaster } from "@/components/ui/toaster";
 import { PatchToast } from "@/components/patch-toast";
-import type { DataMode } from "@/types";
+import type { DataMode, GameMode, MobCatalog } from "@/types";
 import { BossEventConfig } from "@/types/bossEvents";
 import bossEvents from "@/config/bossEvents";
 import { About, Privacy } from "@/pages";
@@ -32,6 +32,10 @@ const CURRENT_BOSS_CONFIGS: BossEventConfig[] = bossEvents;
 function MainApp() {
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
   const [pveData, setPveData] = useState<SpawnData[] | null>(null);
+  const [catalogs, setCatalogs] = useState<Record<GameMode, MobCatalog>>({
+    regular: {},
+    pve: {},
+  });
   const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false); // For background refresh indicator
   const [changes, setChanges] = useState<DataChange[]>([]);
@@ -104,7 +108,7 @@ function MainApp() {
       }
 
       try {
-        const { regular, pve } = await fetchAllSpawnData({
+        const { regular, pve, catalogs: fetchedCatalogs } = await fetchAllSpawnData({
           forceRefresh: options?.forceRefresh,
         });
 
@@ -114,6 +118,7 @@ function MainApp() {
         if (gameMode === "pve" || gameMode === "both") {
           setPveData(pve);
         }
+        setCatalogs(fetchedCatalogs);
         hasDataRef.current = true; // Mark that we have data now
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -331,11 +336,12 @@ function MainApp() {
     const data = mode === "regular" ? regularData : pveData;
     if (!data) return;
 
+    const csvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
     const csvContent = [
-      ["Map", "Boss", "Spawn Chance", "Location", "Location Chance"].join(","),
+      ["Map", "Boss", "Spawn Chance", "Spawn Time", "Random Time", "Trigger", "Location", "Location Chance", "Followers", "Follower Count Probabilities"].map(csvCell).join(","),
       ...data.flatMap((map: SpawnData) =>
         map.bosses.flatMap((boss) =>
-          boss.spawnLocations.map((location) =>
+          (boss.spawnLocations.length ? boss.spawnLocations : [{ name: "", chance: 0 }]).map((location) =>
             [
               map.name,
               boss.boss.name === "infected" && boss.spawnChance < 1
@@ -344,9 +350,14 @@ function MainApp() {
                 ? "Infected(Zombie)"
                 : boss.boss.name,
               `${Math.round(boss.spawnChance * 100)}%`,
+              boss.spawnTime,
+              boss.spawnTimeRandom,
+              boss.spawnTrigger,
               location.name,
               `${Math.round(location.chance * 100)}%`,
-            ].join(",")
+              boss.escorts?.map((escort) => escort.boss.name).join(" | ") ?? "",
+              boss.escorts?.map((escort) => escort.amount.map((amount) => `${amount.count}@${typeof amount.chance === "number" ? `${Math.round(amount.chance * 100)}%` : "?"}`).join("/")).join(" | ") ?? "",
+            ].map(csvCell).join(",")
           )
         )
       ),
@@ -707,6 +718,13 @@ function MainApp() {
                   : pveData
               }
               mode={mode as DataMode}
+              catalog={
+                mode === "regular"
+                  ? catalogs.regular
+                  : mode === "pve"
+                  ? catalogs.pve
+                  : undefined
+              }
               filters={{
                 map: mapFilter,
                 boss: bossFilter,
