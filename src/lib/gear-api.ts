@@ -1,10 +1,10 @@
 import { GameMode, ResolvedItem } from "@/types";
 
-const TARKOV_GRAPHQL_URL = "https://api.tarkov.dev/graphql";
-const MAX_BATCH_SIZE = 100;
+const TARKOV_JSON_API_BASE_URL = "https://json.tarkov.dev";
 const itemCache = new Map<string, ResolvedItem>();
+const itemDataCache = new Map<GameMode, Promise<ItemData>>();
 
-interface GraphQlItem {
+interface TarkovJsonItem {
   id: string;
   name: string;
   shortName?: string | null;
@@ -13,7 +13,7 @@ interface GraphQlItem {
   types?: string[] | null;
   usedInTasks?: Array<{ id: string; name: string }> | null;
   properties?: {
-    __typename?: string;
+    propertiesType?: string;
     class?: number | null;
     caliber?: string | null;
     damage?: number | null;
@@ -21,51 +21,100 @@ interface GraphQlItem {
   } | null;
 }
 
-interface GraphQlResponse {
-  data?: { items?: GraphQlItem[] | null };
-  errors?: Array<{ message?: string }>;
+interface TarkovJsonItemsResponse {
+  data?: {
+    items?: Record<string, TarkovJsonItem>;
+  };
 }
 
-const ITEM_QUERY = `
-  query ResolveBossItems($ids: [ID], $mode: GameMode) {
-    items(ids: $ids, lang: en, gameMode: $mode) {
-      id
-      name
-      shortName
-      iconLink
-      link
-      types
-      usedInTasks { id name }
-      properties {
-        __typename
-        ... on ItemPropertiesArmor { class }
-        ... on ItemPropertiesChestRig { class }
-        ... on ItemPropertiesHelmet { class }
-        ... on ItemPropertiesAmmo {
-          caliber
-          damage
-          penetrationPower
-        }
-      }
-    }
-  }
-`;
+interface TarkovJsonTranslationsResponse {
+  data?: Record<string, string>;
+}
+
+interface ItemData {
+  items: Record<string, TarkovJsonItem>;
+  translations: Record<string, string>;
+}
 
 function cacheKey(mode: GameMode, itemId: string): string {
   return `${mode}:${itemId}`;
 }
 
-function normalizeItem(item: GraphQlItem): ResolvedItem {
-  const isAmmo = item.properties?.__typename === "ItemPropertiesAmmo";
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Item details request failed (${response.status})`);
+  }
+
+  return (await response.json()) as T;
+}
+
+async function loadItemData(mode: GameMode): Promise<ItemData> {
+  const baseUrl = `${TARKOV_JSON_API_BASE_URL}/${mode}/items`;
+  const [itemsResponse, translationsResponse] = await Promise.all([
+    fetchJson<TarkovJsonItemsResponse>(baseUrl),
+    fetchJson<TarkovJsonTranslationsResponse>(`${baseUrl}_en`),
+  ]);
+  const items = itemsResponse.data?.items;
+  const translations = translationsResponse.data;
+
+  if (!items || !translations) {
+    throw new Error("Invalid tarkov.dev JSON items response");
+  }
+
+  return { items, translations };
+}
+
+async function getItemData(mode: GameMode, force = false): Promise<ItemData> {
+  if (force) {
+    itemDataCache.delete(mode);
+  }
+
+  const cached = itemDataCache.get(mode);
+  if (cached) {
+    return cached;
+  }
+
+  const request = loadItemData(mode);
+  itemDataCache.set(mode, request);
+
+  try {
+    return await request;
+  } catch (error) {
+    if (itemDataCache.get(mode) === request) {
+      itemDataCache.delete(mode);
+    }
+    throw error;
+  }
+}
+
+function translate(
+  value: string | null | undefined,
+  translations: Record<string, string>
+): string | null | undefined {
+  return value ? translations[value] ?? value : value;
+}
+
+function normalizeItem(
+  item: TarkovJsonItem,
+  translations: Record<string, string>
+): ResolvedItem {
+  const isAmmo = item.properties?.propertiesType === "ItemPropertiesAmmo";
 
   return {
     id: item.id,
-    name: item.name,
-    shortName: item.shortName,
+    name: translate(item.name, translations) ?? item.id,
+    shortName: translate(item.shortName, translations),
     iconLink: item.iconLink,
     link: item.link,
     types: item.types ?? [],
-    usedInTasks: item.usedInTasks ?? [],
+    usedInTasks: (item.usedInTasks ?? []).map((task) => ({
+      id: task.id,
+      name: translate(task.name, translations) ?? task.name,
+    })),
     armorClass:
       typeof item.properties?.class === "number" ? item.properties.class : null,
     ammo: isAmmo
@@ -78,25 +127,6 @@ function normalizeItem(item: GraphQlItem): ResolvedItem {
   };
 }
 
-async function fetchBatch(ids: string[], mode: GameMode): Promise<ResolvedItem[]> {
-  const response = await fetch(TARKOV_GRAPHQL_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ query: ITEM_QUERY, variables: { ids, mode } }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Item details request failed (${response.status})`);
-  }
-
-  const result = (await response.json()) as GraphQlResponse;
-  if (result.errors?.length) {
-    throw new Error(result.errors.map((error) => error.message).filter(Boolean).join("; "));
-  }
-
-  return (result.data?.items ?? []).map(normalizeItem);
-}
-
 export async function resolveItems(
   itemIds: string[],
   mode: GameMode,
@@ -107,13 +137,14 @@ export async function resolveItems(
     (id) => options?.retry || !itemCache.has(cacheKey(mode, id))
   );
 
-  for (let index = 0; index < missingIds.length; index += MAX_BATCH_SIZE) {
-    const items = await fetchBatch(
-      missingIds.slice(index, index + MAX_BATCH_SIZE),
-      mode
-    );
-    for (const item of items) {
-      itemCache.set(cacheKey(mode, item.id), item);
+  if (missingIds.length) {
+    const { items, translations } = await getItemData(mode, options?.retry);
+
+    for (const id of missingIds) {
+      const item = items[id];
+      if (item) {
+        itemCache.set(cacheKey(mode, id), normalizeItem(item, translations));
+      }
     }
   }
 
