@@ -558,7 +558,7 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                                   />
                                 </span>
                                 <div className="min-w-0 flex-1">
-                                  <BossCell boss={row} />
+                                  <BossCell boss={row} hoverDisabled={isExpanded} />
                                 </div>
                               </div>
                             </div>
@@ -799,7 +799,13 @@ const MapInfo = ({ map }: { map: SpawnData }) => {
 };
 
 // Boss hover cell (duplicated to keep component self-contained)
-const BossCell = ({ boss }: { boss: BossEntry }) => {
+const BossCell = ({
+  boss,
+  hoverDisabled = false,
+}: {
+  boss: BossEntry;
+  hoverDisabled?: boolean;
+}) => {
   const getImageUrl = (boss: BossEntry) => {
     if (boss.boss === "Shadow of Tagilla")
       return "/Shadow_Tagilla_Long_crop.webp";
@@ -811,22 +817,26 @@ const BossCell = ({ boss }: { boss: BossEntry }) => {
   };
   const imageUrl = getImageUrl(boss);
 
+  const bossCell = (
+    <div className="flex items-center gap-2">
+      {boss.imagePortraitLink && (
+        <img
+          src={imageUrl}
+          alt={boss.boss}
+          className="w-8 h-8 rounded-full object-cover"
+        />
+      )}
+      <span className="font-medium text-gray-200 hover:text-purple-400 cursor-pointer border-b border-dotted">
+        {boss.boss}
+      </span>
+    </div>
+  );
+
+  if (hoverDisabled) return bossCell;
+
   return (
     <HoverCard>
-      <HoverCardTrigger>
-        <div className="flex items-center gap-2">
-          {boss.imagePortraitLink && (
-            <img
-              src={imageUrl}
-              alt={boss.boss}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-          )}
-          <span className="font-medium text-gray-200 hover:text-purple-400 cursor-pointer border-b border-dotted">
-            {boss.boss}
-          </span>
-        </div>
-      </HoverCardTrigger>
+      <HoverCardTrigger>{bossCell}</HoverCardTrigger>
       <HoverCardContent
         align="start"
         className={HOVER_CARD_CLASS}

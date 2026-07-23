@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ExternalLink,
+  HeartPulse,
   PackageOpen,
   Swords,
 } from "lucide-react";
@@ -9,13 +10,14 @@ import { resolveItems } from "@/lib/gear-api";
 import {
   Boss,
   GameMode,
+  Health,
   MobCatalog,
   MobCatalogEntry,
   MobEquipmentPoolItem,
   ResolvedItem,
 } from "@/types";
 
-type DetailTab = "spawns" | "equipment" | "loot";
+type DetailTab = "spawns" | "health" | "equipment" | "loot";
 
 interface BossDetailsPanelProps {
   bossName: string;
@@ -32,6 +34,7 @@ interface DisplayItem {
 
 const TAB_LABELS: Array<{ key: DetailTab; label: string }> = [
   { key: "spawns", label: "Spawns" },
+  { key: "health", label: "Health" },
   { key: "equipment", label: "Weapons & Armor" },
   { key: "loot", label: "Loot" },
 ];
@@ -80,86 +83,235 @@ function groupedEncounters(encounters: Boss[]): Array<{ encounter: Boss; count: 
   return Array.from(groups.values());
 }
 
-function SpawnDetails({ encounters }: { encounters: Boss[] }) {
+function SpawnDetails({
+  encounters,
+  selectedKey,
+  selectedName,
+}: {
+  encounters: Boss[];
+  selectedKey?: string;
+  selectedName?: string;
+}) {
+  const isBossSelected =
+    !selectedKey || encounters.some((encounter) => encounter.mobKey === selectedKey);
+  const selectedEncounters = isBossSelected
+    ? encounters
+    : encounters.filter((encounter) =>
+        (encounter.escorts ?? []).some((escort) => escort.mobKey === selectedKey)
+      );
+
+  if (!selectedEncounters.length) {
+    return (
+      <p className="py-6 text-center text-sm text-slate-500">
+        No spawn configuration is available for {selectedName ?? "this unit"}.
+      </p>
+    );
+  }
+
   return (
     <div className="grid gap-3 lg:grid-cols-2">
-      {groupedEncounters(encounters).map(({ encounter, count }, index) => (
-        <article
-          key={`${encounterSignature(encounter)}-${index}`}
-          className="rounded-xl border border-white/[0.08] bg-slate-950/35 p-3"
-        >
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-semibold text-white">Encounter {index + 1}</span>
-            {count > 1 && (
-              <span className="rounded-full bg-sky-400/10 px-2 py-0.5 text-sky-200">
-                {count} identical instances
-              </span>
-            )}
-            <span className="ml-auto text-slate-300">
-              {percent(encounter.spawnChance)} spawn
-            </span>
-          </div>
-          <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-slate-300">
-            <span className="rounded bg-slate-800/80 px-2 py-1">
-              {formatSpawnTime(encounter.spawnTime)}
-              {encounter.spawnTimeRandom ? " · random timing" : ""}
-            </span>
-            {encounter.spawnTrigger && (
-              <span className="rounded bg-amber-400/10 px-2 py-1 text-amber-100">
-                Trigger: {encounter.spawnTrigger}
-              </span>
-            )}
-          </div>
+      {groupedEncounters(selectedEncounters).map(({ encounter, count }, index) => {
+        const visibleEscorts = isBossSelected
+          ? encounter.escorts ?? []
+          : (encounter.escorts ?? []).filter(
+              (escort) => escort.mobKey === selectedKey
+            );
 
-          <div className="mt-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Locations
-            </p>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {encounter.spawnLocations.length ? (
-                encounter.spawnLocations.map((location, locationIndex) => (
-                  <span
-                    key={`${location.name}-${locationIndex}`}
-                    className="rounded-md border border-white/[0.07] bg-slate-900/70 px-2 py-1 text-xs text-slate-200"
-                  >
-                    {location.name} · {percent(location.chance)}
-                  </span>
-                ))
-              ) : (
-                <span className="text-xs italic text-slate-500">No specific location</span>
+        return (
+          <article
+            key={`${encounterSignature(encounter)}-${index}`}
+            className="rounded-xl border border-white/[0.08] bg-slate-950/35 p-3"
+          >
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-semibold text-white">Encounter {index + 1}</span>
+              {count > 1 && (
+                <span className="rounded-full bg-sky-400/10 px-2 py-0.5 text-sky-200">
+                  {count} identical instances
+                </span>
+              )}
+              <span className="ml-auto text-slate-300">
+                {percent(encounter.spawnChance)}{" "}
+                {isBossSelected ? "spawn" : "parent spawn"}
+              </span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-slate-300">
+              <span className="rounded bg-slate-800/80 px-2 py-1">
+                {formatSpawnTime(encounter.spawnTime)}
+                {encounter.spawnTimeRandom ? " · random timing" : ""}
+              </span>
+              {encounter.spawnTrigger && (
+                <span className="rounded bg-amber-400/10 px-2 py-1 text-amber-100">
+                  Trigger: {encounter.spawnTrigger}
+                </span>
               )}
             </div>
-          </div>
 
-          <div className="mt-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              Followers
-            </p>
-            {(encounter.escorts ?? []).length ? (
-              <div className="mt-1 space-y-1.5">
-                {encounter.escorts!.map((escort, escortIndex) => (
-                  <div
-                    key={`${escort.mobKey ?? escort.boss.name}-${escortIndex}`}
-                    className="rounded-md bg-slate-900/60 px-2 py-1.5 text-xs"
-                  >
-                    <span className="font-medium text-slate-100">{escort.boss.name}</span>
-                    <span className="ml-2 text-slate-400">
-                      {escort.amount
-                        .map(({ count: escortCount, chance }) =>
-                          typeof chance === "number"
-                            ? `×${escortCount} ${percent(chance)}`
-                            : `×${escortCount}`
-                        )
-                        .join(" · ")}
+            <div className="mt-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                {isBossSelected ? "Locations" : "Parent spawn locations"}
+              </p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {encounter.spawnLocations.length ? (
+                  encounter.spawnLocations.map((location, locationIndex) => (
+                    <span
+                      key={`${location.name}-${locationIndex}`}
+                      className="rounded-md border border-white/[0.07] bg-slate-900/70 px-2 py-1 text-xs text-slate-200"
+                    >
+                      {location.name} · {percent(location.chance)}
                     </span>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <span className="text-xs italic text-slate-500">No specific location</span>
+                )}
               </div>
-            ) : (
-              <p className="mt-1 text-xs text-slate-500">No followers supplied.</p>
-            )}
+            </div>
+
+            <div className="mt-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                {isBossSelected ? "Followers" : "Follower deployment"}
+              </p>
+              {visibleEscorts.length ? (
+                <div className="mt-1 space-y-1.5">
+                  {visibleEscorts.map((escort, escortIndex) => (
+                    <div
+                      key={`${escort.mobKey ?? escort.boss.name}-${escortIndex}`}
+                      className="rounded-md bg-slate-900/60 px-2 py-1.5 text-xs"
+                    >
+                      <span className="font-medium text-slate-100">{escort.boss.name}</span>
+                      <span className="ml-2 text-slate-400">
+                        {escort.amount
+                          .map(({ count: escortCount, chance }) =>
+                            typeof chance === "number"
+                              ? `×${escortCount} ${percent(chance)}`
+                              : `×${escortCount}`
+                          )
+                          .join(" · ")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-slate-500">No followers supplied.</p>
+              )}
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function healthSignature(health: Health[]): string {
+  return JSON.stringify(
+    health.map(({ bodyPart, max }) => ({ bodyPart, max }))
+  );
+}
+
+function HealthProfile({
+  health,
+  label,
+}: {
+  health: Health[];
+  label?: string;
+}) {
+  const totalHealth = health.reduce((total, part) => total + part.max, 0);
+
+  return (
+    <article className="overflow-hidden rounded-xl border border-white/[0.08] bg-slate-950/35">
+      <div className="relative border-b border-white/[0.07] bg-gradient-to-r from-sky-400/[0.09] via-slate-900/50 to-transparent px-4 py-4">
+        <div className="absolute inset-y-0 left-0 w-1 bg-sky-300/60" />
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sky-300/20 bg-sky-400/10 text-sky-200">
+            <HeartPulse size={20} />
           </div>
-        </article>
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+              Health profile
+            </p>
+            <p className="mt-0.5 text-sm font-semibold text-slate-100">
+              {label ?? `${health.length} body parts`}
+            </p>
+          </div>
+          <div className="ml-auto text-right">
+            <p className="font-mono text-2xl font-bold leading-none text-white">
+              {totalHealth}
+            </p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-sky-200/70">
+              Total HP
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-2 p-3 sm:grid-cols-2 lg:grid-cols-3">
+        {health.map((part) => {
+          const share = totalHealth > 0 ? (part.max / totalHealth) * 100 : 0;
+          return (
+            <div
+              key={part.bodyPart}
+              className="rounded-lg border border-white/[0.06] bg-slate-900/65 px-3 py-2.5"
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-xs font-medium capitalize text-slate-300">
+                  {part.bodyPart}
+                </span>
+                <span className="font-mono text-sm font-bold text-slate-100">
+                  {part.max}
+                </span>
+              </div>
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-sky-500/70 to-cyan-300/80"
+                  style={{ width: `${share}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
+function HealthDetails({
+  bossName,
+  encounters,
+  selected,
+}: {
+  bossName: string;
+  encounters: Boss[];
+  selected?: MobCatalogEntry;
+}) {
+  const profiles = selected
+    ? selected.health?.length
+      ? [selected.health]
+      : []
+    : Array.from(
+        new Map(
+          encounters
+            .map((encounter) => encounter.boss.health)
+            .filter((health): health is Health[] => Boolean(health?.length))
+            .map((health) => [healthSignature(health), health])
+        ).values()
+      );
+  const displayName = selected?.name ?? bossName;
+
+  if (!profiles.length) {
+    return (
+      <p className="py-6 text-center text-sm text-slate-500">
+        No health profile is available for {displayName}.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {profiles.map((health, index) => (
+        <HealthProfile
+          key={healthSignature(health)}
+          health={health}
+          label={profiles.length > 1 ? `${displayName} · Variant ${index + 1}` : displayName}
+        />
       ))}
     </div>
   );
@@ -429,7 +581,7 @@ export function BossDetailsPanel({ bossName, encounters, catalog, mode }: BossDe
   }, [selectedKey, units]);
 
   useEffect(() => {
-    if (!selected || activeTab === "spawns") return;
+    if (!selected || activeTab === "spawns" || activeTab === "health") return;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -467,10 +619,11 @@ export function BossDetailsPanel({ bossName, encounters, catalog, mode }: BossDe
             </button>
           ))}
         </div>
-        {activeTab !== "spawns" && units.length > 0 && (
+        {units.length > 0 && (
           <label className="ml-auto flex items-center gap-2 text-xs text-slate-400">
-            Loadout for
+            Details for
             <select
+              aria-label={`${TAB_LABELS.find((tab) => tab.key === activeTab)?.label} details for`}
               value={selected?.key ?? ""}
               onChange={(event) => setSelectedKey(event.target.value)}
               className="rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
@@ -485,7 +638,17 @@ export function BossDetailsPanel({ bossName, encounters, catalog, mode }: BossDe
 
       <div className="mt-4" role="tabpanel">
         {activeTab === "spawns" ? (
-          <SpawnDetails encounters={encounters} />
+          <SpawnDetails
+            encounters={encounters}
+            selectedKey={selected?.key}
+            selectedName={selected?.name}
+          />
+        ) : activeTab === "health" ? (
+          <HealthDetails
+            bossName={bossName}
+            encounters={encounters}
+            selected={selected}
+          />
         ) : !selected ? (
           <p className="py-6 text-center text-sm text-slate-500">No mob catalog entry is available.</p>
         ) : loading ? (
