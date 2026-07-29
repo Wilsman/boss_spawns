@@ -10,9 +10,6 @@ import { BossNotice } from "./BossNotice";
 import { Notice } from "./Notice";
 // import { MaintenanceNotice } from "./MaintenanceNotice";
 import type { BossEventConfig } from "@/types/bossEvents";
-import type { DataChange } from "@/lib/diff";
-import { getLatestChangeNotice } from "@/lib/change-notice";
-import type { SpawnData } from "@/types";
 
 // Change this to "maintenance" when we need to swap out the boss notice for the maintenance message
 const NOTICE_VARIANT: "boss" | "maintenance" = "maintenance";
@@ -38,21 +35,14 @@ function getRandomBossImage(): string {
 interface HeaderProps {
   primaryDisplayEvent: BossEventConfig | null;
   allBossEvents?: BossEventConfig[];
-  changes?: DataChange[];
-  changesLoaded?: boolean;
-  regularData?: SpawnData[] | null;
-  pveData?: SpawnData[] | null;
 }
 
 export const Header = memo(function Header({
   primaryDisplayEvent,
   allBossEvents = [],
-  changes = [],
-  changesLoaded = false,
 }: HeaderProps) {
   // Memoize the random image so it doesn't change on every render
   const bossImage = useMemo(() => getRandomBossImage(), []);
-  const latestNotice = useMemo(() => getLatestChangeNotice(changes), [changes]);
 
   return (
     <div className="">
@@ -190,42 +180,21 @@ export const Header = memo(function Header({
                 Recent Updates
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
-                {latestNotice ? (
-                  <span className="block mb-1">{latestNotice.updateLine}</span>
-                ) : changesLoaded ? (
-                  <span className="block mb-1">
-                    Latest change feed is connected. No grouped event-style update is available yet.
-                  </span>
-                ) : null}
                 <span className="block mb-1">
-                  (2026/07/08): Switched boss spawn data from Tarkov.dev
-                  GraphQL to the faster JSON API, with cleaner map, boss,
-                  spawn-location, escort, and health data.
+                  (2026/07/29): Improved refresh reliability and added support
+                  for multiple active event notices.
                 </span>
                 <span className="block mb-1">
-                  (2026/07/08): Fixed boss hover-card health labels after the
-                  JSON API switch.
+                  (2026/07/23): Added detailed boss health profiles and cleaner
+                  hover cards.
                 </span>
                 <span className="block mb-1">
-                  (2026/05/08): Added expanded Recent Changes tools with
-                  incremental loading, day grouping, change-type filtering, and
-                  refresh controls.
+                  (2026/07/14): Fixed stale and duplicate entries on the Changes
+                  page.
                 </span>
                 <span className="block mb-1">
-                  (2026/04/09): Added dynamic latest-change notices and merged
-                  duplicate spawn locations in boss tables.
-                </span>
-                <span className="block mb-1">
-                  (2026/03/11): Added change monitoring with unread badges,
-                  notification controls, and background checks.
-                </span>
-                <span className="block mb-1">
-                  (2025/09/02): Reworked the table layout with the modern
-                  grouped boss view.
-                </span>
-                <span className="block mb-1">
-                  (2025/08/07): Fixed notifications and improved compare mode
-                  with delta columns, bars, and wider layout.
+                  (2026/07/08): Moved boss spawn data to the faster Tarkov.dev
+                  JSON API.
                 </span>
               </AccordionContent>
             </AccordionItem>
