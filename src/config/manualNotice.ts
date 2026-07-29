@@ -5,10 +5,11 @@ export interface ManualNoticeMapRow {
   value: string;
 }
 
-export interface ManualNoticeConfig {
+export interface ManualNoticeEvent {
   badgeLabel: string;
   bossDisplayName: string;
   changedAt?: string;
+  id: string;
   imageUrl?: string;
   mapRows: ManualNoticeMapRow[];
   modes: string[];
@@ -16,20 +17,51 @@ export interface ManualNoticeConfig {
   title: string;
 }
 
+export interface ManualNoticeConfig {
+  badgeLabel: string;
+  events: ManualNoticeEvent[];
+  title: string;
+}
+
 export const manualNotice: ManualNoticeConfig = {
-  badgeLabel: "Blackout",
-  bossDisplayName: "Black Division & The Wedge",
-  changedAt: "2026-07-14T13:15:03.710Z",
-  imageUrl: "https://assets.tarkov.dev/black-div-portrait.webp",
-  mapRows: [
+  badgeLabel: "2 Live Events",
+  events: [
     {
-      bossName: "Black Division & The Wedge",
-      mapName: "The Lab",
-      value: "100%",
-      locations: "Active now",
+      badgeLabel: "Blackout",
+      bossDisplayName: "Black Division",
+      changedAt: "2026-07-14T13:15:03.710Z",
+      id: "blackout",
+      imageUrl: "https://assets.tarkov.dev/black-div-portrait.webp",
+      mapRows: [
+        {
+          bossName: "Black Division",
+          mapName: "Dark Labs",
+          value: "100%",
+          locations: "Active now",
+        },
+      ],
+      modes: ["PvP", "PvE"],
+      statusLine: "Black Division is active on Dark Labs.",
+      title: "Blackout",
+    },
+    {
+      badgeLabel: "100% Spawns",
+      bossDisplayName: "Main Bosses & Goons",
+      changedAt: "2026-07-29T12:35:20.884Z",
+      id: "boss-spawns-100",
+      mapRows: [
+        {
+          bossName: "Main Bosses & Goons",
+          mapName: "Usual maps",
+          value: "100%",
+          locations: "Active now",
+        },
+      ],
+      modes: ["PvP", "PvE"],
+      statusLine:
+        "Main bosses and the Goons are now 100% on their usual maps.",
+      title: "100% Boss Spawns",
     },
   ],
-  modes: ["PvP", "PvE"],
-  statusLine: "Black Division and The Wedge are now active on The Lab at 100%.",
-  title: "Blackout Event",
+  title: "Active Events",
 };
