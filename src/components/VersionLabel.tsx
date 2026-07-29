@@ -1,6 +1,6 @@
 export function VersionLabel() {
   return (
-    <footer className="fixed bottom-0 left-0 w-full bg-gray-800/30 py-2 backdrop-blur-sm z-50">
+    <footer className="fixed bottom-0 left-0 z-50 w-full border-t border-white/[0.07] bg-black/80 py-2 backdrop-blur-md">
       <div className="w-full px-4">
         <div className="flex justify-between items-center">
           {/* Discord Button - Far Left */}
@@ -26,7 +26,7 @@ export function VersionLabel() {
               href="https://buymeacoffee.com/wilsman77"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-amber-400 hover:text-amber-300 transition-colors duration-200"
+              className="text-blue-400 hover:text-blue-300 transition-colors duration-200"
             >
               Wilsman77
             </a>{" "}

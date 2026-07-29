@@ -102,7 +102,7 @@ function SpawnDetails({
 
   if (!selectedEncounters.length) {
     return (
-      <p className="py-6 text-center text-sm text-slate-500">
+      <p className="py-6 text-center text-sm text-zinc-500">
         No spawn configuration is available for {selectedName ?? "this unit"}.
       </p>
     );
@@ -120,22 +120,22 @@ function SpawnDetails({
         return (
           <article
             key={`${encounterSignature(encounter)}-${index}`}
-            className="rounded-xl border border-white/[0.08] bg-slate-950/35 p-3"
+            className="rounded-lg border border-white/[0.08] bg-[#0c0c0d] p-3"
           >
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="font-semibold text-white">Encounter {index + 1}</span>
               {count > 1 && (
-                <span className="rounded-full bg-sky-400/10 px-2 py-0.5 text-sky-200">
+                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-zinc-300">
                   {count} identical instances
                 </span>
               )}
-              <span className="ml-auto text-slate-300">
+              <span className="ml-auto text-zinc-300">
                 {percent(encounter.spawnChance)}{" "}
                 {isBossSelected ? "spawn" : "parent spawn"}
               </span>
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-slate-300">
-              <span className="rounded bg-slate-800/80 px-2 py-1">
+            <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-zinc-300">
+              <span className="rounded bg-white/[0.06] px-2 py-1">
                 {formatSpawnTime(encounter.spawnTime)}
                 {encounter.spawnTimeRandom ? " · random timing" : ""}
               </span>
@@ -147,7 +147,7 @@ function SpawnDetails({
             </div>
 
             <div className="mt-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                 {isBossSelected ? "Locations" : "Parent spawn locations"}
               </p>
               <div className="mt-1 flex flex-wrap gap-1.5">
@@ -155,19 +155,19 @@ function SpawnDetails({
                   encounter.spawnLocations.map((location, locationIndex) => (
                     <span
                       key={`${location.name}-${locationIndex}`}
-                      className="rounded-md border border-white/[0.07] bg-slate-900/70 px-2 py-1 text-xs text-slate-200"
+                      className="rounded-md border border-white/[0.07] bg-white/[0.045] px-2 py-1 text-xs text-zinc-200"
                     >
                       {location.name} · {percent(location.chance)}
                     </span>
                   ))
                 ) : (
-                  <span className="text-xs italic text-slate-500">No specific location</span>
+                  <span className="text-xs italic text-zinc-500">No specific location</span>
                 )}
               </div>
             </div>
 
             <div className="mt-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                 {isBossSelected ? "Followers" : "Follower deployment"}
               </p>
               {visibleEscorts.length ? (
@@ -175,10 +175,10 @@ function SpawnDetails({
                   {visibleEscorts.map((escort, escortIndex) => (
                     <div
                       key={`${escort.mobKey ?? escort.boss.name}-${escortIndex}`}
-                      className="rounded-md bg-slate-900/60 px-2 py-1.5 text-xs"
+                      className="rounded-md bg-white/[0.045] px-2 py-1.5 text-xs"
                     >
-                      <span className="font-medium text-slate-100">{escort.boss.name}</span>
-                      <span className="ml-2 text-slate-400">
+                      <span className="font-medium text-zinc-100">{escort.boss.name}</span>
+                      <span className="ml-2 text-zinc-400">
                         {escort.amount
                           .map(({ count: escortCount, chance }) =>
                             typeof chance === "number"
@@ -191,7 +191,7 @@ function SpawnDetails({
                   ))}
                 </div>
               ) : (
-                <p className="mt-1 text-xs text-slate-500">No followers supplied.</p>
+                <p className="mt-1 text-xs text-zinc-500">No followers supplied.</p>
               )}
             </div>
           </article>
@@ -217,17 +217,17 @@ function HealthProfile({
   const totalHealth = health.reduce((total, part) => total + part.max, 0);
 
   return (
-    <article className="overflow-hidden rounded-xl border border-white/[0.08] bg-slate-950/35">
-      <div className="relative border-b border-white/[0.07] bg-gradient-to-r from-sky-400/[0.09] via-slate-900/50 to-transparent px-4 py-4">
+    <article className="overflow-hidden rounded-xl border border-white/[0.09] bg-[#09090a]">
+      <div className="relative border-b border-white/[0.07] bg-gradient-to-r from-white/[0.045] to-transparent px-4 py-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sky-300/20 bg-sky-400/10 text-sky-200">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.05] text-zinc-300">
             <HeartPulse size={20} />
           </div>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
               Health profile
             </p>
-            <p className="mt-0.5 text-sm font-semibold text-slate-100">
+            <p className="mt-0.5 text-sm font-semibold text-zinc-100">
               {label ?? `${health.length} body parts`}
             </p>
           </div>
@@ -235,7 +235,7 @@ function HealthProfile({
             <p className="font-mono text-2xl font-bold leading-none text-white">
               {totalHealth}
             </p>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-sky-200/70">
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
               Total HP
             </p>
           </div>
@@ -248,19 +248,19 @@ function HealthProfile({
           return (
             <div
               key={part.bodyPart}
-              className="rounded-lg border border-white/[0.06] bg-slate-900/65 px-3 py-2.5"
+              className="rounded-lg border border-white/[0.07] bg-[#111113] px-3 py-2.5"
             >
               <div className="flex items-baseline justify-between gap-3">
-                <span className="text-xs font-medium capitalize text-slate-300">
+                <span className="text-xs font-medium capitalize text-zinc-300">
                   {part.bodyPart}
                 </span>
-                <span className="font-mono text-sm font-bold text-slate-100">
+                <span className="font-mono text-sm font-bold text-zinc-100">
                   {part.max}
                 </span>
               </div>
-              <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-800">
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-zinc-800">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-sky-500/70 to-cyan-300/80"
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500/75 to-blue-300/85"
                   style={{ width: `${share}%` }}
                 />
               </div>
@@ -297,7 +297,7 @@ function HealthDetails({
 
   if (!profiles.length) {
     return (
-      <p className="py-6 text-center text-sm text-slate-500">
+      <p className="py-6 text-center text-sm text-zinc-500">
         No health profile is available for {displayName}.
       </p>
     );
@@ -326,17 +326,17 @@ function ItemCard({ display }: { display: DisplayItem }) {
   const isHelmet = item.types.some((type) => type.toLowerCase() === "helmet");
 
   return (
-    <article className="flex min-w-0 gap-2 rounded-lg border border-white/[0.07] bg-slate-900/65 p-2">
+    <article className="flex min-w-0 gap-2 rounded-lg border border-white/[0.07] bg-[#111113] p-2">
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-black/25">
         {item.iconLink ? (
           <img src={item.iconLink} alt="" loading="lazy" className="max-h-11 max-w-11 object-contain" />
         ) : (
-          <PackageOpen size={19} className="text-slate-600" />
+          <PackageOpen size={19} className="text-zinc-600" />
         )}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex gap-1">
-          <p className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-100" title={item.name}>
+          <p className="min-w-0 flex-1 truncate text-xs font-semibold text-zinc-100" title={item.name}>
             {item.name}
           </p>
           {item.link && (
@@ -345,13 +345,13 @@ function ItemCard({ display }: { display: DisplayItem }) {
               target="_blank"
               rel="noreferrer"
               aria-label={`Open ${item.name} on Tarkov.dev`}
-              className="shrink-0 text-slate-500 hover:text-sky-300"
+              className="shrink-0 text-zinc-500 hover:text-zinc-200"
             >
               <ExternalLink size={13} />
             </a>
           )}
         </div>
-        <p className="mt-0.5 text-[10px] text-slate-400">
+        <p className="mt-0.5 text-[10px] text-zinc-400">
           {typeof item.armorClass === "number"
             ? `Class ${item.armorClass}`
             : item.ammo
@@ -364,7 +364,7 @@ function ItemCard({ display }: { display: DisplayItem }) {
           </p>
         )}
         {typeof prevalence === "number" && (
-          <p className="mt-0.5 text-[10px] text-sky-200/80">
+          <p className="mt-0.5 text-[10px] text-zinc-400">
             Estimated {prevalencePercent(prevalence)}
           </p>
         )}
@@ -397,8 +397,8 @@ function ProgressiveSection({
   return (
     <section>
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300">{title}</h4>
-        <span className="text-[10px] text-slate-500">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300">{title}</h4>
+        <span className="text-[10px] text-zinc-500">
           {displayedPool.length} {displayedPool.length === 1 ? "item" : "items"}
         </span>
       </div>
@@ -412,7 +412,7 @@ function ProgressiveSection({
           <button
             type="button"
             onClick={() => setVisibleCount((count) => count + 12)}
-            className="rounded-md border border-slate-600/60 px-2.5 py-1 text-xs text-slate-300 hover:bg-slate-800"
+            className="rounded-md border border-white/[0.1] px-2.5 py-1 text-xs text-zinc-300 hover:bg-white/[0.06]"
           >
             Show 12 more
           </button>
@@ -421,7 +421,7 @@ function ProgressiveSection({
           <button
             type="button"
             onClick={() => setShowComplete(true)}
-            className="rounded-md px-2.5 py-1 text-xs text-slate-500 hover:bg-slate-800 hover:text-slate-300"
+            className="rounded-md px-2.5 py-1 text-xs text-zinc-500 hover:bg-white/[0.06] hover:text-zinc-300"
           >
             Show complete category ({items.length - defaultItems.length} zero-estimate)
           </button>
@@ -472,8 +472,8 @@ function EquipmentDetails({
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-2 rounded-lg border border-sky-400/15 bg-sky-400/[0.05] p-2 text-xs text-slate-400">
-        <Swords size={16} className="shrink-0 text-sky-300" />
+      <div className="flex gap-2 rounded-lg border border-white/[0.08] bg-white/[0.035] p-2 text-xs text-zinc-400">
+        <Swords size={16} className="shrink-0 text-zinc-400" />
         Equipment choices are deduplicated options. The API does not provide reliable equipment probabilities.
       </div>
       {weaponSections.map((section) => (
@@ -482,7 +482,7 @@ function EquipmentDetails({
       <ProgressiveSection title="Armor, armored rigs & helmets" items={protection} />
       <ProgressiveSection title="Notable ammunition" items={ammunition} />
       {!weaponSections.some((section) => section.items.length) && !protection.length && !ammunition.length && (
-        <p className="py-6 text-center text-sm text-slate-500">No weapon or protection pool supplied.</p>
+        <p className="py-6 text-center text-sm text-zinc-500">No weapon or protection pool supplied.</p>
       )}
     </div>
   );
@@ -531,7 +531,7 @@ function LootDetails({
 
   return (
     <div className="space-y-5">
-      <div className="flex gap-2 rounded-lg border border-amber-400/15 bg-amber-400/[0.05] p-2 text-xs text-slate-400">
+      <div className="flex gap-2 rounded-lg border border-amber-400/15 bg-amber-400/[0.05] p-2 text-xs text-zinc-400">
         <AlertTriangle size={16} className="shrink-0 text-amber-300" />
         Loot prevalence is estimated. Tarkov.dev warns that boss equipment and item pools may be inaccurate.
       </div>
@@ -541,7 +541,7 @@ function LootDetails({
       ))}
       <ProgressiveSection title="Other loot" items={other} allowZeroPrevalence />
       {!all.length && (
-        <p className="py-6 text-center text-sm text-slate-500">No carried-item pool supplied.</p>
+        <p className="py-6 text-center text-sm text-zinc-500">No carried-item pool supplied.</p>
       )}
     </div>
   );
@@ -600,9 +600,9 @@ export function BossDetailsPanel({ bossName, encounters, catalog, mode }: BossDe
   }, [activeTab, mode, retryCount, selected]);
 
   return (
-    <div className="border-t border-sky-300/10 bg-slate-950/30 px-3 pb-4 pt-3 sm:px-5">
+    <div className="border-t border-white/[0.08] bg-[#080809] px-3 pb-4 pt-3 sm:px-5">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex rounded-lg border border-slate-700/70 bg-slate-950/60 p-1" role="tablist" aria-label={`${bossName} details`}>
+        <div className="flex rounded-lg border border-white/[0.1] bg-[#09090a] p-1" role="tablist" aria-label={`${bossName} details`}>
           {TAB_LABELS.map((tab) => (
             <button
               key={tab.key}
@@ -611,7 +611,7 @@ export function BossDetailsPanel({ bossName, encounters, catalog, mode }: BossDe
               aria-selected={activeTab === tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                activeTab === tab.key ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"
+                activeTab === tab.key ? "bg-zinc-700 text-white" : "text-zinc-500 hover:bg-white/[0.04] hover:text-white"
               }`}
             >
               {tab.label}
@@ -619,13 +619,13 @@ export function BossDetailsPanel({ bossName, encounters, catalog, mode }: BossDe
           ))}
         </div>
         {units.length > 0 && (
-          <label className="ml-auto flex items-center gap-2 text-xs text-slate-400">
+          <label className="ml-auto flex items-center gap-2 text-xs text-zinc-400">
             Details for
             <select
               aria-label={`${TAB_LABELS.find((tab) => tab.key === activeTab)?.label} details for`}
               value={selected?.key ?? ""}
               onChange={(event) => setSelectedKey(event.target.value)}
-              className="rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-slate-100"
+              className="rounded-md border border-white/[0.12] bg-[#111113] px-2 py-1.5 text-zinc-100"
             >
               {units.map((unit) => (
                 <option key={unit.key} value={unit.key}>{unit.name}</option>
@@ -649,11 +649,11 @@ export function BossDetailsPanel({ bossName, encounters, catalog, mode }: BossDe
             selected={selected}
           />
         ) : !selected ? (
-          <p className="py-6 text-center text-sm text-slate-500">No mob catalog entry is available.</p>
+          <p className="py-6 text-center text-sm text-zinc-500">No mob catalog entry is available.</p>
         ) : loading ? (
           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4" aria-label="Loading item details">
             {Array.from({ length: 8 }, (_, index) => (
-              <div key={index} className="h-16 animate-pulse rounded-lg bg-slate-800/60" />
+              <div key={index} className="h-16 animate-pulse rounded-lg bg-zinc-800/60" />
             ))}
           </div>
         ) : error ? (

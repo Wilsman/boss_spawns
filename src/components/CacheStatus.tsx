@@ -106,8 +106,8 @@ export function CacheStatus({
       <div className="flex items-center gap-2">
         {isRefreshing ? (
           <>
-            <RefreshCcw className="w-3 h-3 animate-spin text-purple-400" />
-            <span className="text-purple-400">Refreshing data...</span>
+            <RefreshCcw className="w-3 h-3 animate-spin text-blue-400" />
+            <span className="text-blue-400">Refreshing data...</span>
           </>
         ) : (
           <span>
@@ -134,7 +134,7 @@ export function CacheStatus({
               : "Refresh boss data now"
           }
           aria-label="Refresh boss data now"
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-gray-700/70 bg-gray-900/70 text-gray-400 transition-colors hover:border-purple-500/60 hover:text-purple-300 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-gray-700/70 disabled:hover:text-gray-400"
+          className="inline-flex h-6 w-6 items-center justify-center rounded border border-white/[0.09] bg-[#0b0b0c] text-gray-500 transition-colors hover:border-blue-500/60 hover:text-blue-300 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-white/[0.09] disabled:hover:text-gray-500"
         >
           <RefreshCcw
             className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}

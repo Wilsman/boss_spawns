@@ -250,7 +250,7 @@ export function ChangesTable({
         {children}
         <ArrowUpDown
           className={`h-4 w-4 transition-colors ${
-            sortField === field ? "text-purple-400" : "text-gray-500"
+            sortField === field ? "text-blue-400" : "text-gray-500"
           }`}
         />
       </div>
@@ -291,11 +291,11 @@ export function ChangesTable({
     }
 
     return (
-      <div className="overflow-x-auto rounded-xl border border-white/[0.07] bg-[#0c1117]/70 shadow-[0_14px_40px_rgba(0,0,0,0.14)]">
+      <div className="overflow-x-auto rounded-xl border border-white/[0.09] bg-[#0a0a0b]">
         <table className="w-full min-w-[760px]">
           {showHeader && (
           <thead>
-            <tr className="bg-gray-900/40">
+            <tr className="bg-[#101011]">
               <SortHeader field="timestamp">Time</SortHeader>
               <SortHeader field="gameMode">Mode</SortHeader>
               <SortHeader field="map">Map</SortHeader>
@@ -368,7 +368,7 @@ export function ChangesTable({
         </div>
 
         {/* Informational content for AdSense compliance */}
-        <div className="rounded-xl border border-gray-700/60 bg-[#0c1117]/60 p-6">
+        <div className="rounded-xl border border-white/[0.09] bg-[#0a0a0b] p-6">
           <h3 className="text-lg font-semibold text-white mb-3">
             About Boss Spawn Changes
           </h3>
@@ -413,7 +413,7 @@ export function ChangesTable({
         </div>
 
         {/* Boss quick reference */}
-        <div className="rounded-xl border border-gray-700/60 bg-[#0c1117]/60 p-6">
+        <div className="rounded-xl border border-white/[0.09] bg-[#0a0a0b] p-6">
           <h3 className="text-lg font-semibold text-white mb-3">
             Tarkov Bosses Quick Reference
           </h3>
@@ -519,7 +519,7 @@ export function ChangesTable({
             <button
               type="button"
               onClick={loadMoreChanges}
-              className="rounded-md border border-gray-700/70 bg-gray-900/50 px-3 py-1.5 text-gray-300 transition-colors hover:border-purple-500/60 hover:text-purple-300"
+              className="rounded-md border border-white/[0.09] bg-[#0b0b0c] px-3 py-1.5 text-gray-300 transition-colors hover:border-blue-500/60 hover:text-blue-300"
             >
               Load more
             </button>

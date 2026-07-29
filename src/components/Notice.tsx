@@ -23,7 +23,7 @@ export function Notice() {
   return (
     <section
       className={cn(
-        "mt-3 w-full rounded-lg border border-amber-500/30 bg-gradient-to-br from-zinc-950 via-zinc-950 to-amber-950/20 px-4 py-4",
+        "mt-3 w-full rounded-lg border border-white/[0.1] bg-[#09090a] px-4 py-4",
         "opacity-0 transition-opacity duration-200 ease-out",
         isVisible && "opacity-100",
       )}
@@ -31,11 +31,11 @@ export function Notice() {
       aria-live="polite"
     >
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
           <h2 className="text-base font-semibold text-zinc-100">
             {manualNotice.title}
           </h2>
-          <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-200">
+          <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.045] px-2.5 py-1 text-xs font-medium text-gray-300">
             <Sparkles className="h-3.5 w-3.5" />
             {manualNotice.badgeLabel}
           </span>
@@ -52,10 +52,10 @@ export function Notice() {
               <article
                 key={event.id}
                 aria-labelledby={titleId}
-                className="flex h-full flex-col rounded-lg border border-amber-500/20 bg-zinc-900/40 px-3 py-3"
+                className="flex h-full flex-col rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3"
               >
-                <div className="flex items-center gap-3 border-b border-amber-500/10 pb-3">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-amber-500/20 bg-zinc-950 text-amber-200">
+                <div className="flex items-center gap-3 border-b border-white/[0.07] pb-3">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/[0.1] bg-black text-blue-300">
                     {event.imageUrl ? (
                       <img
                         src={event.imageUrl}
@@ -75,7 +75,7 @@ export function Notice() {
                       >
                         {event.title}
                       </h3>
-                      <span className="inline-flex rounded-full border border-amber-400/25 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-200">
+                      <span className="inline-flex rounded-full border border-blue-400/25 bg-blue-500/10 px-2 py-0.5 text-[11px] font-medium text-blue-200">
                         {event.badgeLabel}
                       </span>
                     </div>
@@ -97,7 +97,7 @@ export function Notice() {
                   </dd>
 
                   <dt className="text-zinc-500">Status</dt>
-                  <dd className="min-w-0 text-amber-100">
+                  <dd className="min-w-0 text-gray-200">
                     {event.statusLine}
                   </dd>
 

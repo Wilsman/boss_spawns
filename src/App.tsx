@@ -569,12 +569,12 @@ function MainApp() {
 
   return (
     <div
-      className="min-h-screen text-foreground flex flex-col"
+      className="min-h-screen bg-transparent text-foreground flex flex-col"
       data-content-loaded={
         !loading && (regularData || pveData) ? "true" : "false"
       }
     >
-      <div className="container mx-auto px-4 py-4 flex flex-col gap-4 pb-10">
+      <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-5 flex flex-col gap-4 pb-10">
         <Header
           primaryDisplayEvent={primaryDisplayEvent}
           allBossEvents={CURRENT_BOSS_CONFIGS}
@@ -733,18 +733,18 @@ function MainApp() {
         </div>
 
         {/* Footer with links for AdSense compliance */}
-        <footer className="mt-8 pt-6 border-t border-gray-800">
+        <footer className="mt-8 pt-6 border-t border-white/[0.08]">
           <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500">
             <a
               href="/about"
-              className="hover:text-purple-400 transition-colors"
+              className="hover:text-blue-400 transition-colors"
             >
               About
             </a>
             <span>•</span>
             <a
               href="/privacy"
-              className="hover:text-purple-400 transition-colors"
+              className="hover:text-blue-400 transition-colors"
             >
               Privacy Policy
             </a>
@@ -753,7 +753,7 @@ function MainApp() {
               href="https://discord.gg/3dFmr5qaJK"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-purple-400 transition-colors"
+              className="hover:text-blue-400 transition-colors"
             >
               Discord
             </a>
@@ -762,7 +762,7 @@ function MainApp() {
               href="https://tarkov.dev"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-purple-400 transition-colors"
+              className="hover:text-blue-400 transition-colors"
             >
               Data: Tarkov.dev
             </a>

@@ -55,7 +55,7 @@ export const Header = memo(function Header({
               alt="EFT Boss Spawns - Tarkov Real-Time Boss Spawn Tracker"
               width={260}
               height={90}
-              className="max-w-[60vw] h-auto"
+              className="max-w-[56vw] h-auto contrast-110 saturate-75"
             />
           </a>
           <h1 className="sr-only">
@@ -70,9 +70,9 @@ export const Header = memo(function Header({
             href="https://discord.gg/3dFmr5qaJK"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg w-full
-   hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.01]
-   border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
+            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-[#0d0d0e] rounded-md w-full
+   hover:bg-[#141416] transition-colors duration-200
+   border border-white/[0.09] hover:border-blue-500/50"
           >
             <svg
               role="img"
@@ -89,7 +89,7 @@ export const Header = memo(function Header({
                 fill="#ffffff"
               />
             </svg>
-            <span className="text-sm font-medium text-gray-300 transition-colors duration-300 sm:text-base group-hover:text-purple-400">
+            <span className="text-sm font-medium text-gray-300 transition-colors duration-200 sm:text-base group-hover:text-blue-300">
               Join our Discord
             </span>
             <svg
@@ -114,15 +114,15 @@ export const Header = memo(function Header({
             href="https://www.cultistcircle.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg w-full
-             hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.01]
-             border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
+            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-[#0d0d0e] rounded-md w-full
+             hover:bg-[#141416] transition-colors duration-200
+             border border-white/[0.09] hover:border-blue-500/50"
           >
-            <Calculator className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
-            <span className="text-sm font-medium text-gray-300 transition-colors duration-300 sm:text-base group-hover:text-purple-400">
+            <Calculator className="w-5 h-5 text-gray-500 transition-colors duration-200 group-hover:text-blue-400" />
+            <span className="text-sm font-medium text-gray-300 transition-colors duration-200 sm:text-base group-hover:text-blue-300">
               Cultist Circle Calc!
             </span>
-            <Calculator className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:rotate-12" />
+            <Calculator className="w-5 h-5 text-gray-500 transition-colors duration-200 group-hover:text-blue-400" />
           </a>
 
           {/* New Tarkov.dev Attribution Link */}
@@ -130,15 +130,15 @@ export const Header = memo(function Header({
             href="https://tarkov.dev"
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-gray-800/50 rounded-lg w-full
-             hover:bg-gray-700/50 transition-all duration-300 hover:scale-[1.01]
-             border border-gray-700/50 hover:border-purple-500/50 shadow-lg shadow-black/20"
+            className="group flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-2 bg-[#0d0d0e] rounded-md w-full
+             hover:bg-[#141416] transition-colors duration-200
+             border border-white/[0.09] hover:border-blue-500/50"
           >
-            <Database className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:rotate-12" />
-            <span className="text-sm font-medium text-gray-300 transition-colors duration-300 sm:text-base group-hover:text-purple-400">
+            <Database className="w-5 h-5 text-gray-500 transition-colors duration-200 group-hover:text-blue-400" />
+            <span className="text-sm font-medium text-gray-300 transition-colors duration-200 sm:text-base group-hover:text-blue-300">
               Data - Tarkov.dev
             </span>
-            <Database className="w-5 h-5 text-purple-400 transition-transform duration-300 group-hover:-rotate-12" />
+            <Database className="w-5 h-5 text-gray-500 transition-colors duration-200 group-hover:text-blue-400" />
           </a>
 
           {/* Boss Event Notice - spans all columns */}

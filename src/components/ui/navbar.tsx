@@ -29,7 +29,7 @@ export function NavBar({ items, className }: NavBarProps) {
 
   return (
     <div className={cn("flex justify-center w-full", className)}>
-      <div className="flex items-center gap-1 sm:gap-3 bg-background/5 border border-border backdrop-blur-lg py-1 px-1 rounded-full shadow-lg">
+      <div className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#080809] p-1">
         {items.map((item) => {
           const Icon = item.icon;
           // Special case for PVP tab which uses 'regular' in the URL
@@ -51,16 +51,16 @@ export function NavBar({ items, className }: NavBarProps) {
               key={item.name}
               to={to}
               className={cn(
-                "relative cursor-pointer text-sm font-semibold px-3 sm:px-6 py-2 rounded-full transition-colors",
-                "text-foreground/80 hover:text-primary",
-                isActive && "bg-muted text-primary"
+                "relative cursor-pointer rounded-md px-3 py-2 text-sm font-semibold transition-colors sm:px-5",
+                "text-gray-500 hover:bg-white/[0.035] hover:text-gray-200",
+                isActive && "bg-[#1a1a1c] text-white"
               )}
             >
               <span className="flex items-center gap-2">
                 <Icon size={18} strokeWidth={2.5} />
                 {item.name}
                 {!!item.badgeCount && (
-                  <span className="min-w-5 rounded-full bg-purple-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-purple-100">
+                  <span className="min-w-5 rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-blue-200">
                     {item.badgeCount > 99 ? "99+" : item.badgeCount}
                   </span>
                 )}
@@ -68,7 +68,7 @@ export function NavBar({ items, className }: NavBarProps) {
               {isActive && (
                 <motion.div
                   layoutId="lamp"
-                  className="absolute inset-0 w-full bg-primary/5 rounded-full -z-10"
+                  className="pointer-events-none absolute inset-x-2 -bottom-1 h-0.5 rounded-full bg-blue-500"
                   initial={false}
                   transition={{
                     type: "spring",
@@ -76,11 +76,6 @@ export function NavBar({ items, className }: NavBarProps) {
                     damping: 30,
                   }}
                 >
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-t-full">
-                    <div className="absolute w-12 h-6 bg-primary/20 rounded-full blur-md -top-2 -left-2" />
-                    <div className="absolute w-8 h-6 bg-primary/20 rounded-full blur-md -top-1" />
-                    <div className="absolute w-4 h-4 bg-primary/20 rounded-full blur-sm top-0 left-2" />
-                  </div>
                 </motion.div>
               )}
             </Link>

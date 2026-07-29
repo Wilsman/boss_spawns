@@ -58,7 +58,7 @@ interface BossEntry {
 }
 
 const HOVER_CARD_CLASS =
-  "w-[350px] overflow-hidden rounded-2xl border border-slate-500/25 bg-[#0b111a]/95 p-2 text-slate-100 shadow-[0_24px_70px_rgba(0,0,0,0.6)] backdrop-blur-xl";
+  "w-[350px] overflow-hidden rounded-xl border border-white/[0.12] bg-[#0c0c0d]/95 p-2 text-gray-100 shadow-[0_24px_70px_rgba(0,0,0,0.65)] backdrop-blur-xl";
 
 function getEscortCount(escort: Escort): number {
   return Math.max(0, ...escort.amount.map((amount) => amount.count));
@@ -320,10 +320,10 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
         return (
           <section
             key={mapName}
-            className="rounded-xl border border-gray-700/60 overflow-visible bg-[#0c1117]/60"
+            className="overflow-visible rounded-xl border border-white/[0.09] bg-[#0a0a0b]"
           >
             <div
-              className={`flex items-center rounded-t-xl bg-gray-900/40 ${
+              className={`flex items-center rounded-t-xl bg-[#101011] ${
                 isCollapsed ? "rounded-b-xl" : ""
               }`}
             >
@@ -331,7 +331,7 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                 onClick={() =>
                   setCollapsed((p) => ({ ...p, [mapName]: !isCollapsed }))
                 }
-                className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 hover:bg-gray-900/60 transition-colors"
+                className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 hover:bg-white/[0.025] transition-colors"
                 aria-expanded={!isCollapsed}
               >
                 <span className="text-base sm:text-lg font-bold text-white capitalize">
@@ -349,7 +349,7 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
             </div>
             {!isCollapsed && (
               <div className="p-3 sm:p-4">
-                <div className="hidden sm:grid grid-cols-12 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-300 bg-gray-900/50 rounded-md">
+                <div className="hidden sm:grid grid-cols-12 rounded-md border border-white/[0.045] bg-[#0d0d0e] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
                   <div className="col-span-5">
                     <SortLabel label="Boss" columnKey="boss" align="left" />
                   </div>
@@ -381,7 +381,7 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                   )}
                 </div>
 
-                <div className="mt-2 divide-y divide-gray-800">
+                <div className="mt-2 divide-y divide-white/[0.06]">
                   {[...items]
                     .sort((a, b) => {
                       if (mode === "compare") {
@@ -536,10 +536,10 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                                 toggleExpanded();
                               }
                             }}
-                            className={`group relative grid cursor-pointer grid-cols-12 items-center gap-3 rounded-md px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-400/60 ${
+                            className={`group relative grid cursor-pointer grid-cols-12 items-center gap-3 rounded-md px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/30 ${
                               isExpanded
-                                ? "bg-sky-400/[0.055]"
-                                : "hover:bg-sky-400/[0.035]"
+                                ? "bg-white/[0.045]"
+                                : "hover:bg-white/[0.025]"
                             }`}
                           >
                             <div className="col-span-12 pr-20 sm:col-span-5 sm:pr-0">
@@ -548,8 +548,8 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                                   aria-hidden="true"
                                   className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${
                                     isExpanded
-                                      ? "border-sky-300/40 bg-sky-400/15 text-sky-100"
-                                      : "border-slate-700/70 bg-slate-900/60 text-slate-500 group-hover:border-sky-400/30 group-hover:text-sky-200"
+                                      ? "border-white/[0.2] bg-white/[0.08] text-white"
+                                      : "border-white/[0.1] bg-[#121214] text-gray-500 group-hover:border-white/[0.18] group-hover:text-gray-200"
                                   }`}
                                 >
                                   <ChevronRight
@@ -563,9 +563,9 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                               </div>
                             </div>
                             <div className="col-span-6 sm:col-span-3">
-                              <div className="relative h-5 rounded bg-slate-900/40">
+                              <div className="relative h-5 overflow-hidden rounded bg-[#151517]">
                                 <div
-                                  className="absolute left-0 top-0 h-full bg-slate-400/50"
+                                  className="absolute left-0 top-0 h-full bg-blue-500/55"
                                   style={{
                                     width: `${Math.max(
                                       0,
@@ -587,7 +587,7 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                                 locs.map((l, idx) => (
                                   <span
                                     key={`${l.name}-${idx}`}
-                                    className={`px-2 py-1 rounded bg-slate-800/70 ring-1 ring-slate-700/50 text-slate-100 ${getLocationClasses(
+                                    className={`rounded bg-[#171719] px-2 py-1 text-gray-200 ring-1 ring-white/[0.09] ${getLocationClasses(
                                       l.name,
                                       l.chance
                                     )}`}
@@ -606,8 +606,8 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                               aria-hidden="true"
                               className={`pointer-events-none absolute right-3 inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] transition-all top-3 sm:top-1/2 sm:-translate-y-1/2 ${
                                 isExpanded
-                                  ? "border-sky-300/40 bg-sky-400/15 text-sky-100"
-                                  : "border-slate-600/50 bg-slate-800/60 text-slate-400 group-hover:border-sky-400/30 group-hover:bg-sky-400/[0.1] group-hover:text-sky-200"
+                                  ? "border-white/[0.2] bg-white/[0.08] text-white"
+                                  : "border-white/[0.1] bg-[#171719] text-gray-500 group-hover:border-white/[0.18] group-hover:bg-white/[0.05] group-hover:text-gray-200"
                               }`}
                             >
                               {isExpanded ? "Hide" : "Details"}
@@ -697,8 +697,8 @@ const BossInfo = ({
 
   return (
     <div className="space-y-3">
-      <div className="relative min-h-32 overflow-hidden rounded-xl border border-slate-400/15 bg-gradient-to-br from-slate-800 via-slate-900 to-[#121b28] px-4 py-3">
-        <div className="absolute -left-8 -top-10 h-28 w-28 rounded-full bg-sky-400/10 blur-2xl" />
+      <div className="relative min-h-32 overflow-hidden rounded-lg border border-white/[0.09] bg-gradient-to-br from-[#1a1a1d] via-[#101011] to-[#0b0b0c] px-4 py-3">
+        <div className="absolute -left-8 -top-10 h-28 w-28 rounded-full bg-blue-400/10 blur-2xl" />
         <div className="relative z-10 flex h-full max-w-[62%] flex-col justify-end gap-2">
           <h3 className="text-xl font-bold tracking-tight text-white">{name}</h3>
           {health && (
@@ -709,7 +709,7 @@ const BossInfo = ({
         </div>
         {imagePortraitLink && (
           <>
-            <div className="absolute inset-y-0 right-0 w-3/5 bg-gradient-to-r from-[#121b28] via-transparent to-transparent" />
+            <div className="absolute inset-y-0 right-0 w-3/5 bg-gradient-to-r from-[#0b0b0c] via-transparent to-transparent" />
             <img
               src={imagePortraitLink}
               alt={name}
@@ -720,7 +720,7 @@ const BossInfo = ({
       </div>
 
       {health && (
-        <div className="rounded-xl border border-slate-500/15 bg-slate-950/40 p-2">
+        <div className="rounded-lg border border-white/[0.08] bg-black/30 p-2">
           <div className="mb-2 flex items-center justify-between px-1">
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
               Health profile
@@ -731,7 +731,7 @@ const BossInfo = ({
             {health.map((part) => (
               <li
                 key={part.bodyPart}
-                className="flex items-center justify-between rounded-md bg-slate-800/60 px-2 py-1.5 text-xs"
+                className="flex items-center justify-between rounded-md bg-white/[0.045] px-2 py-1.5 text-xs"
               >
                 <span className="capitalize text-slate-400">{part.bodyPart}</span>
                 <span className="font-mono font-bold text-slate-100">{part.max}</span>
@@ -760,14 +760,14 @@ const MapInfo = ({ map }: { map: SpawnData }) => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md p-2 text-slate-500 hover:bg-slate-800 hover:text-sky-200"
+        className="rounded-md p-2 text-gray-500 hover:bg-white/[0.06] hover:text-blue-200"
         aria-label={`${map.name} raid information`}
         aria-expanded={open}
       >
         <Info size={16} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-[min(22rem,calc(100vw-2rem))] rounded-xl border border-slate-600/40 bg-[#0b111a]/95 p-3 text-left shadow-2xl backdrop-blur-xl">
+        <div className="absolute right-0 top-full z-50 mt-1 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-white/[0.12] bg-[#0c0c0d]/95 p-3 text-left shadow-2xl backdrop-blur-xl">
           <div className="flex items-center gap-2">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-300">Raid information</p>
             <button
@@ -826,7 +826,7 @@ const BossCell = ({
           className="w-8 h-8 rounded-full object-cover"
         />
       )}
-      <span className="font-medium text-gray-200 hover:text-purple-400 cursor-pointer border-b border-dotted">
+      <span className="font-medium text-gray-200 hover:text-blue-400 cursor-pointer border-b border-dotted">
         {boss.boss}
       </span>
     </div>
@@ -849,7 +849,7 @@ const BossCell = ({
           />
 
           {boss.escorts && boss.escorts.length > 0 && (
-            <div className="rounded-xl border border-slate-500/15 bg-slate-950/40 p-2">
+            <div className="rounded-lg border border-white/[0.08] bg-black/30 p-2">
               <div className="mb-2 flex items-center justify-between px-1">
                 <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
                   Escort detail
@@ -862,7 +862,7 @@ const BossCell = ({
                 {boss.escorts.map((escort: Escort, index: number) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between rounded-lg bg-slate-800/60 px-2 py-1.5 text-xs"
+                    className="flex items-center justify-between rounded-md bg-white/[0.045] px-2 py-1.5 text-xs"
                   >
                     <div className="flex items-center gap-2">
                       {escort.boss.imagePortraitLink && (
