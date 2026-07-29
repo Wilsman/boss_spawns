@@ -536,6 +536,7 @@ async function fetchJsonMaps(mode: GameMode): Promise<{
   catalog: MobCatalog;
 }> {
   const response = await fetch(`${TARKOV_JSON_API_BASE_URL}/${mode}/maps`, {
+    cache: "no-store",
     method: "GET",
     headers: {
       Accept: "application/json",
