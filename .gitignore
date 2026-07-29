@@ -24,6 +24,7 @@ lerna-debug.log*
 # Build output directories
 dist/
 dist-ssr/
+.wrangler/
 
 # Editor directories and files
 .vscode/

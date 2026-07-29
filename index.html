@@ -61,6 +61,106 @@
     <link rel="canonical" href="https://eftboss.com/" />
     <title>Tarkov Boss Spawns - Real-Time Boss Spawn Tracking | EFT</title>
 
+    <!-- Recover automatically if a deployment temporarily serves stale HTML or a missing module. -->
+    <script id="module-recovery">
+      (function () {
+        var originalModuleUrl = "";
+        var retryCount = 0;
+        var reloadStorageKey = "eftboss.module-recovery.last-reload";
+
+        function readLastReload() {
+          try {
+            return Number(sessionStorage.getItem(reloadStorageKey)) || 0;
+          } catch {
+            return 0;
+          }
+        }
+
+        function writeLastReload(value) {
+          try {
+            sessionStorage.setItem(reloadStorageKey, String(value));
+          } catch {
+            // Recovery still works when sessionStorage is unavailable.
+          }
+        }
+
+        function cleanRecoveryUrl() {
+          var pageUrl = new URL(location.href);
+          if (!pageUrl.searchParams.has("__asset_reload")) return;
+
+          pageUrl.searchParams.delete("__asset_reload");
+          history.replaceState(null, "", pageUrl);
+        }
+
+        function reloadFreshDocument() {
+          var now = Date.now();
+          var timeSinceLastReload = now - readLastReload();
+
+          if (timeSinceLastReload < 60000) {
+            setTimeout(retryModule, 30000);
+            return;
+          }
+
+          writeLastReload(now);
+          var pageUrl = new URL(location.href);
+          pageUrl.searchParams.set("__asset_reload", String(now));
+          location.replace(pageUrl);
+        }
+
+        function retryModule() {
+          retryCount += 1;
+
+          var retryUrl = new URL(originalModuleUrl, location.href);
+          retryUrl.searchParams.set(
+            "__asset_retry",
+            Date.now() + "-" + retryCount
+          );
+
+          var replacement = document.createElement("script");
+          replacement.type = "module";
+          replacement.src = retryUrl.href;
+          replacement.onload = function () {
+            writeLastReload(0);
+            cleanRecoveryUrl();
+          };
+          replacement.onerror = function () {
+            if (retryCount >= 3) {
+              reloadFreshDocument();
+              return;
+            }
+
+            setTimeout(retryModule, retryCount * 1000);
+          };
+
+          document.head.appendChild(replacement);
+        }
+
+        window.__recoverEftBossModule = function (failedScript) {
+          if (originalModuleUrl) return;
+
+          originalModuleUrl = failedScript.src;
+          failedScript.remove();
+          setTimeout(retryModule, 500);
+        };
+
+        window.addEventListener(
+          "error",
+          function (event) {
+            var failedElement = event.target;
+            if (
+              failedElement &&
+              failedElement.tagName === "SCRIPT" &&
+              failedElement.type === "module" &&
+              failedElement.src
+            ) {
+              window.__recoverEftBossModule(failedElement);
+            }
+          },
+          true
+        );
+      })();
+    </script>
+
     <!-- Delay AdSense loading until page content is ready -->
     <script>
       // Load AdSense after DOM is ready and content exists

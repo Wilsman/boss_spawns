@@ -3,5 +3,5 @@
 /robots.txt /robots.txt 200
 /sitemap.xml /sitemap.xml 200
 
-# SPA Catch-all (Cloudflare Pages serves index.html for unknown routes)
-/* /index.html 200
+# Cloudflare Pages supplies SPA routing when there is no top-level 404.html.
+# Do not add a catch-all rewrite here: missing module assets must stay 404s.
