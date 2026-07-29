@@ -219,7 +219,6 @@ function HealthProfile({
   return (
     <article className="overflow-hidden rounded-xl border border-white/[0.08] bg-slate-950/35">
       <div className="relative border-b border-white/[0.07] bg-gradient-to-r from-sky-400/[0.09] via-slate-900/50 to-transparent px-4 py-4">
-        <div className="absolute inset-y-0 left-0 w-1 bg-sky-300/60" />
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sky-300/20 bg-sky-400/10 text-sky-200">
             <HeartPulse size={20} />
