@@ -181,6 +181,10 @@ export const Header = memo(function Header({
               </AccordionTrigger>
               <AccordionContent className="text-center text-xs text-gray-400 pb-2">
                 <span className="block mb-1">
+                  (2026/08/03): Added Season mode tracking, three-way Compare,
+                  and Season change notifications.
+                </span>
+                <span className="block mb-1">
                   (2026/07/29): Improved refresh reliability and added support
                   for multiple active event notices.
                 </span>
