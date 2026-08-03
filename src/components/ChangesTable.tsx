@@ -46,6 +46,16 @@ type SortField =
   | "newValue"
   | "timestamp"
   | "gameMode";
+
+function getGameModeBadgeClass(gameMode: string): string {
+  if (gameMode === "PvE") {
+    return "border-sky-400/20 bg-sky-400/10 text-sky-200";
+  }
+  if (gameMode === "Season") {
+    return "border-violet-400/20 bg-violet-400/10 text-violet-200";
+  }
+  return "border-orange-400/20 bg-orange-400/10 text-orange-200";
+}
 type SortDirection = "asc" | "desc";
 const CHANGE_BATCH_SIZE = 75;
 
@@ -313,7 +323,7 @@ export function ChangesTable({
               >
                 <TimestampCell timestamp={change.timestamp} />
                 <td className="px-4 py-3.5 whitespace-nowrap">
-                  <span className={`inline-flex rounded-md border px-2 py-1 text-[11px] font-bold tracking-wide ${change.gameMode.toLowerCase() === "pve" ? "border-sky-400/20 bg-sky-400/10 text-sky-200" : "border-orange-400/20 bg-orange-400/10 text-orange-200"}`}>
+                  <span className={`inline-flex rounded-md border px-2 py-1 text-[11px] font-bold tracking-wide ${getGameModeBadgeClass(change.gameMode)}`}>
                     {change.gameMode}
                   </span>
                 </td>

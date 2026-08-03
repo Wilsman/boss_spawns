@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Users, Database, Bell, GitCompare, Shield, Swords } from "lucide-react";
+import { ArrowLeft, Users, Database, Bell, CalendarDays, GitCompare, Shield, Swords } from "lucide-react";
 
 export function About() {
   return (
@@ -71,12 +71,23 @@ export function About() {
 
             <div className="bg-gray-800/50 rounded-lg p-5">
               <div className="flex items-center gap-3 mb-3">
+                <CalendarDays className="w-5 h-5 text-violet-400" />
+                <h3 className="font-semibold text-white">Season Mode Tracking</h3>
+              </div>
+              <p className="text-gray-400 text-sm">
+                Follow boss spawn chances for the active PVP season separately
+                from standard PVP and PVE data.
+              </p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-5">
+              <div className="flex items-center gap-3 mb-3">
                 <GitCompare className="w-5 h-5 text-yellow-400" />
                 <h3 className="font-semibold text-white">Compare Mode</h3>
               </div>
               <p className="text-gray-400 text-sm">
-                Side-by-side comparison of PVP and PVE spawn rates. Quickly identify 
-                differences between game modes to optimize your strategy.
+                Side-by-side comparison of PVP, PVE, and Season spawn rates.
+                Quickly identify differences between game modes to optimize your strategy.
               </p>
             </div>
 

@@ -32,9 +32,11 @@ const CURRENT_BOSS_CONFIGS: BossEventConfig[] = bossEvents;
 function MainApp() {
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
   const [pveData, setPveData] = useState<SpawnData[] | null>(null);
+  const [seasonData, setSeasonData] = useState<SpawnData[] | null>(null);
   const [catalogs, setCatalogs] = useState<Record<GameMode, MobCatalog>>({
     regular: {},
     pve: {},
+    "pvp-season": {},
   });
   const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false); // For background refresh indicator
@@ -50,7 +52,12 @@ function MainApp() {
   useEffect(() => {
     const modeParam = searchParams.get("mode");
     if (modeParam && location.pathname === "/") {
-      const targetPath = modeParam === "regular" ? "/pvp" : `/${modeParam}`;
+      const targetPath =
+        modeParam === "regular"
+          ? "/pvp"
+          : modeParam === "pvp-season"
+          ? "/season"
+          : `/${modeParam}`;
       const newParams = new URLSearchParams(searchParams);
       newParams.delete("mode");
       const queryString = newParams.toString();
@@ -61,11 +68,19 @@ function MainApp() {
   }, [searchParams, location.pathname, navigate]);
 
   // Derived mode from path or search params (fallback)
-  const mode = useMemo(() => {
+  const mode = useMemo<DataMode>(() => {
     const path = location.pathname.toLowerCase().replace(/^\/+/, "");
     if (path === "pve" || path === "compare" || path === "changes") return path;
+    if (path === "season") return "pvp-season";
     if (path === "pvp") return "regular";
-    return searchParams.get("mode") ?? "regular";
+    const legacyMode = searchParams.get("mode")?.toLowerCase();
+    if (legacyMode === "pve" || legacyMode === "compare" || legacyMode === "changes") {
+      return legacyMode;
+    }
+    if (legacyMode === "season" || legacyMode === "pvp-season") {
+      return "pvp-season";
+    }
+    return "regular";
   }, [searchParams, location.pathname]);
 
   const mapFilter = searchParams.get("map") ?? "";
@@ -93,10 +108,7 @@ function MainApp() {
   const hasChangesRef = useRef(false);
 
   const loadData = useCallback(
-    async (
-      gameMode: "regular" | "pve" | "both" = "both",
-      options?: { forceRefresh?: boolean }
-    ) => {
+    async (options?: { forceRefresh?: boolean }) => {
       if (fatalError) return; // 🚫 prevent retry loop
 
       // Only show full loading state on initial load (no data yet)
@@ -108,16 +120,16 @@ function MainApp() {
       }
 
       try {
-        const { regular, pve, catalogs: fetchedCatalogs } = await fetchAllSpawnData({
-          forceRefresh: options?.forceRefresh,
-        });
+        const {
+          regular,
+          pve,
+          "pvp-season": season,
+          catalogs: fetchedCatalogs,
+        } = await fetchAllSpawnData({ forceRefresh: options?.forceRefresh });
 
-        if (gameMode === "regular" || gameMode === "both") {
-          setRegularData(regular);
-        }
-        if (gameMode === "pve" || gameMode === "both") {
-          setPveData(pve);
-        }
+        setRegularData(regular);
+        setPveData(pve);
+        setSeasonData(season);
         setCatalogs(fetchedCatalogs);
         hasDataRef.current = true; // Mark that we have data now
       } catch (error) {
@@ -133,12 +145,12 @@ function MainApp() {
 
   // Initial data load - fetch fresh data immediately
   useEffect(() => {
-    loadData("both");
+    loadData();
 
     // Set up interval to refresh data every 5 minutes
     const intervalId = setInterval(() => {
       if (!loading) {
-        loadData("both");
+        loadData();
       }
     }, 5 * 60 * 1000);
 
@@ -178,7 +190,7 @@ function MainApp() {
       // console.log("Active bosses details:", activeBossesDetails);
     }
     processData();
-  }, [regularData, pveData, mode]);
+  }, [regularData, pveData, seasonData, mode]);
 
   // Check cache and refresh data when needed
   useEffect(() => {
@@ -187,7 +199,7 @@ function MainApp() {
 
       const combinedCache = localStorage.getItem("maps_combined");
       if (!combinedCache) {
-        loadData("both");
+        loadData();
         return;
       }
 
@@ -196,11 +208,11 @@ function MainApp() {
         const now = Date.now();
 
         if (now - timestamp >= CACHE_EXPIRY_TIME) {
-          loadData("both");
+          loadData();
         }
       } catch (error) {
         console.error("Error checking cache:", error);
-        loadData("both");
+        loadData();
       }
     };
 
@@ -242,7 +254,8 @@ function MainApp() {
     const titles: Record<string, string> = {
       regular: "PVP Boss Spawns - Tarkov Real-Time Tracking",
       pve: "PVE Boss Spawns - Tarkov Real-Time Tracking",
-      compare: "Compare Boss Spawns - PVP vs PVE | EFT",
+      "pvp-season": "Season Boss Spawns - Tarkov Real-Time Tracking",
+      compare: "Compare Boss Spawns - PVP vs PVE vs Season | EFT",
       changes: "Recent Spawn Changes - Tarkov Boss Tracking",
     };
 
@@ -250,8 +263,10 @@ function MainApp() {
       regular:
         "Track real-time boss spawn chances in Escape from Tarkov PVP raids. Live updates for all bosses and maps.",
       pve: "Track real-time boss spawn chances in Escape from Tarkov PVE raids. Perfect for co-op and solo planning.",
+      "pvp-season":
+        "Track real-time boss spawn chances in Escape from Tarkov Season raids across every map.",
       compare:
-        "Compare the differences in boss spawn rates between Escape from Tarkov PVP and PVE game modes.",
+        "Compare boss spawn rates across Escape from Tarkov PVP, PVE, and Season game modes.",
       changes:
         "View the most recent changes to boss spawn chances in Escape from Tarkov. Stay updated on the latest rate adjustments.",
     };
@@ -333,7 +348,12 @@ function MainApp() {
       return;
     }
 
-    const data = mode === "regular" ? regularData : pveData;
+    const data =
+      mode === "regular"
+        ? regularData
+        : mode === "pvp-season"
+        ? seasonData
+        : pveData;
     if (!data) return;
 
     const csvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
@@ -367,7 +387,9 @@ function MainApp() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `tarkov_spawns_${mode === "regular" ? "pvp" : mode}_${
+    const exportMode =
+      mode === "regular" ? "pvp" : mode === "pvp-season" ? "season" : mode;
+    link.download = `tarkov_spawns_${exportMode}_${
       new Date().toISOString().split("T")[0]
     }.csv`;
     document.body.appendChild(link);
@@ -500,7 +522,7 @@ function MainApp() {
                 EFT Boss Spawns provides real-time tracking of boss spawn
                 chances in Escape from Tarkov. Our tool helps players plan their
                 raids by showing current spawn rates for all bosses across every
-                map in both PVP and PVE modes.
+                map across PVP, PVE, and Season modes.
               </p>
               <p className="text-gray-300">
                 Data is sourced from the Tarkov.dev API and updated every 5
@@ -571,7 +593,7 @@ function MainApp() {
     <div
       className="min-h-screen bg-transparent text-foreground flex flex-col"
       data-content-loaded={
-        !loading && (regularData || pveData) ? "true" : "false"
+        !loading && (regularData || pveData || seasonData) ? "true" : "false"
       }
     >
       <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-5 flex flex-col gap-4 pb-10">
@@ -584,7 +606,11 @@ function MainApp() {
           {mode === "changes" ? (
             <ChangesWorkspace
               changes={changes}
-              filterData={[...(regularData || []), ...(pveData || [])]}
+              filterData={[
+                ...(regularData || []),
+                ...(pveData || []),
+                ...(seasonData || []),
+              ]}
               mapFilter={mapFilter}
               bossFilter={bossFilter}
               searchQuery={searchQuery}
@@ -632,7 +658,19 @@ function MainApp() {
             />
           ) : (
           <DataWorkspace
-            filterData={mode === "compare" ? [...(regularData || []), ...(pveData || [])] : mode === "regular" ? regularData : pveData}
+            filterData={
+              mode === "compare"
+                ? [
+                    ...(regularData || []),
+                    ...(pveData || []),
+                    ...(seasonData || []),
+                  ]
+                : mode === "regular"
+                ? regularData
+                : mode === "pve"
+                ? pveData
+                : seasonData
+            }
             mapFilter={mapFilter}
             bossFilter={bossFilter}
             searchQuery={searchQuery}
@@ -640,7 +678,7 @@ function MainApp() {
             onBossFilterChange={setBossFilter}
             onSearchQueryChange={setSearchQuery}
             onExport={handleExport}
-            onRefresh={() => loadData("both", { forceRefresh: true })}
+            onRefresh={() => loadData({ forceRefresh: true })}
             isRefreshing={isRefreshing}
             disabled={loading}
             autoRefreshEnabled={autoRefreshEnabled}
@@ -708,10 +746,16 @@ function MainApp() {
             <ModernTable
               data={
                 mode === "compare"
-                  ? { regular: regularData || [], pve: pveData || [] }
+                  ? {
+                      regular: regularData || [],
+                      pve: pveData || [],
+                      "pvp-season": seasonData || [],
+                    }
                   : mode === "regular"
                   ? regularData
-                  : pveData
+                  : mode === "pve"
+                  ? pveData
+                  : seasonData
               }
               mode={mode as DataMode}
               catalog={
@@ -719,6 +763,8 @@ function MainApp() {
                   ? catalogs.regular
                   : mode === "pve"
                   ? catalogs.pve
+                  : mode === "pvp-season"
+                  ? catalogs["pvp-season"]
                   : undefined
               }
               filters={{
@@ -788,6 +834,7 @@ function App() {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/pvp" element={<MainApp />} />
             <Route path="/pve" element={<MainApp />} />
+            <Route path="/season" element={<MainApp />} />
             <Route path="/compare" element={<MainApp />} />
             <Route path="/changes" element={<MainApp />} />
             <Route path="/" element={<MainApp />} />

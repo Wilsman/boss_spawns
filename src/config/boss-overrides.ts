@@ -7,7 +7,7 @@ export interface BossOverride {
   bossName: string;
   spawnChance: number; // 0 to 1 (e.g., 0.3 for 30%)
   spawnLocations?: SpawnLocation[];
-  gameMode?: "regular" | "pve" | "both"; // Default to "both" if undefined
+  gameMode?: "regular" | "pve" | "pvp-season" | "both"; // "both" means regular PvP and PvE
 }
 
 // Reshala	Customs	Dorms (3-story), New Gas Station, Stronghold (Fortress)

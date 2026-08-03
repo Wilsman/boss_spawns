@@ -22,7 +22,7 @@ import type {
   ChangeGroupBy,
 } from "@/components/ChangesTable";
 import { cn } from "@/lib/utils";
-import { Crosshair, History, Scale, Swords } from "lucide-react";
+import { CalendarDays, Crosshair, History, Scale, Swords } from "lucide-react";
 
 interface ChangesWorkspaceProps {
   renderContent: (filters: ChangeFilters) => ReactNode;
@@ -161,6 +161,7 @@ export function ChangesWorkspace({
               items={[
                 { name: "PVP", url: "/pvp", icon: Swords },
                 { name: "PVE", url: "/pve", icon: Crosshair },
+                { name: "Season", url: "/season", icon: CalendarDays },
                 { name: "Compare", url: "/compare", icon: Scale },
                 { name: "Changes", url: "/changes", icon: History, badgeCount: unreadCount },
               ]}
@@ -216,7 +217,7 @@ export function ChangesWorkspace({
 
           {advancedOpen && <div className="grid gap-2 border-t border-white/[0.07] pt-3 md:grid-cols-4">
             <select value={changeFilters.dateRange} onChange={(event) => updateChangeFilter("dateRange", event.target.value as ChangeDateRange)} aria-label="Date range" className={filterSelectClass}><option value="all">All Time ({dateCounts.all})</option><option value="24h">Last 24 Hours ({dateCounts.last24h})</option><option value="7d">Last 7 Days ({dateCounts.last7d})</option><option value="30d">Last 30 Days ({dateCounts.last30d})</option></select>
-            <select value={changeFilters.modeFilter} onChange={(event) => updateChangeFilter("modeFilter", event.target.value)} aria-label="Game mode" className={filterSelectClass}><option value="">All Modes</option><option value="PvP">PvP</option><option value="PvE">PvE</option></select>
+            <select value={changeFilters.modeFilter} onChange={(event) => updateChangeFilter("modeFilter", event.target.value)} aria-label="Game mode" className={filterSelectClass}><option value="">All Modes</option><option value="PvP">PvP</option><option value="PvE">PvE</option><option value="Season">Season</option></select>
             <select value={changeFilters.changeTypeFilter} onChange={(event) => updateChangeFilter("changeTypeFilter", event.target.value)} aria-label="Change type" className={filterSelectClass}><option value="">All Change Types</option>{changeTypes.map((type) => <option key={type} value={type}>{type}</option>)}</select>
             <select value={changeFilters.groupBy} onChange={(event) => updateChangeFilter("groupBy", event.target.value as ChangeGroupBy)} aria-label="Grouping" className={filterSelectClass}><option value="none">No Grouping</option><option value="day">Group by Day</option><option value="week">Group by Week</option></select>
           </div>}

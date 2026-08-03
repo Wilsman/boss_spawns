@@ -71,9 +71,11 @@ describe("spawn data cache synchronization", () => {
   test("force refresh does not reuse a stale browser HTTP response", async () => {
     let upstreamChance = 0.75;
     const browserHttpCache = new Map<string, string>();
+    const requestedUrls = new Set<string>();
 
     globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
+      requestedUrls.add(url);
       const bypassesHttpCache = init?.cache === "no-store";
 
       let body = bypassesHttpCache ? undefined : browserHttpCache.get(url);
@@ -90,10 +92,42 @@ describe("spawn data cache synchronization", () => {
 
     const firstLoad = await fetchAllSpawnData({ forceRefresh: true });
     expect(firstLoad.regular[0].bosses[0].spawnChance).toBe(0.75);
+    expect(firstLoad["pvp-season"][0].bosses[0].spawnChance).toBe(0.75);
+    expect(requestedUrls).toEqual(new Set([
+      "https://json.tarkov.dev/regular/maps",
+      "https://json.tarkov.dev/pve/maps",
+      "https://json.tarkov.dev/pvp-season/maps",
+    ]));
 
     upstreamChance = 1;
 
     const refreshed = await fetchAllSpawnData({ forceRefresh: true });
     expect(refreshed.regular[0].bosses[0].spawnChance).toBe(1);
+  });
+
+  test("a two-mode cache is incomplete after Season support is enabled", async () => {
+    localStorage.setItem("cache_version", "14");
+    localStorage.setItem("maps_combined", JSON.stringify({
+      data: {
+        regular: [],
+        pve: [],
+        catalogs: { regular: {}, pve: {} },
+      },
+      timestamp: Date.now(),
+    }));
+    const requestedUrls: string[] = [];
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      requestedUrls.push(input.toString());
+      return Response.json(mapsPayload(0.4));
+    }) as typeof fetch;
+
+    const data = await fetchAllSpawnData();
+
+    expect(requestedUrls.sort()).toEqual([
+      "https://json.tarkov.dev/pve/maps",
+      "https://json.tarkov.dev/pvp-season/maps",
+      "https://json.tarkov.dev/regular/maps",
+    ]);
+    expect(data["pvp-season"][0].bosses[0].spawnChance).toBe(0.4);
   });
 });

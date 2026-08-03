@@ -7,6 +7,9 @@
 /pve
   Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate
 
+/season
+  Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate
+
 /compare
   Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate
 

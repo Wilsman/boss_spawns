@@ -71,4 +71,42 @@ describe("boss item details", () => {
       },
     });
   });
+
+  test("loads translated item details from the Season endpoints", async () => {
+    const requestedUrls: string[] = [];
+    globalThis.fetch = async (input) => {
+      const url = input.toString();
+      requestedUrls.push(url);
+
+      if (url === "https://json.tarkov.dev/pvp-season/items") {
+        return Response.json({
+          data: {
+            items: {
+              "season-item": {
+                id: "season-item",
+                name: "season-item Name",
+                types: ["loot"],
+              },
+            },
+          },
+        });
+      }
+
+      if (url === "https://json.tarkov.dev/pvp-season/items_en") {
+        return Response.json({
+          data: { "season-item Name": "Season API item" },
+        });
+      }
+
+      return new Response(null, { status: 503 });
+    };
+
+    const items = await resolveItems(["season-item"], "pvp-season");
+
+    expect(requestedUrls).toEqual([
+      "https://json.tarkov.dev/pvp-season/items",
+      "https://json.tarkov.dev/pvp-season/items_en",
+    ]);
+    expect(items["season-item"].name).toBe("Season API item");
+  });
 });

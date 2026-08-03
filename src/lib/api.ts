@@ -23,7 +23,7 @@ import {
 
 export type { SpawnData };
 
-const CACHE_VERSION = 13;
+const CACHE_VERSION = 14;
 const CHANGES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for changes data (can be adjusted independently)
 const CHANGES_CACHE_VERSION = 1;
 const CHANGES_FAILURE_RETRY_DELAY = 60 * 60 * 1000;
@@ -32,6 +32,23 @@ const DEFAULT_CHANGES_API_BASE_URL = "https://bossdata.cultistcircle.workers.dev
 const CHANGES_API_PATH = "/api/changes";
 const CHANGES_API_LIMIT = 1000;
 const TARKOV_JSON_API_BASE_URL = "https://json.tarkov.dev";
+
+export type ChangeGameModeLabel = "PvP" | "PvE" | "Season";
+
+export function getChangeGameModeLabel(
+  gameMode: unknown
+): ChangeGameModeLabel | null {
+  switch (gameMode) {
+    case "regular":
+      return "PvP";
+    case "pve":
+      return "PvE";
+    case "pvp-season":
+      return "Season";
+    default:
+      return null;
+  }
+}
 
 interface TarkovJsonResponse {
   data?: {
@@ -566,10 +583,18 @@ function getExpiredCachedData(
   try {
     const { data } = JSON.parse(cached);
 
-    if (data?.regular && data?.pve && data?.catalogs?.regular && data?.catalogs?.pve) {
+    if (
+      data?.regular &&
+      data?.pve &&
+      data?.["pvp-season"] &&
+      data?.catalogs?.regular &&
+      data?.catalogs?.pve &&
+      data?.catalogs?.["pvp-season"]
+    ) {
       return {
         regular: applyLocalData(data.regular, "regular"),
         pve: applyLocalData(data.pve, "pve"),
+        "pvp-season": applyLocalData(data["pvp-season"], "pvp-season"),
         catalogs: data.catalogs,
       };
     }
@@ -584,6 +609,7 @@ function clearLegacySpawnCacheSnapshots(): void {
   [
     "maps_regular_previous",
     "maps_pve_previous",
+    "maps_pvp-season_previous",
     "maps_combined_previous",
   ].forEach((key) => {
     try {
@@ -614,7 +640,7 @@ function writeSpawnCache(key: string, value: string): void {
 }
 
 // Helper function to merge spawn data with temporary boss data and apply overrides
-export function applyLocalData(currentData: SpawnData[], mode: "regular" | "pve"): SpawnData[] {
+export function applyLocalData(currentData: SpawnData[], mode: GameMode): SpawnData[] {
   let mergedData: SpawnData[] = currentData.map((m) => ({
     ...m,
     bosses: [...m.bosses],
@@ -641,7 +667,10 @@ export function applyLocalData(currentData: SpawnData[], mode: "regular" | "pve"
     BOSS_OVERRIDES.forEach((override) => {
       // Check if override applies to this game mode
       const overrideMode = override.gameMode || "both";
-      if (overrideMode !== "both" && overrideMode !== mode) {
+      const appliesToMode =
+        overrideMode === mode ||
+        (overrideMode === "both" && (mode === "regular" || mode === "pve"));
+      if (!appliesToMode) {
         return;
       }
 
@@ -702,8 +731,10 @@ export async function fetchAllSpawnData(options?: {
     [
       "maps_regular",
       "maps_pve",
+      "maps_pvp-season",
       "maps_regular_previous",
       "maps_pve_previous",
+      "maps_pvp-season_previous",
       "maps_combined",
     ].forEach((key) => {
       localStorage.removeItem(key);
@@ -725,13 +756,16 @@ export async function fetchAllSpawnData(options?: {
         if (
           data?.regular &&
           data?.pve &&
+          data?.["pvp-season"] &&
           data?.catalogs?.regular &&
           data?.catalogs?.pve &&
+          data?.catalogs?.["pvp-season"] &&
           cacheAge < FIVE_MINUTES
         ) {
           return {
             regular: applyLocalData(data.regular, "regular"),
             pve: applyLocalData(data.pve, "pve"),
+            "pvp-season": applyLocalData(data["pvp-season"], "pvp-season"),
             catalogs: data.catalogs,
           };
         }
@@ -747,11 +781,13 @@ export async function fetchAllSpawnData(options?: {
 
   let regularResult: Awaited<ReturnType<typeof fetchJsonMaps>>;
   let pveResult: Awaited<ReturnType<typeof fetchJsonMaps>>;
+  let seasonResult: Awaited<ReturnType<typeof fetchJsonMaps>>;
 
   try {
-    [regularResult, pveResult] = await Promise.all([
+    [regularResult, pveResult, seasonResult] = await Promise.all([
       fetchJsonMaps("regular"),
       fetchJsonMaps("pve"),
+      fetchJsonMaps("pvp-season"),
     ]);
   } catch (error) {
     console.error("API fetch failed:", error);
@@ -770,9 +806,11 @@ export async function fetchAllSpawnData(options?: {
   const cacheData: SpawnApiData = {
     regular: regularResult.maps,
     pve: pveResult.maps,
+    "pvp-season": seasonResult.maps,
     catalogs: {
       regular: regularResult.catalog,
       pve: pveResult.catalog,
+      "pvp-season": seasonResult.catalog,
     },
   };
 
@@ -780,6 +818,7 @@ export async function fetchAllSpawnData(options?: {
     ...cacheData,
     regular: applyLocalData(cacheData.regular, "regular"),
     pve: applyLocalData(cacheData.pve, "pve"),
+    "pvp-season": applyLocalData(cacheData["pvp-season"], "pvp-season"),
   };
 
   // Update cache with transformed data. Persistence is best-effort; fresh data
@@ -963,7 +1002,7 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
       old_value: string;
       new_value: string;
       timestamp: number;
-      game_mode?: string;
+      game_mode: string;
     } => {
       if (!change || typeof change !== "object") {
         return false;
@@ -982,7 +1021,8 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
         typeof candidate.new_value === "string" &&
         candidate.new_value.length > 0 &&
         typeof candidate.timestamp === "number" &&
-        Number.isFinite(candidate.timestamp)
+        Number.isFinite(candidate.timestamp) &&
+        getChangeGameModeLabel(candidate.game_mode) !== null
       );
     };
 
@@ -1000,7 +1040,7 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
         oldValue: change.old_value,
         newValue: change.new_value,
         timestamp: change.timestamp,
-        gameMode: change.game_mode === "regular" ? "PvP" : "PvE",
+        gameMode: getChangeGameModeLabel(change.game_mode) as ChangeGameModeLabel,
       }))
       .sort((a, b) => b.timestamp - a.timestamp); // Sort by newest first
 

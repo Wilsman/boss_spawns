@@ -5,13 +5,14 @@ import { SpawnData, Boss, DataMode, Health, Escort, GameMode, MobCatalog } from 
 import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
 import { mergeSpawnLocations } from "@/lib/spawn-location-utils";
 import { BossDetailsPanel } from "@/components/BossDetailsPanel";
+import { buildBossComparisons } from "@/lib/compare";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
-type CompareData = { regular: SpawnData[]; pve: SpawnData[] };
+type CompareData = Record<GameMode, SpawnData[]>;
 type NormalizedData = SpawnData[] | CompareData;
 
 interface DataTableProps {
@@ -42,9 +43,9 @@ interface Location {
   name: string;
   chance: number;
   spawnKey?: string | null;
-  regularChance?: number;
-  pveChance?: number;
-  hasDifference?: boolean;
+  regularChance?: number | null;
+  pveChance?: number | null;
+  seasonChance?: number | null;
 }
 interface BossEntry {
   map: string;
@@ -55,6 +56,14 @@ interface BossEntry {
   imagePortraitLink: string | null;
   escorts: Escort[] | null;
   encounters: Boss[];
+}
+
+function getComparisonRate(entry: BossEntry, mode: GameMode): number | null {
+  const location = entry.locations[0];
+  if (!location) return null;
+  if (mode === "regular") return location.regularChance ?? null;
+  if (mode === "pve") return location.pveChance ?? null;
+  return location.seasonChance ?? null;
 }
 
 const HOVER_CARD_CLASS =
@@ -93,7 +102,7 @@ function mergeEscorts(escorts: Escort[]): Escort[] {
 export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const isCompare = mode === "compare";
-  const urlSort = searchParams.get("sort") || (isCompare ? "delta" : "spawn");
+  const urlSort = searchParams.get("sort") || (isCompare ? "pvp" : "spawn");
   const urlDir = (searchParams.get("dir") as "asc" | "desc") || "desc";
   const [sortKey, setSortKey] = useState<string>(urlSort);
   const [sortDir, setSortDir] = useState<"asc" | "desc">(urlDir);
@@ -145,7 +154,10 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
 
   const normalizedData = useMemo<NormalizedData | null>(() => {
     if (!data) return null;
-    if (mode === "compare" && (!("regular" in data) || !("pve" in data)))
+    if (
+      mode === "compare" &&
+      (!("regular" in data) || !("pve" in data) || !("pvp-season" in data))
+    )
       return null;
     return data;
   }, [data, mode]);
@@ -160,51 +172,24 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
 
     if (mode === "compare") {
       const compareData = normalizedData as CompareData;
-      const regularData = Array.isArray(compareData.regular)
-        ? compareData.regular
-        : [];
-      const pveData = Array.isArray(compareData.pve) ? compareData.pve : [];
-      const unique = new Map<string, BossEntry>();
-
-      regularData.forEach((rMap: SpawnData) => {
-        const pMap = pveData.find((m) => m.name === rMap.name);
-        if (!pMap) return;
-        rMap.bosses.forEach((rBoss: Boss) => {
-          const pBoss = pMap.bosses.find(
-            (b) => b.boss.name === rBoss.boss.name
-          );
-          if (!pBoss) return;
-          const r = rBoss.spawnChance;
-          const p = pBoss.spawnChance;
-          if (r !== p) {
-            const bossName = getCanonicalBossName(
-              rBoss.boss.name,
-              rBoss.spawnChance
-            );
-            const key = `${rMap.name}-${bossName}`;
-            unique.set(key, {
-              map: rMap.name,
-              boss: bossName,
-              spawnChance: 0,
-              locations: [
-                {
-                  name: rMap.name,
-                  chance: 0,
-                  regularChance: r,
-                  pveChance: p,
-                  hasDifference: true,
-                },
-              ],
-              health: rBoss.boss.health || null,
-              imagePortraitLink: rBoss.boss.imagePortraitLink || null,
-              escorts: rBoss.escorts || null,
-              encounters: [],
-            });
-          }
-        });
-      });
-
-      processedData = Array.from(unique.values()).filter((entry) => {
+      processedData = buildBossComparisons(compareData).map((row) => ({
+        map: row.map,
+        boss: row.boss,
+        spawnChance: 0,
+        locations: [
+          {
+            name: row.map,
+            chance: 0,
+            regularChance: row.rates.regular,
+            pveChance: row.rates.pve,
+            seasonChance: row.rates["pvp-season"],
+          },
+        ],
+        health: row.representative.boss.health || null,
+        imagePortraitLink: row.representative.boss.imagePortraitLink || null,
+        escorts: row.representative.escorts || null,
+        encounters: [row.representative],
+      })).filter((entry) => {
         if (
           filters.map &&
           entry.map.toLowerCase() !== filters.map.toLowerCase()
@@ -303,7 +288,7 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
     return (
       <div className="text-center text-gray-500 py-8">
         {mode === "compare"
-          ? "No differences found between PVP and PVE modes."
+          ? "No differences found between PVP, PVE, and Season modes."
           : `No results found for "${filters.search}".`}
       </div>
     );
@@ -350,7 +335,7 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
             {!isCollapsed && (
               <div className="p-3 sm:p-4">
                 <div className="hidden sm:grid grid-cols-12 rounded-md border border-white/[0.045] bg-[#0d0d0e] px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-                  <div className="col-span-5">
+                  <div className={mode === "compare" ? "col-span-3" : "col-span-5"}>
                     <SortLabel label="Boss" columnKey="boss" align="left" />
                   </div>
                   {mode === "compare" ? (
@@ -361,8 +346,8 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                       <div className="col-span-3 text-center text-green-300">
                         <SortLabel label="PvE" columnKey="pve" />
                       </div>
-                      <div className="col-span-1 text-center">
-                        <SortLabel label="Delta" columnKey="delta" />
+                      <div className="col-span-3 text-center text-violet-300">
+                        <SortLabel label="Season" columnKey="season" />
                       </div>
                     </>
                   ) : (
@@ -385,43 +370,26 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                   {[...items]
                     .sort((a, b) => {
                       if (mode === "compare") {
-                        const aReg = Math.max(
-                          ...a.locations.map((l: any) => l.regularChance || 0)
-                        );
-                        const aPve = Math.max(
-                          ...a.locations.map((l: any) => l.pveChance || 0)
-                        );
-                        const bReg = Math.max(
-                          ...b.locations.map((l: any) => l.regularChance || 0)
-                        );
-                        const bPve = Math.max(
-                          ...b.locations.map((l: any) => l.pveChance || 0)
-                        );
-                        const aDelta = aPve - aReg;
-                        const bDelta = bPve - bReg;
-                        let va = 0,
-                          vb = 0;
-                        switch (sortKey) {
-                          case "pvp":
-                            va = aReg;
-                            vb = bReg;
-                            break;
-                          case "pve":
-                            va = aPve;
-                            vb = bPve;
-                            break;
-                          case "delta":
-                            va = aDelta;
-                            vb = bDelta;
-                            break;
-                          case "boss":
-                          default:
-                            return sortDir === "asc"
-                              ? a.boss.localeCompare(b.boss)
-                              : b.boss.localeCompare(a.boss);
+                        const sortMode: GameMode | null =
+                          sortKey === "pvp"
+                            ? "regular"
+                            : sortKey === "pve"
+                            ? "pve"
+                            : sortKey === "season"
+                            ? "pvp-season"
+                            : null;
+                        if (!sortMode) {
+                          return sortDir === "asc"
+                            ? a.boss.localeCompare(b.boss)
+                            : b.boss.localeCompare(a.boss);
                         }
-                        const d = va - vb;
-                        return sortDir === "asc" ? d : -d;
+                        const va = getComparisonRate(a, sortMode);
+                        const vb = getComparisonRate(b, sortMode);
+                        if (va === null && vb === null) return 0;
+                        if (va === null) return 1;
+                        if (vb === null) return -1;
+                        const difference = va - vb;
+                        return sortDir === "asc" ? difference : -difference;
                       }
                       let va: number | string = 0,
                         vb: number | string = 0;
@@ -449,66 +417,59 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                     })
                     .map((row) => {
                       if (mode === "compare") {
-                        const reg = Math.max(
-                          ...row.locations.map((l: any) => l.regularChance || 0)
-                        );
-                        const pve = Math.max(
-                          ...row.locations.map((l: any) => l.pveChance || 0)
-                        );
-                        const delta = pve - reg;
-                        const deltaPct = (delta * 100).toFixed(0);
-                        const deltaColor =
-                          delta > 0
-                            ? "text-green-300"
-                            : delta < 0
-                            ? "text-red-300"
-                            : "text-gray-300";
+                        const rateCells = [
+                          {
+                            key: "pvp",
+                            value: getComparisonRate(row, "regular"),
+                            track: "bg-red-900/20",
+                            fill: "bg-red-500/40",
+                            text: "text-red-300",
+                          },
+                          {
+                            key: "pve",
+                            value: getComparisonRate(row, "pve"),
+                            track: "bg-green-900/20",
+                            fill: "bg-green-500/40",
+                            text: "text-green-300",
+                          },
+                          {
+                            key: "season",
+                            value: getComparisonRate(row, "pvp-season"),
+                            track: "bg-violet-900/20",
+                            fill: "bg-violet-500/40",
+                            text: "text-violet-300",
+                          },
+                        ];
                         return (
                           <div
                             key={row.boss}
                             className="grid grid-cols-12 gap-3 items-center px-3 py-3 hover:bg-gray-800/30 rounded-md"
                           >
-                            <div className="col-span-12 sm:col-span-5">
+                            <div className="col-span-12 sm:col-span-3">
                               <BossCell boss={row} />
                             </div>
-                            <div className="col-span-6 sm:col-span-3">
-                              <div className="relative h-5 rounded bg-red-900/20">
-                                <div
-                                  className="absolute left-0 top-0 h-full bg-red-500/40"
-                                  style={{
-                                    width: `${Math.max(
-                                      0,
-                                      Math.min(100, reg * 100)
-                                    )}%`,
-                                  }}
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center text-red-300 text-sm font-medium">
-                                  {(reg * 100).toFixed(0)}%
+                            {rateCells.map((cell) => (
+                              <div key={cell.key} className="col-span-4 sm:col-span-3">
+                                <div className={`relative h-5 rounded ${cell.track}`}>
+                                  {cell.value !== null && (
+                                    <div
+                                      className={`absolute left-0 top-0 h-full ${cell.fill}`}
+                                      style={{
+                                        width: `${Math.max(
+                                          0,
+                                          Math.min(100, cell.value * 100)
+                                        )}%`,
+                                      }}
+                                    />
+                                  )}
+                                  <div className={`absolute inset-0 flex items-center justify-center text-sm font-medium ${cell.text}`}>
+                                    {cell.value === null
+                                      ? "—"
+                                      : `${(cell.value * 100).toFixed(0)}%`}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="col-span-6 sm:col-span-3">
-                              <div className="relative h-5 rounded bg-green-900/20">
-                                <div
-                                  className="absolute left-0 top-0 h-full bg-green-500/40"
-                                  style={{
-                                    width: `${Math.max(
-                                      0,
-                                      Math.min(100, pve * 100)
-                                    )}%`,
-                                  }}
-                                />
-                                <div className="absolute inset-0 flex items-center justify-center text-green-300 text-sm font-medium">
-                                  {(pve * 100).toFixed(0)}%
-                                </div>
-                              </div>
-                            </div>
-                            <div className="col-span-12 sm:col-span-1 text-center font-semibold">
-                              <span className={deltaColor}>
-                                {delta > 0 ? "+" : delta < 0 ? "-" : "0"}{" "}
-                                {deltaPct}%
-                              </span>
-                            </div>
+                            ))}
                           </div>
                         );
                       }

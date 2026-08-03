@@ -1,11 +1,11 @@
 # 🎯 Tarkov Boss Spawn Tracker
 
-A real-time tracker for Escape from Tarkov boss spawn locations and probabilities, supporting both PvP and PvE modes.
+A real-time tracker for Escape from Tarkov boss spawn locations and probabilities across PvP, PvE, and Season modes.
 
 ## ✨ Features
 
 - **Live Spawn Data**: Real-time tracking of boss spawn locations and probabilities
-- **Dual Mode Support**: Toggle between PvP and PvE spawn data
+- **Three Mode Support**: Toggle between PvP, PvE, and Season spawn data
 - **Advanced Filtering**: Filter by map, boss name, or custom search terms
 - **Change Tracking**: Monitor and review historical changes in spawn patterns
 - **Data Export**: Export spawn data to CSV for further analysis

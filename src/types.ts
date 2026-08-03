@@ -1,4 +1,4 @@
-export type DataMode = "regular" | "pve" | "compare" | "changes";
+export type DataMode = "regular" | "pve" | "pvp-season" | "compare" | "changes";
 
 export interface SpawnLocation {
   name: string;
@@ -51,7 +51,7 @@ export interface MapAiType {
   imagePortraitLink?: string | null;
 }
 
-export type GameMode = "regular" | "pve";
+export type GameMode = "regular" | "pve" | "pvp-season";
 
 export interface MobEquipmentPoolItem {
   itemId: string;
@@ -91,6 +91,7 @@ export interface ResolvedItem {
 export interface SpawnApiData {
   regular: SpawnData[];
   pve: SpawnData[];
+  "pvp-season": SpawnData[];
   catalogs: Record<GameMode, MobCatalog>;
 }
 

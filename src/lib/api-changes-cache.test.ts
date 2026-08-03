@@ -252,6 +252,23 @@ describe("changes cache synchronization", () => {
     expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("0");
   });
 
+  test("maps Season changes explicitly and rejects unknown game modes", async () => {
+    globalThis.fetch = async () => successfulResponse([
+      { ...serverChange, game_mode: "pvp-season" },
+    ]);
+
+    const seasonChanges = await fetchChanges({ force: true });
+    expect(seasonChanges[0].gameMode).toBe("Season");
+
+    globalThis.localStorage = new MemoryStorage();
+    globalThis.fetch = async () => successfulResponse([
+      { ...serverChange, game_mode: "unknown" },
+    ]);
+
+    const unknownChanges = await fetchChanges({ force: true });
+    expect(unknownChanges).toEqual([]);
+  });
+
   test("a full-sync 404 clears only the changes cache", async () => {
     seedCache();
     localStorage.setItem(STORAGE_KEYS.notificationsEnabled, "true");

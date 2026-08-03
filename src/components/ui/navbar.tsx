@@ -23,28 +23,30 @@ export function NavBar({ items, className }: NavBarProps) {
   const modeParam = useMemo(() => {
     const path = location.pathname.toLowerCase().replace(/^\/+/, "");
     if (path === "pvp") return "regular";
+    if (path === "season") return "pvp-season";
     if (path === "pve" || path === "compare" || path === "changes") return path;
     return searchParams.get("mode")?.toLowerCase() || "regular";
   }, [location.pathname, searchParams]);
 
   return (
-    <div className={cn("flex justify-center w-full", className)}>
-      <div className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-[#080809] p-1">
+    <div className={cn("w-full overflow-x-auto pb-1", className)}>
+      <div className="flex w-max min-w-max items-center gap-1 rounded-lg border border-white/[0.08] bg-[#080809] p-1">
         {items.map((item) => {
           const Icon = item.icon;
           // Special case for PVP tab which uses 'regular' in the URL
-          const isActive =
-            item.name === "PVP"
-              ? modeParam === "regular"
-              : item.name.toLowerCase() === modeParam;
+          const itemMode =
+            item.url === "/pvp"
+              ? "regular"
+              : item.url === "/season"
+              ? "pvp-season"
+              : item.url.replace(/^\//, "");
+          const isActive = itemMode === modeParam;
 
           // Preserve existing filters when switching modes
           const nextParams = new URLSearchParams(searchParams);
           nextParams.delete("mode"); // Remove mode from query params
-          const targetMode =
-            item.name === "PVP" ? "pvp" : item.name.toLowerCase();
           const query = nextParams.toString();
-          const to = `/${targetMode}${query ? `?${query}` : ""}`;
+          const to = `${item.url}${query ? `?${query}` : ""}`;
 
           return (
             <Link

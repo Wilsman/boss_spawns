@@ -86,7 +86,11 @@ export function BossNotice({
         const cached = localStorage.getItem("maps_combined");
         if (cached) {
           const { data } = JSON.parse(cached);
-          const allMapsData = [...(data?.regular || []), ...(data?.pve || [])];
+          const allMapsData = [
+            ...(data?.regular || []),
+            ...(data?.pve || []),
+            ...(data?.["pvp-season"] || []),
+          ];
 
           // Attempt to update details with images and fetch map info
           details = details.map((bossDetail, index) => {
