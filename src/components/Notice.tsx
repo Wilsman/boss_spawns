@@ -35,25 +35,28 @@ export function Notice() {
           <h2 className="text-base font-semibold text-zinc-100">
             {manualNotice.title}
           </h2>
-          <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.045] px-2.5 py-1 text-xs font-medium text-gray-300">
-            <Sparkles className="h-3.5 w-3.5" />
-            {manualNotice.badgeLabel}
-          </span>
+          {manualNotice.events.length > 0 ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.045] px-2.5 py-1 text-xs font-medium text-gray-300">
+              <Sparkles className="h-3.5 w-3.5" />
+              {manualNotice.badgeLabel}
+            </span>
+          ) : null}
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-2">
-          {manualNotice.events.map((event) => {
+        {manualNotice.events.length > 0 ? (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {manualNotice.events.map((event) => {
             const changeDateLabel = event.changedAt
               ? changeDateFormatter.format(new Date(event.changedAt))
               : null;
             const titleId = `notice-${event.id}-title`;
 
-            return (
-              <article
-                key={event.id}
-                aria-labelledby={titleId}
-                className="flex h-full flex-col rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3"
-              >
+              return (
+                <article
+                  key={event.id}
+                  aria-labelledby={titleId}
+                  className="flex h-full flex-col rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3"
+                >
                 <div className="flex items-center gap-3 border-b border-white/[0.07] pb-3">
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/[0.1] bg-black text-blue-300">
                     {event.imageUrl ? (
@@ -120,10 +123,15 @@ export function Notice() {
                     {event.modes.join(", ")}
                   </dd>
                 </dl>
-              </article>
-            );
-          })}
-        </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="border-t border-white/[0.08] pt-4 text-center text-sm text-zinc-500">
+            No current events active.
+          </p>
+        )}
       </div>
     </section>
   );

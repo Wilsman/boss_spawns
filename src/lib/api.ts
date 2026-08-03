@@ -15,6 +15,7 @@ import { BOSS_OVERRIDES, ENABLE_OVERRIDES } from "@/config/boss-overrides";
 import {
   readChangeStorageNumber,
   readChangeStorageRaw,
+  removeChangeStorage,
   writeChangeStorage,
   writeChangeStorageNumber,
 } from "@/lib/change-storage";
@@ -23,8 +24,10 @@ import {
 export type { SpawnData };
 
 const CACHE_VERSION = 13;
-const CHANGES_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for changes data (can be adjusted independently)
+const CHANGES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for changes data (can be adjusted independently)
 const CHANGES_CACHE_VERSION = 1;
+const CHANGES_FAILURE_RETRY_DELAY = 60 * 60 * 1000;
+const CHANGES_QUOTA_RESET_GRACE = 5 * 60 * 1000;
 const DEFAULT_CHANGES_API_BASE_URL = "https://bossdata.cultistcircle.workers.dev";
 const CHANGES_API_PATH = "/api/changes";
 const CHANGES_API_LIMIT = 1000;
@@ -853,14 +856,44 @@ function mergeChanges(existingChanges: DataChange[], newChanges: DataChange[]): 
   return merged.sort((a, b) => b.timestamp - a.timestamp);
 }
 
+function getNextWorkersQuotaReset(now: number): number {
+  const current = new Date(now);
+  return (
+    Date.UTC(
+      current.getUTCFullYear(),
+      current.getUTCMonth(),
+      current.getUTCDate() + 1,
+    ) + CHANGES_QUOTA_RESET_GRACE
+  );
+}
+
+function pauseChangesRequestsUntil(timestamp: number): void {
+  writeChangeStorageNumber("retryAfter", timestamp);
+}
+
+async function isWorkersQuotaResponse(response: Response): Promise<boolean> {
+  if (response.status === 429) {
+    return true;
+  }
+
+  try {
+    const body = await response.clone().text();
+    return /\b1027\b|daily request limit/i.test(body);
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchChanges(options: { force?: boolean } = {}): Promise<DataChange[]> {
+  const now = Date.now();
+
   try {
     const { force = false } = options;
     const cachedChanges = getCachedChanges();
     const cacheVersion = readChangeStorageNumber("cacheVersion");
     const requiresFullSync = force || cacheVersion !== CHANGES_CACHE_VERSION;
     const timestamp = readChangeStorageNumber("cacheTimestamp");
-    const now = Date.now();
+    const retryAfter = readChangeStorageNumber("retryAfter");
 
     if (
       !requiresFullSync &&
@@ -870,6 +903,14 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
       return cachedChanges;
     }
 
+    if (retryAfter > now) {
+      return cachedChanges;
+    }
+
+    if (retryAfter) {
+      removeChangeStorage("retryAfter");
+    }
+
     const latestCachedTimestamp = requiresFullSync
       ? 0
       : getLatestChangeTimestamp(cachedChanges);
@@ -877,7 +918,6 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
       method: "GET",
       headers: {
         Accept: "application/json",
-        "Cache-Control": "no-cache",
       },
     });
 
@@ -894,26 +934,26 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
         return cachedChanges;
       }
 
-      console.error(
-        "Failed to fetch changes:",
-        response.status,
-        response.statusText
+      const quotaReached = await isWorkersQuotaResponse(response);
+      pauseChangesRequestsUntil(
+        quotaReached
+          ? getNextWorkersQuotaReset(now)
+          : now + CHANGES_FAILURE_RETRY_DELAY,
       );
-      // If fetch fails but we have cached data, return it even if expired
-      if (cachedChanges.length) {
-        return cachedChanges;
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
+      console.warn(
+        quotaReached
+          ? "Changes service quota reached; using cached data until the next reset."
+          : `Changes service unavailable (${response.status}); using cached data.`,
+      );
+      return cachedChanges;
     }
 
     const data = await response.json();
 
     if (!Array.isArray(data)) {
-      console.error("Invalid response format:", data);
-      if (cachedChanges.length) {
-        return cachedChanges;
-      }
-      return [];
+      pauseChangesRequestsUntil(now + CHANGES_FAILURE_RETRY_DELAY);
+      console.warn("Changes service returned an invalid response; using cached data.");
+      return cachedChanges;
     }
 
     const isValidChange = (change: unknown): change is {
@@ -947,7 +987,8 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
     };
 
     if (!data.every(isValidChange)) {
-      console.error("Invalid change record in response:", data);
+      pauseChangesRequestsUntil(now + CHANGES_FAILURE_RETRY_DELAY);
+      console.warn("Changes service returned an invalid change; using cached data.");
       return cachedChanges;
     }
 
@@ -970,15 +1011,13 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
     writeChangeStorage("cache", JSON.stringify(mergedChanges));
     writeChangeStorage("cacheTimestamp", now.toString());
     writeChangeStorageNumber("cacheVersion", CHANGES_CACHE_VERSION);
+    removeChangeStorage("retryAfter");
 
     return mergedChanges;
   } catch (error) {
-    console.error("Error fetching changes:", error);
-    // If there's an error and we have cached data, return it even if expired
+    pauseChangesRequestsUntil(now + CHANGES_FAILURE_RETRY_DELAY);
+    console.warn("Changes service unavailable; using cached data.", error);
     const cachedChanges = getCachedChanges();
-    if (cachedChanges.length) {
-      return cachedChanges;
-    }
-    throw error;
+    return cachedChanges;
   }
 }

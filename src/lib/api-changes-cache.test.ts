@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   cache: "boss_spawns.changes.cache",
   cacheTimestamp: "boss_spawns.changes.cache_timestamp",
   cacheVersion: "boss_spawns.changes.cache_version",
+  retryAfter: "boss_spawns.changes.retry_after",
   lastNotifiedCount:
     "boss_spawns.changes.notifications.last_notified.count",
   lastNotifiedLatestTs:
@@ -163,6 +164,22 @@ describe("changes cache synchronization", () => {
     expect(changes).toHaveLength(2);
   });
 
+  test("changes requests remain simple CORS requests without preflight-only headers", async () => {
+    seedCache({ version: 1 });
+    let requestedInit: RequestInit | undefined;
+    globalThis.fetch = async (_input, init) => {
+      requestedInit = init;
+      return successfulResponse();
+    };
+
+    await fetchChanges();
+
+    expect(requestedInit?.method).toBe("GET");
+    expect(requestedInit?.headers).toEqual({
+      Accept: "application/json",
+    });
+  });
+
   test("a failed upgrade keeps the stale cache and does not advance its version", async () => {
     seedCache();
     globalThis.fetch = async () => {
@@ -173,6 +190,54 @@ describe("changes cache synchronization", () => {
 
     expect(changes).toEqual([cachedChange]);
     expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBeNull();
+  });
+
+  test("a quota response keeps cached data and pauses requests until the next UTC reset", async () => {
+    seedCache({ version: 1 });
+    let requestCount = 0;
+    globalThis.fetch = async () => {
+      requestCount += 1;
+      return new Response("error code: 1027", { status: 500 });
+    };
+
+    const firstChanges = await fetchChanges();
+    const retryAfter = Number(localStorage.getItem(STORAGE_KEYS.retryAfter));
+    const secondChanges = await fetchChanges({ force: true });
+
+    expect(firstChanges).toEqual([cachedChange]);
+    expect(secondChanges).toEqual([cachedChange]);
+    expect(requestCount).toBe(1);
+    expect(retryAfter).toBeGreaterThan(Date.now());
+    expect(retryAfter - Date.now()).toBeLessThanOrEqual(24 * 60 * 60 * 1000 + 5 * 60 * 1000);
+  });
+
+  test("an unavailable changes service resolves to an empty list for a new visitor", async () => {
+    let requestCount = 0;
+    globalThis.fetch = async () => {
+      requestCount += 1;
+      throw new TypeError("Failed to fetch");
+    };
+
+    const firstChanges = await fetchChanges();
+    const secondChanges = await fetchChanges();
+
+    expect(firstChanges).toEqual([]);
+    expect(secondChanges).toEqual([]);
+    expect(requestCount).toBe(1);
+    expect(Number(localStorage.getItem(STORAGE_KEYS.retryAfter))).toBeGreaterThan(
+      Date.now(),
+    );
+  });
+
+  test("a successful retry clears an expired circuit breaker", async () => {
+    seedCache({ version: 1 });
+    localStorage.setItem(STORAGE_KEYS.retryAfter, (Date.now() - 1).toString());
+    globalThis.fetch = async () => successfulResponse();
+
+    const changes = await fetchChanges();
+
+    expect(changes).toHaveLength(2);
+    expect(localStorage.getItem(STORAGE_KEYS.retryAfter)).toBeNull();
   });
 
   test("a malformed upgrade response keeps the stale cache and version", async () => {

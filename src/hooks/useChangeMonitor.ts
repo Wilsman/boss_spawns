@@ -8,7 +8,7 @@ import {
   writeChangeStorageNumber,
 } from "@/lib/change-storage";
 
-const POLL_INTERVAL = 5 * 60 * 1000;
+const POLL_INTERVAL = 10 * 60 * 1000;
 
 const NOTIFICATIONS_SUPPORTED =
   typeof window !== "undefined" && "Notification" in window;
