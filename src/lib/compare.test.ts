@@ -60,4 +60,17 @@ describe("three-mode boss comparison", () => {
       "pvp-season": 0.5,
     });
   });
+
+  test("omits PvE-only BEAR and USEC rows", () => {
+    const rows = buildBossComparisons(comparisonData(
+      [],
+      modeData([
+        { map: "Customs", boss: "BEAR", chance: 0.5 },
+        { map: "Customs", boss: "USEC", chance: 0.5 },
+      ]),
+      []
+    ));
+
+    expect(rows).toEqual([]);
+  });
 });

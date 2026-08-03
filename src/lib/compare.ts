@@ -2,6 +2,7 @@ import type { Boss, GameMode, SpawnData } from "@/types";
 import { getCanonicalBossName } from "@/lib/boss-aliases";
 
 export const COMPARISON_MODES: GameMode[] = ["regular", "pve", "pvp-season"];
+const PVE_ONLY_BOSSES = new Set(["BEAR", "USEC"]);
 
 export interface BossComparison {
   map: string;
@@ -22,6 +23,7 @@ export function buildBossComparisons(
           encounter.boss.name,
           encounter.spawnChance
         );
+        if (PVE_ONLY_BOSSES.has(boss)) continue;
         const key = `${map.name}\u0000${boss}`;
         const existing = rows.get(key) ?? {
           map: map.name,
