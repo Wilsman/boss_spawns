@@ -116,6 +116,110 @@ describe("module recovery bootstrap", () => {
     );
   });
 
+  test("ignores failures from unrelated modules after the app has loaded", () => {
+    const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    const recoveryScript = html.match(
+      /<script id="module-recovery">([\s\S]*?)<\/script>/
+    )?.[1];
+    let moduleErrorListener:
+      | ((event: { target?: unknown }) => void)
+      | undefined;
+    const appendedScripts: unknown[] = [];
+    const replacedUrls: unknown[] = [];
+    let removed = false;
+    const windowObject: {
+      __recoverEftBossModule?: (script: {
+        remove: () => void;
+        src: string;
+      }) => void;
+      addEventListener: (
+        type: string,
+        listener: (event: { target?: unknown }) => void,
+        capture: boolean
+      ) => void;
+    } = {
+      addEventListener: (type, listener, capture) => {
+        if (type === "error" && capture) moduleErrorListener = listener;
+      },
+    };
+
+    new Function(
+      "window",
+      "document",
+      "location",
+      "history",
+      "sessionStorage",
+      "setTimeout",
+      recoveryScript!
+    )(
+      windowObject,
+      {
+        createElement: () => ({}),
+        head: { appendChild: (script: unknown) => appendedScripts.push(script) },
+      },
+      {
+        href: "https://eftboss.com/pve?map=Woods",
+        replace: (url: unknown) => replacedUrls.push(url),
+      },
+      { replaceState: () => undefined },
+      { getItem: () => null, setItem: () => undefined },
+      (callback: () => void) => {
+        callback();
+        return 0;
+      }
+    );
+
+    moduleErrorListener?.({
+      target: {
+        tagName: "SCRIPT",
+        type: "module",
+        remove: () => {
+          removed = true;
+        },
+        src: "https://eftboss.com/assets/vendor-stale.js",
+      },
+    });
+
+    expect(removed).toBe(false);
+    expect(appendedScripts).toHaveLength(0);
+    expect(replacedUrls).toHaveLength(0);
+  });
+
+  test("cleans an asset reload marker without navigating", () => {
+    const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
+    const recoveryScript = html.match(
+      /<script id="module-recovery">([\s\S]*?)<\/script>/
+    )?.[1];
+    const historyUrls: string[] = [];
+    const navigatedUrls: unknown[] = [];
+
+    new Function(
+      "window",
+      "document",
+      "location",
+      "history",
+      "sessionStorage",
+      "setTimeout",
+      recoveryScript!
+    )(
+      { addEventListener: () => undefined },
+      { createElement: () => ({}), head: { appendChild: () => undefined } },
+      {
+        href: "https://eftboss.com/pve?__asset_reload=123&map=Woods",
+        replace: (url: unknown) => navigatedUrls.push(url),
+      },
+      {
+        replaceState: (_state: unknown, _title: string, url: URL) =>
+          historyUrls.push(url.href),
+      },
+      { getItem: () => null, setItem: () => undefined },
+      () => 0
+    );
+
+    expect(historyUrls).toEqual(["https://eftboss.com/pve?map=Woods"]);
+    expect(navigatedUrls).toHaveLength(0);
+  });
+
   test("ignores errors from non-module resources", () => {
     const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
     const recoveryScript = html.match(

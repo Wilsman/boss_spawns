@@ -107,6 +107,22 @@
           location.replace(pageUrl);
         }
 
+        function isAppEntryModule(failedElement) {
+          try {
+            var failedUrl = new URL(failedElement.src, location.href);
+            var pageUrl = new URL(location.href);
+
+            if (failedUrl.origin !== pageUrl.origin) return false;
+
+            return (
+              failedUrl.pathname === "/src/main.tsx" ||
+              /^\/assets\/index-[A-Za-z0-9_-]+\.js$/.test(failedUrl.pathname)
+            );
+          } catch {
+            return false;
+          }
+        }
+
         function retryModule() {
           retryCount += 1;
 
@@ -135,6 +151,8 @@
           document.head.appendChild(replacement);
         }
 
+        cleanRecoveryUrl();
+
         window.__recoverEftBossModule = function (failedScript) {
           if (originalModuleUrl) return;
 
@@ -151,7 +169,8 @@
               failedElement &&
               failedElement.tagName === "SCRIPT" &&
               failedElement.type === "module" &&
-              failedElement.src
+              failedElement.src &&
+              isAppEntryModule(failedElement)
             ) {
               window.__recoverEftBossModule(failedElement);
             }
