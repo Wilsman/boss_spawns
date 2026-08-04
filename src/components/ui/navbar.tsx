@@ -25,7 +25,7 @@ export function NavBar({ items, className }: NavBarProps) {
     if (path === "pvp") return "regular";
     if (path === "season") return "pvp-season";
     if (path === "pve" || path === "compare" || path === "changes") return path;
-    return searchParams.get("mode")?.toLowerCase() || "regular";
+    return searchParams.get("mode")?.toLowerCase() || "pvp-season";
   }, [location.pathname, searchParams]);
 
   return (

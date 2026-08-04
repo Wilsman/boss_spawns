@@ -159,9 +159,9 @@ export function ChangesWorkspace({
           <div className="flex flex-col gap-3 border-b border-white/[0.07] pb-3 lg:flex-row lg:items-center lg:justify-between">
             <NavBar
               items={[
+                { name: "Season", url: "/season", icon: CalendarDays },
                 { name: "PVP", url: "/pvp", icon: Swords },
                 { name: "PVE", url: "/pve", icon: Crosshair },
-                { name: "Season", url: "/season", icon: CalendarDays },
                 { name: "Compare", url: "/compare", icon: Scale },
                 { name: "Changes", url: "/changes", icon: History, badgeCount: unreadCount },
               ]}

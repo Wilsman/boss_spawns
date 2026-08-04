@@ -92,7 +92,7 @@ export function DataWorkspace({
       <section className="rounded-xl border border-white/[0.09] bg-[#0a0a0b] p-3 sm:p-4">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-3 border-b border-white/[0.07] pb-3 lg:flex-row lg:items-center lg:justify-between">
-            <NavBar items={[{ name: "PVP", url: "/pvp", icon: Swords }, { name: "PVE", url: "/pve", icon: Crosshair }, { name: "Season", url: "/season", icon: CalendarDays }, { name: "Compare", url: "/compare", icon: Scale }, { name: "Changes", url: "/changes", icon: History, badgeCount: unreadCount }]} className="justify-start" />
+            <NavBar items={[{ name: "Season", url: "/season", icon: CalendarDays }, { name: "PVP", url: "/pvp", icon: Swords }, { name: "PVE", url: "/pve", icon: Crosshair }, { name: "Compare", url: "/compare", icon: Scale }, { name: "Changes", url: "/changes", icon: History, badgeCount: unreadCount }]} className="justify-start" />
             <div className="flex items-center justify-between gap-2 lg:justify-end">
               <CacheStatus onExpired={onRefresh} onManualRefresh={onRefresh} isRefreshing={isRefreshing} disabled={disabled} />
               <div ref={notificationRef} className="relative">

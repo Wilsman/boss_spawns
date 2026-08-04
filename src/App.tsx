@@ -80,7 +80,7 @@ function MainApp() {
     if (legacyMode === "season" || legacyMode === "pvp-season") {
       return "pvp-season";
     }
-    return "regular";
+    return "pvp-season";
   }, [searchParams, location.pathname]);
 
   const mapFilter = searchParams.get("map") ?? "";
