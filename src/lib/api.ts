@@ -8,6 +8,7 @@ import {
   SpawnApiData,
   SpawnData,
   SpawnLocation,
+  GoonReport,
 } from "@/types";
 import { DataChange } from "./diff";
 import tempBossDataFromFile from "./temp-bosses.json"; // Added import for temp bosses
@@ -54,6 +55,7 @@ interface TarkovJsonResponse {
   data?: {
     maps?: Record<string, TarkovJsonMap>;
     mobs?: Record<string, TarkovJsonMob>;
+    goonReports?: GoonReport[];
   };
 }
 
@@ -554,6 +556,7 @@ function normalizeMapsPayload(payload: TarkovJsonResponse): {
 async function fetchJsonMaps(mode: GameMode): Promise<{
   maps: SpawnData[];
   catalog: MobCatalog;
+  goonReports: GoonReport[];
 }> {
   const response = await fetch(`${TARKOV_JSON_API_BASE_URL}/${mode}/maps`, {
     cache: "no-store",
@@ -570,7 +573,7 @@ async function fetchJsonMaps(mode: GameMode): Promise<{
   }
 
   const result = (await response.json()) as TarkovJsonResponse;
-  return normalizeMapsPayload(result);
+  return { ...normalizeMapsPayload(result), goonReports: result.data?.goonReports ?? [] };
 }
 
 function getExpiredCachedData(
@@ -595,6 +598,7 @@ function getExpiredCachedData(
         regular: applyLocalData(data.regular, "regular"),
         pve: applyLocalData(data.pve, "pve"),
         "pvp-season": applyLocalData(data["pvp-season"], "pvp-season"),
+        goonReports: data.goonReports ?? { regular: [], pve: [], "pvp-season": [] },
         catalogs: data.catalogs,
       };
     }
@@ -766,6 +770,7 @@ export async function fetchAllSpawnData(options?: {
             regular: applyLocalData(data.regular, "regular"),
             pve: applyLocalData(data.pve, "pve"),
             "pvp-season": applyLocalData(data["pvp-season"], "pvp-season"),
+            goonReports: data.goonReports ?? { regular: [], pve: [], "pvp-season": [] },
             catalogs: data.catalogs,
           };
         }
@@ -807,6 +812,11 @@ export async function fetchAllSpawnData(options?: {
     regular: regularResult.maps,
     pve: pveResult.maps,
     "pvp-season": seasonResult.maps,
+    goonReports: {
+      regular: regularResult.goonReports,
+      pve: pveResult.goonReports,
+      "pvp-season": seasonResult.goonReports,
+    },
     catalogs: {
       regular: regularResult.catalog,
       pve: pveResult.catalog,

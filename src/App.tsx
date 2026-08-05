@@ -18,7 +18,7 @@ import { exportChanges, getStoredChanges } from "@/lib/changes";
 import { VersionLabel } from "@/components/VersionLabel";
 import { Toaster } from "@/components/ui/toaster";
 import { PatchToast } from "@/components/patch-toast";
-import type { DataMode, GameMode, MobCatalog } from "@/types";
+import type { DataMode, GameMode, MobCatalog, GoonReport } from "@/types";
 import { BossEventConfig } from "@/types/bossEvents";
 import bossEvents from "@/config/bossEvents";
 import { About, Privacy } from "@/pages";
@@ -33,6 +33,9 @@ function MainApp() {
   const [regularData, setRegularData] = useState<SpawnData[] | null>(null);
   const [pveData, setPveData] = useState<SpawnData[] | null>(null);
   const [seasonData, setSeasonData] = useState<SpawnData[] | null>(null);
+  const [goonReports, setGoonReports] = useState<Record<GameMode, GoonReport[]>>({
+    regular: [], pve: [], "pvp-season": [],
+  });
   const [catalogs, setCatalogs] = useState<Record<GameMode, MobCatalog>>({
     regular: {},
     pve: {},
@@ -125,12 +128,14 @@ function MainApp() {
           pve,
           "pvp-season": season,
           catalogs: fetchedCatalogs,
+          goonReports: fetchedGoonReports,
         } = await fetchAllSpawnData({ forceRefresh: options?.forceRefresh });
 
         setRegularData(regular);
         setPveData(pve);
         setSeasonData(season);
         setCatalogs(fetchedCatalogs);
+        setGoonReports(fetchedGoonReports);
         hasDataRef.current = true; // Mark that we have data now
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -600,6 +605,7 @@ function MainApp() {
         <Header
           primaryDisplayEvent={primaryDisplayEvent}
           allBossEvents={CURRENT_BOSS_CONFIGS}
+          goonReports={goonReports}
         />
 
         <div className="flex flex-col gap-4">

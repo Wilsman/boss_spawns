@@ -10,6 +10,8 @@ import { BossNotice } from "./BossNotice";
 import { Notice } from "./Notice";
 // import { MaintenanceNotice } from "./MaintenanceNotice";
 import type { BossEventConfig } from "@/types/bossEvents";
+import type { GoonReport, GameMode } from "@/types";
+import { GoonTracker } from "./GoonTracker";
 
 // Change this to "maintenance" when we need to swap out the boss notice for the maintenance message
 const NOTICE_VARIANT: "boss" | "maintenance" = "maintenance";
@@ -35,11 +37,13 @@ function getRandomBossImage(): string {
 interface HeaderProps {
   primaryDisplayEvent: BossEventConfig | null;
   allBossEvents?: BossEventConfig[];
+  goonReports?: Record<GameMode, GoonReport[]>;
 }
 
 export const Header = memo(function Header({
   primaryDisplayEvent,
   allBossEvents = [],
+  goonReports,
 }: HeaderProps) {
   // Memoize the random image so it doesn't change on every render
   const bossImage = useMemo(() => getRandomBossImage(), []);
@@ -167,6 +171,7 @@ export const Header = memo(function Header({
                 />
               )
             )}
+            <GoonTracker reports={goonReports} />
           </div>
 
           {/* Collapsible Update Message */}

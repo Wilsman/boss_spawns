@@ -92,7 +92,13 @@ export interface SpawnApiData {
   regular: SpawnData[];
   pve: SpawnData[];
   "pvp-season": SpawnData[];
+  goonReports: Record<GameMode, GoonReport[]>;
   catalogs: Record<GameMode, MobCatalog>;
+}
+
+export interface GoonReport {
+  map: string;
+  timestamp: string;
 }
 
 export interface SpawnData {
