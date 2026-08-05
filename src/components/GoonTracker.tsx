@@ -56,9 +56,9 @@ function ReportPopover({ reports }: { reports: GoonReport[] }) {
 export function GoonTracker({ reports }: { reports?: Record<GameMode, GoonReport[]> }) {
   const modes: GameMode[] = ["regular", "pve", "pvp-season"];
   return (
-    <section className="rounded-md border border-amber-300/15 bg-[#0b0b0c] px-3 py-2.5" aria-label="Goon reports">
+    <section className="rounded-md border border-amber-300/15 bg-[#0b0b0c] px-3 py-2.5" aria-label="Goons reports">
       <div className="flex items-center gap-2">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-300">Goon reports</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-300">Goons reports</h2>
         <span className="ml-auto text-[10px] text-zinc-600">live reports</span>
       </div>
       <div className="mt-2 grid grid-cols-3 gap-2">
