@@ -217,7 +217,7 @@ export function DataTable({ data, mode, filters }: DataTableProps) {
         if (
           !map.bosses ||
           (filters.map &&
-            !map.name.toLowerCase().includes(filters.map.toLowerCase()))
+            map.name.toLowerCase() !== filters.map.toLowerCase())
         ) {
           return [];
         }

@@ -68,11 +68,6 @@ export function GoonTracker({ reports }: { reports?: Record<GameMode, GoonReport
             <div key={mode} tabIndex={0} className="group relative min-w-0 cursor-help rounded border border-white/[0.07] bg-white/[0.025] px-2 py-1.5 outline-none transition-colors hover:border-amber-300/25 focus:border-amber-300/35">
               <div className="flex items-center gap-1.5 text-[10px] font-medium text-zinc-500">
                 <span>{modeLabel(mode)}</span>
-                {mode === "pvp-season" ? (
-                  <span className="rounded border border-amber-300/20 px-1 py-px text-[8px] uppercase tracking-wide text-amber-300/70">
-                    Soon
-                  </span>
-                ) : null}
               </div>
               {report ? (
                 <>
