@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { fetchChanges } from "./api";
+import { fetchChangeMonitorHealth, fetchChanges } from "./api";
 
 const STORAGE_KEYS = {
   autoRefreshEnabled:
@@ -280,5 +280,115 @@ describe("changes cache synchronization", () => {
     expect(localStorage.getItem(STORAGE_KEYS.cache)).toBe("[]");
     expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("1");
     expect(localStorage.getItem(STORAGE_KEYS.notificationsEnabled)).toBe("true");
+  });
+});
+
+const monitorHealthResponse = {
+  healthy: true,
+  now: 1787503354434,
+  staleAfterMs: 600000,
+  modes: [
+    {
+      gameMode: "regular",
+      stale: false,
+      lastAttemptAt: 1787503339462,
+      lastSuccessAt: 1787503339864,
+      lastError: null,
+      lastDurationMs: 402,
+      lastChangeCount: 0,
+      lastResult: "not-modified",
+    },
+    {
+      gameMode: "pve",
+      stale: false,
+      lastAttemptAt: 1787503219449,
+      lastSuccessAt: 1787503219844,
+      lastError: null,
+      lastDurationMs: 395,
+      lastChangeCount: 0,
+      lastResult: "not-modified",
+    },
+    {
+      gameMode: "pvp-season",
+      stale: false,
+      lastAttemptAt: 1787503279458,
+      lastSuccessAt: 1787503279860,
+      lastError: null,
+      lastDurationMs: 402,
+      lastChangeCount: 0,
+      lastResult: "not-modified",
+    },
+  ],
+};
+
+describe("change monitor health", () => {
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  test("requests fresh monitor health from the configured Worker", async () => {
+    let requestedUrl = "";
+    let requestedInit: RequestInit | undefined;
+    globalThis.fetch = async (input, init) => {
+      requestedUrl = input.toString();
+      requestedInit = init;
+      return new Response(JSON.stringify(monitorHealthResponse), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    };
+
+    const health = await fetchChangeMonitorHealth();
+
+    expect(requestedUrl).toBe(
+      "https://bossdata.cultistcircle.workers.dev/api/health"
+    );
+    expect(requestedInit?.cache).toBe("no-store");
+    expect(health.healthy).toBe(true);
+    expect(health.modes.map((mode) => mode.gameMode)).toEqual([
+      "regular",
+      "pve",
+      "pvp-season",
+    ]);
+  });
+
+  test("keeps a valid degraded response available to the status UI", async () => {
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          ...monitorHealthResponse,
+          healthy: false,
+          modes: monitorHealthResponse.modes.map((mode, index) =>
+            index === 0 ? { ...mode, stale: true } : mode
+          ),
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: 503,
+        }
+      );
+
+    const health = await fetchChangeMonitorHealth();
+
+    expect(health.healthy).toBe(false);
+    expect(health.modes[0].stale).toBe(true);
+  });
+
+  test("rejects incomplete mode health instead of reporting a false healthy state", async () => {
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          ...monitorHealthResponse,
+          modes: monitorHealthResponse.modes.slice(0, 2),
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+
+    await expect(fetchChangeMonitorHealth()).rejects.toThrow(
+      "Change monitor returned an invalid response"
+    );
   });
 });

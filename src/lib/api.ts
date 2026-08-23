@@ -31,10 +31,31 @@ const CHANGES_FAILURE_RETRY_DELAY = 60 * 60 * 1000;
 const CHANGES_QUOTA_RESET_GRACE = 5 * 60 * 1000;
 const DEFAULT_CHANGES_API_BASE_URL = "https://bossdata.cultistcircle.workers.dev";
 const CHANGES_API_PATH = "/api/changes";
+const CHANGES_HEALTH_API_PATH = "/api/health";
 const CHANGES_API_LIMIT = 1000;
 const TARKOV_JSON_API_BASE_URL = "https://json.tarkov.dev";
 
 export type ChangeGameModeLabel = "PvP" | "PvE" | "Season";
+
+export type ChangeMonitorGameMode = "regular" | "pve" | "pvp-season";
+
+export interface ChangeMonitorModeHealth {
+  gameMode: ChangeMonitorGameMode;
+  stale: boolean;
+  lastAttemptAt: number | null;
+  lastSuccessAt: number | null;
+  lastError: string | null;
+  lastDurationMs: number | null;
+  lastChangeCount: number;
+  lastResult: string | null;
+}
+
+export interface ChangeMonitorHealth {
+  healthy: boolean;
+  now: number;
+  staleAfterMs: number;
+  modes: ChangeMonitorModeHealth[];
+}
 
 export function getChangeGameModeLabel(
   gameMode: unknown
@@ -844,12 +865,18 @@ export async function fetchAllSpawnData(options?: {
   return finalData;
 }
 
-function buildChangesApiUrl(since?: number): string {
+function buildChangesApiEndpointUrl(path: string): URL {
   const url = CHANGES_API_BASE_URL.startsWith("/")
     ? new URL(CHANGES_API_BASE_URL, window.location.origin)
     : new URL(CHANGES_API_BASE_URL);
 
-  url.pathname = `${url.pathname.replace(/\/$/, "")}${CHANGES_API_PATH}`;
+  url.pathname = `${url.pathname.replace(/\/$/, "")}${path}`;
+
+  return url;
+}
+
+function buildChangesApiUrl(since?: number): string {
+  const url = buildChangesApiEndpointUrl(CHANGES_API_PATH);
   url.searchParams.set("limit", CHANGES_API_LIMIT.toString());
 
   if (typeof since === "number" && Number.isFinite(since) && since > 0) {
@@ -857,6 +884,79 @@ function buildChangesApiUrl(since?: number): string {
   }
 
   return url.toString();
+}
+
+function isNullableNumber(value: unknown): value is number | null {
+  return value === null || (typeof value === "number" && Number.isFinite(value));
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+function isChangeMonitorModeHealth(value: unknown): value is ChangeMonitorModeHealth {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    getChangeGameModeLabel(candidate.gameMode) !== null &&
+    typeof candidate.stale === "boolean" &&
+    isNullableNumber(candidate.lastAttemptAt) &&
+    isNullableNumber(candidate.lastSuccessAt) &&
+    isNullableString(candidate.lastError) &&
+    isNullableNumber(candidate.lastDurationMs) &&
+    typeof candidate.lastChangeCount === "number" &&
+    Number.isFinite(candidate.lastChangeCount) &&
+    isNullableString(candidate.lastResult)
+  );
+}
+
+function isChangeMonitorHealth(value: unknown): value is ChangeMonitorHealth {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const modes = candidate.modes;
+  const expectedModes: ChangeMonitorGameMode[] = ["regular", "pve", "pvp-season"];
+  return (
+    typeof candidate.healthy === "boolean" &&
+    typeof candidate.now === "number" &&
+    Number.isFinite(candidate.now) &&
+    typeof candidate.staleAfterMs === "number" &&
+    Number.isFinite(candidate.staleAfterMs) &&
+    Array.isArray(modes) &&
+    modes.length === expectedModes.length &&
+    modes.every(isChangeMonitorModeHealth) &&
+    expectedModes.every(
+      (gameMode) => modes.filter((mode) => mode.gameMode === gameMode).length === 1
+    )
+  );
+}
+
+export async function fetchChangeMonitorHealth(
+  signal?: AbortSignal
+): Promise<ChangeMonitorHealth> {
+  const response = await fetch(
+    buildChangesApiEndpointUrl(CHANGES_HEALTH_API_PATH).toString(),
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+      signal,
+    }
+  );
+  const data: unknown = await response.json();
+
+  if (!isChangeMonitorHealth(data)) {
+    throw new Error(`Change monitor returned an invalid response (${response.status}).`);
+  }
+
+  return data;
 }
 
 function getCachedChanges(): DataChange[] {

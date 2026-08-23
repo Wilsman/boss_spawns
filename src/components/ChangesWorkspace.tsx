@@ -15,6 +15,7 @@ import type { DataChange } from "@/lib/diff";
 import { getCanonicalBossName } from "@/lib/boss-aliases";
 import { NavBar } from "@/components/ui/navbar";
 import { CacheStatus } from "@/components/CacheStatus";
+import { ChangeMonitorHealth } from "@/components/ChangeMonitorHealth";
 import { ChangeNotificationControls } from "@/components/ChangeNotificationControls";
 import type {
   ChangeDateRange,
@@ -168,6 +169,7 @@ export function ChangesWorkspace({
               className="justify-start"
             />
             <div className="flex items-center justify-between gap-2 lg:justify-end">
+              <ChangeMonitorHealth />
               <CacheStatus
                 onExpired={() => void onChangesUpdate()}
                 onManualRefresh={() => onChangesUpdate({ force: true })}
