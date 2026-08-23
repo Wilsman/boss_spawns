@@ -587,6 +587,7 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                               encounters={row.encounters}
                               catalog={catalog}
                               mode={mode as GameMode}
+                              raidDurationMinutes={mapDetails?.raidDuration}
                             />
                           )}
                         </div>

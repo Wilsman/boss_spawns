@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
+  Clock3,
   ExternalLink,
   HeartPulse,
   PackageOpen,
@@ -16,6 +17,11 @@ import {
   MobEquipmentPoolItem,
   ResolvedItem,
 } from "@/types";
+import {
+  formatElapsedRaidTime,
+  getEncounterTimingLabels,
+  summarizeSpawnTiming,
+} from "@/lib/spawn-timing";
 
 type DetailTab = "spawns" | "health" | "equipment" | "loot";
 
@@ -24,6 +30,7 @@ interface BossDetailsPanelProps {
   encounters: Boss[];
   catalog: MobCatalog;
   mode: GameMode;
+  raidDurationMinutes?: number;
 }
 
 interface DisplayItem {
@@ -46,12 +53,6 @@ function percent(value: number): string {
 
 function prevalencePercent(value: number): string {
   return `${value < 1 && value > 0 ? value.toFixed(2) : value.toFixed(value < 10 ? 1 : 0)}%`;
-}
-
-function formatSpawnTime(seconds?: number | null): string {
-  if (seconds === -1) return "Raid start";
-  if (typeof seconds !== "number") return "Time not supplied";
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
 function encounterSignature(encounter: Boss): string {
@@ -85,10 +86,12 @@ function groupedEncounters(encounters: Boss[]): Array<{ encounter: Boss; count: 
 
 function SpawnDetails({
   encounters,
+  raidDurationMinutes,
   selectedKey,
   selectedName,
 }: {
   encounters: Boss[];
+  raidDurationMinutes?: number;
   selectedKey?: string;
   selectedName?: string;
 }) {
@@ -99,6 +102,10 @@ function SpawnDetails({
     : encounters.filter((encounter) =>
         (encounter.escorts ?? []).some((escort) => escort.mobKey === selectedKey)
       );
+  const timingSummary = summarizeSpawnTiming(
+    selectedEncounters,
+    raidDurationMinutes
+  );
 
   if (!selectedEncounters.length) {
     return (
@@ -109,19 +116,59 @@ function SpawnDetails({
   }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-2">
-      {groupedEncounters(selectedEncounters).map(({ encounter, count }, index) => {
-        const visibleEscorts = isBossSelected
-          ? encounter.escorts ?? []
-          : (encounter.escorts ?? []).filter(
-              (escort) => escort.mobKey === selectedKey
-            );
+    <div className="space-y-3">
+      {timingSummary.hasMeaningfulTiming && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-amber-300/[0.14] bg-gradient-to-r from-amber-400/[0.065] via-amber-300/[0.025] to-transparent px-3 py-2.5 text-xs">
+          <div className="flex items-center gap-2 text-amber-100/90">
+            <Clock3 size={14} aria-hidden="true" className="text-amber-300/80" />
+            <span className="font-bold uppercase tracking-[0.14em]">
+              {isBossSelected ? "Spawn timing" : "Parent boss schedule"}
+            </span>
+          </div>
+          {timingSummary.elapsedSeconds.length > 0 && (
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 text-zinc-300">
+              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">
+                Timed waves
+              </span>
+              <span className="font-mono text-amber-100">
+                {timingSummary.elapsedSeconds
+                  .map(formatElapsedRaidTime)
+                  .join(" · ")}
+              </span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-1.5 sm:ml-auto">
+            {timingSummary.triggered && (
+              <span className="rounded-full border border-white/[0.08] bg-white/[0.045] px-2 py-0.5 text-zinc-300">
+                Switch-triggered
+              </span>
+            )}
+            {timingSummary.randomized && (
+              <span className="rounded-full border border-white/[0.08] bg-white/[0.045] px-2 py-0.5 text-zinc-300">
+                Randomized timing
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
-        return (
-          <article
-            key={`${encounterSignature(encounter)}-${index}`}
-            className="rounded-lg border border-white/[0.08] bg-[#0c0c0d] p-3"
-          >
+      <div className="grid gap-3 lg:grid-cols-2">
+        {groupedEncounters(selectedEncounters).map(({ encounter, count }, index) => {
+          const visibleEscorts = isBossSelected
+            ? encounter.escorts ?? []
+            : (encounter.escorts ?? []).filter(
+                (escort) => escort.mobKey === selectedKey
+              );
+          const timingLabels = getEncounterTimingLabels(
+            encounter,
+            raidDurationMinutes
+          );
+
+          return (
+            <article
+              key={`${encounterSignature(encounter)}-${index}`}
+              className="rounded-lg border border-white/[0.08] bg-[#0c0c0d] p-3"
+            >
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="font-semibold text-white">Encounter {index + 1}</span>
               {count > 1 && (
@@ -134,17 +181,22 @@ function SpawnDetails({
                 {isBossSelected ? "spawn" : "parent spawn"}
               </span>
             </div>
-            <div className="mt-2 flex flex-wrap gap-1.5 text-xs text-zinc-300">
-              <span className="rounded bg-white/[0.06] px-2 py-1">
-                {formatSpawnTime(encounter.spawnTime)}
-                {encounter.spawnTimeRandom ? " · random timing" : ""}
-              </span>
-              {encounter.spawnTrigger && (
-                <span className="rounded bg-amber-400/10 px-2 py-1 text-amber-100">
-                  Trigger: {encounter.spawnTrigger}
-                </span>
-              )}
-            </div>
+            {timingLabels.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+                {timingLabels.map((label) => (
+                  <span
+                    key={label}
+                    className={`rounded border px-2 py-1 ${
+                      label.endsWith("into raid")
+                        ? "border-amber-300/[0.12] bg-amber-400/[0.07] font-mono text-amber-100"
+                        : "border-white/[0.07] bg-white/[0.045] text-zinc-300"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className="mt-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
@@ -194,9 +246,10 @@ function SpawnDetails({
                 <p className="mt-1 text-xs text-zinc-500">No followers supplied.</p>
               )}
             </div>
-          </article>
-        );
-      })}
+            </article>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -554,7 +607,13 @@ function itemIdsForTab(entry: MobCatalogEntry, tab: DetailTab): string[] {
   return tab === "loot" ? entry.loot.map((item) => item.itemId) : [];
 }
 
-export function BossDetailsPanel({ bossName, encounters, catalog, mode }: BossDetailsPanelProps) {
+export function BossDetailsPanel({
+  bossName,
+  encounters,
+  catalog,
+  mode,
+  raidDurationMinutes,
+}: BossDetailsPanelProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>("spawns");
   const units = useMemo(() => {
     const keys = new Set<string>();
@@ -639,6 +698,7 @@ export function BossDetailsPanel({ bossName, encounters, catalog, mode }: BossDe
         {activeTab === "spawns" ? (
           <SpawnDetails
             encounters={encounters}
+            raidDurationMinutes={raidDurationMinutes}
             selectedKey={selected?.key}
             selectedName={selected?.name}
           />
