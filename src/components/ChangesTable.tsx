@@ -479,13 +479,13 @@ export function ChangesTable({
   }
 
   const formatGroupDate = (dateStr: string): string => {
+    const formatDateKey = (value: string) => value.replace(/-/g, "/");
+
     if (dateStr.includes(" to ")) {
       const [start, end] = dateStr.split(" to ");
-      return `Week of ${new Date(start).toLocaleDateString()} - ${new Date(
-        end
-      ).toLocaleDateString()}`;
+      return `Week of ${formatDateKey(start)} - ${formatDateKey(end)}`;
     }
-    return new Date(dateStr).toLocaleDateString();
+    return formatDateKey(dateStr);
   };
 
   return (
