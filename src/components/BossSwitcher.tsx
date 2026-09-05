@@ -3,16 +3,19 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BOSS_MODELS } from "./boss-model-registry";
 
+const DUCK_ENABLED_IN_HEADER = false;
+const HEADER_BOSS_MODELS = BOSS_MODELS.filter(boss => boss.id !== "duck" || DUCK_ENABLED_IN_HEADER);
+
 export function BossSwitcher() {
   const [selection, setSelection] = useState(() => ({
-    index: Math.floor(Math.random() * BOSS_MODELS.length),
+    index: Math.floor(Math.random() * HEADER_BOSS_MODELS.length),
     direction: 1,
   }));
   const reducedMotion = useReducedMotion();
-  const boss = BOSS_MODELS[selection.index];
+  const boss = HEADER_BOSS_MODELS[selection.index % HEADER_BOSS_MODELS.length];
   const Viewer = boss.Viewer;
   const switchBoss = (direction: number) => setSelection(current => ({
-    index: (current.index + direction + BOSS_MODELS.length) % BOSS_MODELS.length,
+    index: (current.index + direction + HEADER_BOSS_MODELS.length) % HEADER_BOSS_MODELS.length,
     direction,
   }));
   const arrowClass = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-transparent text-gray-500 transition-colors duration-200 hover:border-white/10 hover:bg-white/[0.04] hover:text-white active:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 motion-reduce:transition-none";

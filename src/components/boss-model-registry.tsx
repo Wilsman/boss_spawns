@@ -31,4 +31,5 @@ export const BOSS_MODELS = [
   { id: "shturman", name: "Shturman", image: "/eft_boss_shturman.webp", Viewer: lazy(() => import("./Shturman3D")) },
   { id: "wedgie", name: "Wedgie", image: "/eft_boss_wedgie.png", Viewer: model("wedgie") },
   { id: "zryachiy", name: "Zryachiy", image: "/eft_boss_zryachiy.png", Viewer: model("zryachiy") },
+  { id: "duck", name: "Tactical Duck", Viewer: model("duck") },
 ];

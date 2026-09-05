@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 // Procedural minifigures based on the corresponding public/eft_boss_*.webp art.
 // Local axes: +Z is the face, +X is the figure's left. Weapons use +X as barrel.
-export type BossModelId = "glukhar" | "goons" | "jaeger" | "kaban" | "killa" | "kollontay" | "partisan" | "sanitar" | "special-cultists" | "tagilla" | "wedgie" | "zryachiy";
+export type BossModelId = "duck" | "glukhar" | "goons" | "jaeger" | "kaban" | "killa" | "kollontay" | "partisan" | "sanitar" | "special-cultists" | "tagilla" | "wedgie" | "zryachiy";
 type Point = [number, number, number];
 type Parent = THREE.Group;
 type Mat = THREE.Material;
@@ -938,8 +938,69 @@ function makeZryachiy() {
   return root;
 }
 
+function makeDuck() {
+  const root = new THREE.Group();
+  const feathers = material(0x9b8038), wing = material(0xb29848), orange = material(0xb76e3f);
+  const black = material(0x171d1c), armor = material(0x303633), trim = material(0x545954, 0.25);
+  const torso = mesh(root, new THREE.CapsuleGeometry(0.67, 1.4, 8, 24), feathers, [0, 1.94, 0]); torso.scale.z = 0.82;
+  oval(root, [0.66, 0.52, 0.55], feathers, [0, 0.81, -0.01]);
+  const tail = oval(root, [0.32, 0.19, 0.44], wing, [0, 0.83, -0.55]); tail.rotation.x = -0.3;
+  for (const side of [-1, 1]) {
+    const eye = oval(root, [0.072, 0.104, 0.047], black, [side * 0.48, 2.75, 0.4]); eye.rotation.y = side * 0.32;
+    tube(root, 0.095, 0.3, orange, [side * 0.43, 0.32, 0]);
+    const foot = new THREE.Shape();
+    foot.moveTo(-0.11, 0.13); foot.lineTo(0.11, 0.13); foot.lineTo(0.16, -0.1);
+    foot.lineTo(0.3, -0.35); foot.quadraticCurveTo(0.18, -0.39, 0.1, -0.36);
+    foot.quadraticCurveTo(0, -0.44, -0.1, -0.36); foot.quadraticCurveTo(-0.2, -0.4, -0.3, -0.34);
+    foot.lineTo(-0.16, -0.1); foot.closePath();
+    const webbing = mesh(root, new THREE.ExtrudeGeometry(foot, { depth: 0.055, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.025, bevelThickness: 0.025 }), orange, [side * 0.43, 0.055, 0.09]);
+    webbing.rotation.set(-Math.PI / 2, 0, -side * 0.15);
+  }
+  oval(root, [0.245, 0.082, 0.19], orange, [0, 2.53, 0.6]);
+  oval(root, [0.235, 0.053, 0.175], material(0x865025), [0, 2.46, 0.6]);
+  curve(root, [[-0.24, 2.5, 0.64], [-0.12, 2.49, 0.758], [0, 2.49, 0.79], [0.12, 2.49, 0.758], [0.24, 2.5, 0.64]], 0.015, black);
+  for (const side of [-1, 1]) oval(root, [0.018, 0.01, 0.026], material(0x614722), [side * 0.083, 2.603, 0.64]);
+
+  const dome = mesh(root, new THREE.SphereGeometry(0.76, 28, 18, 0, Math.PI * 2, 0, Math.PI / 2), armor, [0, 3.04, -0.02]); dome.scale.set(1, 0.77, 0.88);
+  const brim = tube(root, 0.77, 0.13, black, [0, 3.04, -0.02]); brim.scale.z = 0.88;
+  for (const side of [-1, 1]) {
+    box(root, [0.12, 0.38, 0.35], armor, [side * 0.69, 2.89, -0.05], false);
+    curve(root, [[side * 0.65, 3, 0.15], [side * 0.67, 2.42, 0.07], [side * 0.48, 1.98, 0.43]], 0.037, black);
+  }
+  const goggles = new THREE.Shape();
+  goggles.moveTo(-0.58, -0.12); goggles.quadraticCurveTo(-0.68, -0.09, -0.61, 0.13);
+  goggles.quadraticCurveTo(-0.53, 0.28, 0, 0.3); goggles.quadraticCurveTo(0.53, 0.28, 0.61, 0.13);
+  goggles.quadraticCurveTo(0.68, -0.09, 0.58, -0.12); goggles.quadraticCurveTo(0.32, -0.19, 0.12, -0.1);
+  goggles.quadraticCurveTo(0, -0.015, -0.12, -0.1); goggles.quadraticCurveTo(-0.32, -0.19, -0.58, -0.12); goggles.closePath();
+  mesh(root, new THREE.ExtrudeGeometry(goggles, { depth: 0.055, bevelEnabled: true, bevelSize: 0.045, bevelThickness: 0.025, bevelSegments: 3, steps: 1 }), black, [0, 3.24, 0.58]);
+  const lens = mesh(root, new THREE.ShapeGeometry(goggles, 24), new THREE.MeshStandardMaterial({ color: 0x707772, roughness: 0.3, metalness: 0.35, side: THREE.DoubleSide }), [0, 3.24, 0.665]); lens.scale.set(0.92, 0.86, 1);
+  curve(root, [[-0.56, 3.4, 0.67], [-0.32, 3.48, 0.674], [0.05, 3.5, 0.674], [0.37, 3.45, 0.67]], 0.012, trim);
+  curve(root, [[-0.64, 3.21, 0.58], [-0.76, 3.23, 0], [0, 3.26, -0.67], [0.76, 3.23, 0], [0.64, 3.21, 0.58]], 0.055, black);
+
+  const plate = new THREE.Shape();
+  plate.moveTo(-0.48, 0.44); plate.lineTo(0.48, 0.44); plate.lineTo(0.63, 0.19);
+  plate.lineTo(0.65, -0.36); plate.quadraticCurveTo(0, -0.52, -0.65, -0.36); plate.lineTo(-0.63, 0.19); plate.closePath();
+  mesh(root, new THREE.ExtrudeGeometry(plate, { depth: 0.15, bevelEnabled: true, bevelSize: 0.045, bevelThickness: 0.025, bevelSegments: 2, steps: 1 }), armor, [0, 1.38, 0.46]);
+  box(root, [0.99, 0.83, 0.16], armor, [0, 1.44, -0.53]);
+  for (const side of [-1, 1]) {
+    curve(root, [[side * 0.47, 1.8, 0.55], [side * 0.58, 2.06, 0.35], [side * 0.53, 2.11, -0.3], [side * 0.44, 1.82, -0.6]], 0.07, black);
+    box(root, [0.13, 0.3, 0.72], black, [side * 0.63, 1.25, 0]);
+    for (const y of [1.07, 1.29]) box(root, [0.55, 0.16, 0.08], trim, [side * 0.295, y, 0.674]);
+  }
+  box(root, [0.32, 0.23, 0.06], trim, [0, 1.62, 0.659]);
+  for (const side of [-1, 1]) limb(root, [-0.13, 1.62 + side * 0.085, 0.697], [0.13, 1.62 - side * 0.085, 0.697], 0.018, black, 0.018);
+  const rightWing = oval(root, [0.2, 0.5, 0.28], wing, [0.77, 1.48, 0]); rightWing.rotation.z = 0.28;
+  const tip = oval(root, [0.14, 0.29, 0.17], feathers, [0.86, 1.05, 0.11]); tip.rotation.z = -0.23;
+  const leftWing = oval(root, [0.2, 0.53, 0.26], wing, [-0.78, 1.69, 0.06]); leftWing.rotation.z = -0.15;
+  oval(root, [0.17, 0.25, 0.21], wing, [-0.88, 2.18, 0.24]);
+  const gun = rifle(); gun.position.set(-0.94, 2.55, 0.23); gun.rotation.z = Math.PI / 2; gun.scale.setScalar(0.75); root.add(gun);
+  oval(root, [0.15, 0.19, 0.11], feathers, [-0.81, 2.32, 0.36]);
+  return root;
+}
+
 export function buildBossModel(boss: BossModelId): THREE.Group {
   switch (boss) {
+    case "duck": return makeDuck();
     case "glukhar": return makeGlukhar();
     case "goons": return makeGoons();
     case "jaeger": return makeJaeger();
