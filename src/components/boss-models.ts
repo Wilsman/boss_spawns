@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { createTagillaSlam, type SlamArm } from "./tagilla-slam";
 
 // Procedural minifigures based on the corresponding public/eft_boss_*.webp art.
 // Local axes: +Z is the face, +X is the figure's left. Weapons use +X as barrel.
@@ -1063,12 +1064,19 @@ function makeShadowOfTagilla() {
   });
   const tattooedSkin = new THREE.MeshStandardMaterial({ map: tattooMap, bumpMap: tattooMap, bumpScale: 0.006, roughness: 0.87 });
 
-  sculpt(root, [0, 1.76, 0], [0, 3.24, -0.04], [0.28, 0.4, 0.36, 0.43, 0.57, 0.55, 0.22], skin, 0.63);
-  oval(root, [0.44, 0.28, 0.28], pants, [0, 1.78, 0]);
+  // Twist at the waist and lean over the bent front leg for the wind-up.
+  const waist = new THREE.Group();
+  waist.position.set(-0.08, 1.55, 0.18);
+  waist.rotation.set(0.18, -0.48, -0.04);
+  root.add(waist);
+  const torso = new THREE.Group(); torso.position.y = -1.76; waist.add(torso);
+
+  sculpt(torso, [0, 1.76, 0], [0, 3.24, -0.04], [0.28, 0.4, 0.36, 0.43, 0.57, 0.55, 0.22], skin, 0.63);
+  oval(root, [0.44, 0.28, 0.28], pants, [-0.08, 1.57, 0.18]);
   for (const side of [-1, 1]) {
-    const hip: Point = [side * 0.28, 1.72, 0];
-    const knee: Point = [side * 0.55, side < 0 ? 0.96 : 1.04, side < 0 ? 0.25 : -0.05];
-    const ankle: Point = [side * 0.68, 0.32, side < 0 ? 0.44 : -0.28];
+    const hip: Point = [side * 0.28 - 0.08, 1.51, 0.18];
+    const knee: Point = [side * 0.55, side < 0 ? 0.88 : 0.92, side < 0 ? 0.64 : 0.04];
+    const ankle: Point = [side * 0.68, 0.32, side < 0 ? 0.45 : -0.55];
     sculpt(root, hip, knee, [0.19, 0.28, 0.275, 0.23, 0.18], pants, 1.08);
     oval(root, [0.21, 0.22, 0.23], pants, knee);
     sculpt(root, knee, ankle, [0.18, 0.22, 0.2, 0.145, 0.14], pants, 1.03);
@@ -1085,32 +1093,32 @@ function makeShadowOfTagilla() {
     for (const dy of [-0.17, 0.17]) {
       const strap = tube(root, 0.215, 0.055, leather, [knee[0], knee[1] + dy, knee[2]]); strap.scale.z = 1.09;
     }
-    panel(root, [0.26, 0.36, 0.075], pants, [side * 0.42, 1.43, 0.2], 0.035);
-    for (let i = 0; i < 4; i++) curve(root, [[side * 0.45, 1.43 - i * 0.17, 0.16], [side * 0.57, 1.4 - i * 0.17, 0.21], [side * 0.64, 1.43 - i * 0.17, 0.16]], 0.012, darkCloth);
+    panel(root, [0.26, 0.36, 0.075], pants, [hip[0] * 0.65 + knee[0] * 0.35, 1.29, hip[2] * 0.65 + knee[2] * 0.35 + 0.2], 0.035);
+    for (let i = 0; i < 4; i++) curve(root, [[knee[0] - 0.1, knee[1] + 0.22 - i * 0.14, knee[2] + 0.16], [knee[0], knee[1] + 0.19 - i * 0.14, knee[2] + 0.21], [knee[0] + 0.1, knee[1] + 0.22 - i * 0.14, knee[2] + 0.16]], 0.012, darkCloth);
   }
-  const belt = tube(root, 0.415, 0.14, leather, [0, 1.96, 0]); belt.scale.z = 0.76;
-  panel(root, [0.18, 0.12, 0.035], metal, [0, 1.96, 0.335], 0.014);
-  panel(root, [0.11, 0.075, 0.018], black, [0, 1.96, 0.363], 0.006);
-  for (const x of [-0.28, 0.28]) panel(root, [0.05, 0.19, 0.025], cloth, [x, 1.97, 0.28], 0.007);
+  const belt = tube(torso, 0.415, 0.14, leather, [0, 1.96, 0]); belt.scale.z = 0.76;
+  panel(torso, [0.18, 0.12, 0.035], metal, [0, 1.96, 0.335], 0.014);
+  panel(torso, [0.11, 0.075, 0.018], black, [0, 1.96, 0.363], 0.006);
+  for (const x of [-0.28, 0.28]) panel(torso, [0.05, 0.19, 0.025], cloth, [x, 1.97, 0.28], 0.007);
 
-  const chest = panel(root, [0.82, 0.85, 0.12], cloth, [0, 2.68, 0.295], 0.075); chest.rotation.x = -0.04;
-  panel(root, [0.79, 0.91, 0.13], darkCloth, [0, 2.71, -0.34], 0.065);
+  const chest = panel(torso, [0.82, 0.85, 0.12], cloth, [0, 2.68, 0.295], 0.075); chest.rotation.x = -0.04;
+  panel(torso, [0.79, 0.91, 0.13], darkCloth, [0, 2.71, -0.34], 0.065);
   for (const side of [-1, 1]) {
-    curve(root, [[side * 0.33, 2.96, 0.37], [side * 0.4, 3.23, 0.18], [side * 0.36, 3.27, -0.2], [side * 0.31, 2.97, -0.41]], 0.077, cloth);
-    panel(root, [0.12, 0.2, 0.055], metal, [side * 0.35, 3.03, 0.33], 0.009);
-    panel(root, [0.07, 0.13, 0.024], leather, [side * 0.35, 3.03, 0.37], 0.006);
-    panel(root, [0.13, 0.45, 0.52], darkCloth, [side * 0.42, 2.5, 0], 0.025);
+    curve(torso, [[side * 0.33, 2.96, 0.37], [side * 0.4, 3.23, 0.18], [side * 0.36, 3.27, -0.2], [side * 0.31, 2.97, -0.41]], 0.077, cloth);
+    panel(torso, [0.12, 0.2, 0.055], metal, [side * 0.35, 3.03, 0.33], 0.009);
+    panel(torso, [0.07, 0.13, 0.024], leather, [side * 0.35, 3.03, 0.37], 0.006);
+    panel(torso, [0.13, 0.45, 0.52], darkCloth, [side * 0.42, 2.5, 0], 0.025);
   }
-  panel(root, [0.6, 0.22, 0.075], darkCloth, [0, 2.93, 0.407], 0.026);
+  panel(torso, [0.6, 0.22, 0.075], darkCloth, [0, 2.93, 0.407], 0.026);
   for (const x of [-0.27, 0, 0.27]) {
-    panel(root, [0.2, 0.39, 0.14], cloth, [x, 2.49, 0.438], 0.028);
-    panel(root, [0.21, 0.095, 0.04], darkCloth, [x, 2.67, 0.53], 0.016);
-    curve(root, [[x - 0.09, 2.31, 0.515], [x - 0.09, 2.61, 0.527], [x + 0.09, 2.61, 0.527], [x + 0.09, 2.31, 0.515]], 0.005, seam);
+    panel(torso, [0.2, 0.39, 0.14], cloth, [x, 2.49, 0.438], 0.028);
+    panel(torso, [0.21, 0.095, 0.04], darkCloth, [x, 2.67, 0.53], 0.016);
+    curve(torso, [[x - 0.09, 2.31, 0.515], [x - 0.09, 2.61, 0.527], [x + 0.09, 2.61, 0.527], [x + 0.09, 2.31, 0.515]], 0.005, seam);
   }
-  for (let i = 0; i < 5; i++) panel(root, [0.7, 0.033, 0.025], cloth, [0, 2.4 + i * 0.13, -0.43], 0.005);
+  for (let i = 0; i < 5; i++) panel(torso, [0.7, 0.033, 0.025], cloth, [0, 2.4 + i * 0.13, -0.43], 0.005);
 
-  sculpt(root, [0, 3.14, -0.03], [0, 3.61, -0.04], [0.17, 0.185, 0.16, 0.14], skin);
-  const mask = new THREE.Group(); mask.position.set(0, 3.77, -0.06); mask.rotation.x = 0.1; root.add(mask);
+  sculpt(torso, [0, 3.14, -0.03], [0, 3.61, -0.04], [0.17, 0.185, 0.16, 0.14], skin);
+  const mask = new THREE.Group(); mask.position.set(0, 3.77, -0.06); mask.rotation.x = 0.1; torso.add(mask);
   oval(mask, [0.295, 0.37, 0.29], leather, [0, 0.01, 0]);
   const shell = mesh(mask, new THREE.SphereGeometry(0.34, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.77), metal, [0, 0.06, -0.025]); shell.scale.set(1, 1.31, 0.94);
   panel(mask, [0.48, 0.46, 0.07], metal, [0, -0.015, 0.255], 0.05);
@@ -1153,7 +1161,8 @@ function makeShadowOfTagilla() {
     }
   }
 
-  const axe = new THREE.Group(); axe.position.set(-0.24, 4.62, -0.43); axe.rotation.set(-0.12, 0.08, 0.16); root.add(axe);
+  // Keep the diagonal shaft in front of the vest and the raised grip outside the shoulder.
+  const axe = new THREE.Group(); axe.position.set(0.3, 2.85, 0.7); axe.rotation.set(0, 0.3, 0.95); torso.add(axe);
   tube(axe, 0.047, 3.6, worn("#716954"), [0.15, 0, 0], "x");
   tube(axe, 0.063, 0.07, metal, [-1.63, 0, 0], "x");
   for (let i = 0; i < 34; i++) tube(axe, 0.052, 0.046, i % 3 ? leather : metal, [-1.45 + i * 0.067, 0, 0], "x");
@@ -1193,24 +1202,27 @@ function makeShadowOfTagilla() {
     link.scale.y = 1.45; link.rotation.y = i % 2 ? Math.PI / 2 : 0;
   }
 
+  const arms: SlamArm[] = [];
   for (const side of [-1, 1]) {
-    const gripX = side < 0 ? -0.62 : 0.55;
+    const gripX = side < 0 ? -1.25 : 0.55;
     const gripPosition = new THREE.Vector3(gripX, 0, 0).applyEuler(axe.rotation).add(axe.position);
-    const wrist: Point = [gripPosition.x, gripPosition.y - 0.12, gripPosition.z + 0.045];
+    const wristPosition = new THREE.Vector3(0, -0.17, 0).applyEuler(axe.rotation).add(gripPosition);
+    const wrist: Point = [wristPosition.x, wristPosition.y, wristPosition.z];
     const shoulder: Point = [side * 0.57, 3.16, -0.035];
-    const elbow: Point = [side * 1.02, side < 0 ? 3.9 : 4.02, -0.19];
-    oval(root, [0.245, 0.27, 0.245], tattooedSkin, shoulder);
-    sculpt(root, shoulder, elbow, [0.19, 0.225, 0.24, 0.19, 0.145], tattooedSkin, 0.98);
-    oval(root, [0.155, 0.17, 0.16], skin, elbow);
-    sculpt(root, elbow, wrist, [0.145, 0.19, 0.17, 0.12, 0.095], side < 0 ? skin : tattooedSkin);
+    const elbow: Point = side < 0 ? [-0.91, 2.48, 0.58] : [1.06, 3.02, 0.4];
+    oval(torso, [0.245, 0.27, 0.245], tattooedSkin, shoulder);
+    const upper = sculpt(torso, shoulder, elbow, [0.19, 0.225, 0.24, 0.19, 0.145], tattooedSkin, 0.98);
+    const joint = oval(torso, [0.155, 0.17, 0.16], skin, elbow);
+    const forearm = sculpt(torso, elbow, wrist, [0.145, 0.19, 0.17, 0.12, 0.095], side < 0 ? skin : tattooedSkin);
+    let wrapping: THREE.Group | undefined;
     if (side < 0) {
       const start = new THREE.Vector3(...elbow), end = new THREE.Vector3(...wrist);
-      const wrapping = new THREE.Group(); wrapping.position.copy(start); wrapping.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize()); root.add(wrapping);
+      wrapping = new THREE.Group(); wrapping.position.copy(start); wrapping.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize()); torso.add(wrapping);
       for (let i = 0; i < 9; i++) {
         const band = tube(wrapping, 0.185 - i * 0.004, 0.05, i % 3 ? cloth : seam, [0, 0.12 + i * 0.048, 0]); band.rotation.z = 0.05;
       }
     }
-    const handGroup = new THREE.Group(); handGroup.position.copy(gripPosition); handGroup.rotation.copy(axe.rotation); root.add(handGroup);
+    const handGroup = new THREE.Group(); handGroup.position.copy(gripPosition); handGroup.rotation.copy(axe.rotation); torso.add(handGroup);
     oval(handGroup, [0.14, 0.145, 0.085], red, [0, -0.045, -0.075]);
     sculpt(handGroup, [0, -0.2, 0], [0, -0.07, -0.05], [0.11, 0.13, 0.12], red);
     for (let i = 0; i < 4; i++) {
@@ -1220,7 +1232,11 @@ function makeShadowOfTagilla() {
     }
     curve(handGroup, [[0.13, -0.11, -0.04], [0.16, -0.08, 0.08], [0.07, -0.04, 0.12], [0.005, -0.025, 0.1]], 0.038, red);
     curve(handGroup, [[-0.11, -0.18, 0.035], [0, -0.2, 0.07], [0.11, -0.18, 0.035]], 0.015, black);
+    arms.push({ side, shoulder: new THREE.Vector3(...shoulder), upper, joint, forearm, hand: handGroup, wrapping,
+      upperLength: new THREE.Vector3(...shoulder).distanceTo(new THREE.Vector3(...elbow)),
+      forearmLength: new THREE.Vector3(...elbow).distanceTo(wristPosition) });
   }
+  createTagillaSlam(root, torso, waist, axe, arms);
   return root;
 }
 

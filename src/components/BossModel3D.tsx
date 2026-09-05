@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { buildBossModel, type BossModelId } from "./boss-models";
 import { createBossSnow } from "./boss-snow";
+import { getTagillaSlam } from "./tagilla-slam";
 
 interface BossModel3DProps {
   boss: BossModelId;
@@ -101,10 +102,15 @@ export function BossModel3D({
     spinRef.current = fig;
     fig.rotation.y = -0.35;
     const bounds = new THREE.Box3().setFromObject(fig);
+    const slam = getTagillaSlam(fig);
+    if (slam) bounds.union(slam.bounds.clone().applyMatrix4(fig.matrix));
     const center = bounds.getCenter(new THREE.Vector3());
     const size = bounds.getSize(new THREE.Vector3());
     // Fit the entire model through a full turn, including held props and groups.
-    const radius = Math.hypot(size.x, size.z) / 2;
+    const radius = slam
+      ? Math.hypot(Math.max(Math.abs(slam.bounds.min.x), Math.abs(slam.bounds.max.x)), Math.max(Math.abs(slam.bounds.min.z), Math.abs(slam.bounds.max.z)))
+      : Math.hypot(size.x, size.z) / 2;
+    if (slam) center.set(0, center.y, 0);
     camera.lookAt(center);
     const fitCamera = (aspect: number) => {
       const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
@@ -154,6 +160,7 @@ export function BossModel3D({
       const dt = Math.min(clock.getDelta(), 0.05);
       snow?.update(dt);
       mist?.update(dt);
+      slam?.update(dt);
       idleRef.current += dt;
       const spin = spinRef.current;
       if (spin && !draggingRef.current) {
