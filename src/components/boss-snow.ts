@@ -25,7 +25,7 @@ export function createBossSnow(scene: THREE.Scene) {
     }
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
-    const material = new THREE.PointsMaterial({ map, size: layer === 0 ? 0.043 : 0.078, color: 0xdcecf4, transparent: true, opacity: layer === 0 ? 0.55 : 0.38, depthWrite: false, sizeAttenuation: true });
+    const material = new THREE.PointsMaterial({ map, size: layer === 0 ? 0.1 : 0.31, color: 0xdcecf4, transparent: true, opacity: layer === 0 ? 0.55 : 0.38, depthWrite: false, sizeAttenuation: true });
     const points = new THREE.Points(geometry, material);
     points.frustumCulled = false;
     group.add(points);
