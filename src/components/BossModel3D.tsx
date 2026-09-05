@@ -116,7 +116,8 @@ export function BossModel3D({
     fitCamera(W / H);
     disc.scale.set(Math.max(1, radius / 1.7), 1, Math.max(1, radius / 1.7));
     ground.scale.setScalar(Math.max(1, radius / 1.7));
-    const snow = boss === "wedgie" ? createBossSnow(scene) : null;
+    const snow = boss === "wedgie" || boss === "santa-claus" ? createBossSnow(scene) : null;
+    const mist = boss === "shadow-of-tagilla" ? createBossMist(scene) : null;
 
     // ---- Horizontal-only drag (mouse + touch) ----
     const el = renderer.domElement;
@@ -152,6 +153,7 @@ export function BossModel3D({
       raf = requestAnimationFrame(animate);
       const dt = Math.min(clock.getDelta(), 0.05);
       snow?.update(dt);
+      mist?.update(dt);
       idleRef.current += dt;
       const spin = spinRef.current;
       if (spin && !draggingRef.current) {
@@ -189,6 +191,7 @@ export function BossModel3D({
     return () => {
       cancelAnimationFrame(raf);
       snow?.dispose();
+      mist?.dispose();
       window.removeEventListener("resize", onResize);
       resizeObs.disconnect();
       obs.disconnect();
@@ -264,6 +267,54 @@ export function BossModel3D({
       )}
     </div>
   );
+}
+
+function createBossMist(scene: THREE.Scene) {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = 128;
+  const ctx = canvas.getContext("2d")!;
+  for (let i = 0; i < 9; i++) {
+    const angle = i * 2.4, x = 64 + Math.cos(angle) * 21, y = 64 + Math.sin(angle) * 18;
+    const gradient = ctx.createRadialGradient(x, y, 0, x, y, 38);
+    gradient.addColorStop(0, "rgba(202,214,209,0.3)");
+    gradient.addColorStop(0.45, "rgba(180,197,190,0.13)");
+    gradient.addColorStop(1, "rgba(180,197,190,0)");
+    ctx.fillStyle = gradient; ctx.fillRect(0, 0, 128, 128);
+  }
+  const map = new THREE.CanvasTexture(canvas); map.colorSpace = THREE.SRGBColorSpace;
+  const group = new THREE.Group(); scene.add(group);
+  const wisps = Array.from({ length: 14 }, (_, i) => {
+    const material = new THREE.SpriteMaterial({ map, transparent: true, opacity: 0, depthWrite: false, toneMapped: false });
+    const sprite = new THREE.Sprite(material);
+    const isLow = i < 10;
+    sprite.scale.set(isLow ? 2.6 : 2.1, isLow ? 0.95 : 1.3, 1);
+    group.add(sprite);
+    return { sprite, material, phase: i / 14, duration: 22 + i % 5 * 3, height: isLow ? 0.3 + i % 4 * 0.22 : 1.55 + i % 3 * 0.4, depth: isLow ? -0.8 + i % 4 * 0.5 : -1.15, opacity: isLow ? 0.17 : 0.085 };
+  });
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const syncMotion = () => { group.visible = !motion.matches; };
+  syncMotion(); motion.addEventListener("change", syncMotion);
+  let elapsed = 0;
+  function update(dt: number) {
+    if (!group.visible) return;
+    elapsed += dt;
+    for (const { sprite, material, phase, duration, height, depth, opacity } of wisps) {
+      const progress = (phase + elapsed / duration) % 1;
+      sprite.position.set(-1.9 + progress * 3.8, height + Math.sin(progress * Math.PI) * 0.18, depth + Math.sin(elapsed * 0.13 + phase * 6) * 0.12);
+      material.opacity = opacity * Math.sin(progress * Math.PI) ** 2;
+      material.rotation = Math.sin(elapsed * 0.08 + phase * 6) * 0.12;
+    }
+  }
+  update(0);
+  return {
+    update,
+    dispose() {
+      motion.removeEventListener("change", syncMotion);
+      scene.remove(group);
+      for (const { material } of wisps) material.dispose();
+      map.dispose();
+    },
+  };
 }
 
 export default BossModel3D;

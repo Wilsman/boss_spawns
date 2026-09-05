@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 // Procedural minifigures based on the corresponding public/eft_boss_*.webp art.
 // Local axes: +Z is the face, +X is the figure's left. Weapons use +X as barrel.
-export type BossModelId = "duck" | "glukhar" | "goons" | "jaeger" | "kaban" | "killa" | "kollontay" | "partisan" | "sanitar" | "shadow-of-tagilla" | "special-cultists" | "tagilla" | "wedgie" | "zryachiy";
+export type BossModelId = "duck" | "glukhar" | "goons" | "jaeger" | "kaban" | "killa" | "kollontay" | "partisan" | "sanitar" | "santa-claus" | "shadow-of-tagilla" | "special-cultists" | "tagilla" | "wedgie" | "zryachiy";
 type Point = [number, number, number];
 type Parent = THREE.Group;
 type Mat = THREE.Material;
@@ -1224,6 +1224,116 @@ function makeShadowOfTagilla() {
   return root;
 }
 
+function makeSantaClaus() {
+  const root = new THREE.Group(), santa = new THREE.Group(); santa.position.set(-0.62, 0, 0.65); root.add(santa);
+  const red = material(0xa4261e), darkRed = material(0x641d19), white = material(0xe3e4d6), snow = material(0xe7f0ee);
+  const olive = material(0x596044), black = material(0x202a26), gold = material(0xc4a052, 0.45);
+  const knitMap = texture(g => {
+    g.fillStyle = "#525f66"; g.fillRect(0, 0, 256, 256);
+    for (let x = 0; x < 256; x += 9) {
+      g.strokeStyle = "#879196"; g.lineWidth = 2; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 256); g.stroke();
+      g.strokeStyle = "#323e43"; g.beginPath(); g.moveTo(x + 4, 0); g.lineTo(x + 4, 256); g.stroke();
+    }
+    for (let y = 0; y < 256; y += 12) {
+      g.strokeStyle = "rgba(183,193,192,.18)"; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(0, y); g.lineTo(256, y + 5); g.stroke();
+    }
+  });
+  const knit = new THREE.MeshStandardMaterial({ map: knitMap, roughness: 0.95 });
+  body(santa, { coat: material(0x85969a), pants: material(0x3d5260), boots: black });
+  vest(santa, 0x596044, 2, 3);
+  for (const side of [-1, 1]) {
+    box(santa, [0.47, 0.34, 0.12], black, [side * 0.44, 0.85, side * 0.07 + 0.35]);
+    box(santa, [0.37, 0.37, 0.09], black, [side * 0.5, 0.5, side * 0.1 + 0.34]);
+    box(santa, [0.61, 0.065, 0.83], white, [side * 0.53, 0.09, side * 0.1 + 0.12]);
+    for (let i = 0; i < 3; i++) box(santa, [0.24, 0.025, 0.04], white, [side * 0.53, 0.351, side * 0.1 + 0.15 + i * 0.09], false);
+  }
+  const h = head(santa, { beard: 0xe3e4d6 });
+  oval(h, [0.29, 0.34, 0.16], white, [0, -0.42, 0.3]);
+  for (let i = 0; i < 7; i++) {
+    const x = -0.23 + i * 0.077;
+    curve(h, [[x, -0.25, 0.48], [x * 0.9, -0.42, 0.465], [x * 0.55, -0.66 + Math.abs(x) * 0.5, 0.35]], 0.014, material(0xbac3bc));
+  }
+  tube(h, 0.54, 0.25, white, [0, 0.31, 0]);
+  const cap = mesh(h, new THREE.SphereGeometry(0.51, 24, 18, 0, Math.PI * 2, 0, Math.PI / 2), red, [0, 0.4, 0]); cap.scale.y = 0.95;
+  const fold = oval(h, [0.35, 0.16, 0.29], red, [0.25, 0.77, -0.015]); fold.rotation.z = -0.3;
+  curve(h, [[0.27, 0.79, 0], [0.49, 0.76, 0], [0.59, 0.62, 0.02]], 0.12, red);
+  oval(h, [0.16, 0.17, 0.16], white, [0.6, 0.54, 0.03]);
+  curve(h, [[-0.35, 0.51, 0.34], [-0.09, 0.6, 0.42], [0.27, 0.72, 0.26]], 0.016, darkRed);
+  for (let i = 0; i < 20; i++) {
+    const angle = i / 20 * Math.PI * 2;
+    oval(h, [0.069, 0.11, 0.065], white, [Math.sin(angle) * 0.525, 0.32, Math.cos(angle) * 0.525]);
+  }
+
+  box(santa, [1.1, 1.68, 0.59], red, [0, 2.25, -0.72]);
+  oval(santa, [0.56, 0.27, 0.32], red, [0, 3.07, -0.73]);
+  box(santa, [0.76, 0.63, 0.16], darkRed, [0, 2.1, -1.09]);
+  for (const y of [1.56, 2.65, 3.02]) box(santa, [1.13, 0.09, 0.65], white, [0, y, -0.73]);
+  for (const side of [-1, 1]) {
+    box(santa, [0.085, 1.56, 0.055], olive, [side * 0.39, 2.25, -1.045]);
+    box(santa, [0.16, 0.19, 0.07], black, [side * 0.39, 2.69, -1.09]);
+    curve(santa, [[side * 0.44, 2.96, -0.63], [side * 0.63, 2.8, -0.07], [side * 0.57, 2.53, 0.42], [side * 0.53, 1.62, 0.47]], 0.09, red);
+    curve(santa, [[side * 0.49, 2.93, -0.59], [side * 0.67, 2.77, -0.06], [side * 0.63, 2.51, 0.43], [side * 0.59, 1.66, 0.47]], 0.023, white);
+  }
+  box(santa, [1.15, 0.085, 0.06], white, [0, 1.55, 0.4]);
+  box(santa, [0.2, 0.15, 0.06], black, [0, 1.55, 0.46]);
+  const gun = holdRifle(santa, "ak", [0, 2.02, 0.94], -0.35, knit, black, 0.8);
+  box(gun, [0.68, 0.22, 0.25], black, [-0.85, -0.07, 0]);
+  box(gun, [0.65, 0.21, 0.25], black, [0.63, 0, 0]);
+
+  oval(root, [2.1, 0.045, 1.95], snow, [0.2, 0.045, -0.3]);
+  const tree = new THREE.Group(); tree.position.set(0.92, 0, -1.06); root.add(tree);
+  const pine = material(0x244e3c), pineTips = material(0x32644b), wire = material(0x263c29);
+  tube(tree, 0.14, 0.77, material(0x685038), [0, 0.39, 0]);
+  for (let tier = 0; tier < 5; tier++) {
+    const radius = 1.12 - tier * 0.2, height = 1.25 - tier * 0.1, y = 0.95 + tier * 0.57;
+    mesh(tree, new THREE.ConeGeometry(radius, height, 14), tier % 2 ? pineTips : pine, [0, y, 0]);
+    mesh(tree, new THREE.ConeGeometry(radius * 0.84, height * 0.82, 14), snow, [0, y + height * 0.11, 0]);
+    for (let i = 0; i < 7; i++) {
+      const angle = i / 7 * Math.PI * 2 + tier * 0.47;
+      const x = Math.sin(angle) * radius * 0.8, z = Math.cos(angle) * radius * 0.8;
+      const branch = oval(tree, [radius * 0.28, 0.12, 0.18], pineTips, [x, y - height * 0.32, z]); branch.rotation.y = Math.PI / 2 - angle;
+      const frost = oval(tree, [radius * 0.25, 0.06, 0.15], snow, [x, y - height * 0.32 + 0.085, z]); frost.rotation.y = Math.PI / 2 - angle;
+      if (tier < 4) {
+        tube(tree, 0.008, 0.12, gold, [x, y - height * 0.32 - 0.09, z]);
+        oval(tree, [0.073, 0.081, 0.073], i % 2 ? gold : red, [x, y - height * 0.32 - 0.18, z]);
+      }
+    }
+  }
+  const garland: Point[] = Array.from({ length: 97 }, (_, i): Point => {
+    const t = i / 96, angle = t * Math.PI * 7, radius = 0.99 - t * 0.79;
+    return [Math.sin(angle) * radius, 0.63 + t * 2.8, Math.cos(angle) * radius];
+  });
+  curve(tree, garland, 0.014, wire);
+  const lights = [0xf6c56a, 0xc5533f, 0x7ba5b6].map(color => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.75, roughness: 0.35 }));
+  for (let i = 0; i < garland.length; i += 3) oval(tree, [0.033, 0.041, 0.033], lights[i / 3 % lights.length], garland[i]);
+  const star = new THREE.Shape();
+  for (let i = 0; i < 10; i++) {
+    const angle = Math.PI / 2 + i * Math.PI / 5, radius = i % 2 ? 0.105 : 0.24;
+    if (i === 0) star.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+    else star.lineTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+  }
+  star.closePath();
+  const starGeometry = new THREE.ExtrudeGeometry(star, { depth: 0.055, bevelEnabled: true, bevelSize: 0.012, bevelThickness: 0.012, bevelSegments: 2, steps: 1 });
+  starGeometry.translate(0, 0, -0.0275); mesh(tree, starGeometry, gold, [0, 3.83, 0]);
+
+  function present(at: Point, size: Point, wrapping: Mat, ribbon: Mat, angle: number) {
+    const gift = new THREE.Group(); gift.position.set(...at); gift.rotation.y = angle; tree.add(gift);
+    const [width, height, depth] = size;
+    box(gift, size, wrapping, [0, height / 2, 0]);
+    box(gift, [width + 0.025, 0.06, depth + 0.025], wrapping, [0, height, 0]);
+    box(gift, [0.09, height + 0.075, depth + 0.035], ribbon, [0, height / 2 + 0.01, 0], false);
+    box(gift, [width + 0.035, height + 0.075, 0.09], ribbon, [0, height / 2 + 0.01, 0], false);
+    for (const side of [-1, 1]) curve(gift, [[0, height + 0.07, 0], [side * 0.17, height + 0.18, 0], [side * 0.2, height + 0.075, 0.04], [0, height + 0.07, 0]], 0.024, ribbon);
+    oval(gift, [width * 0.21, 0.027, depth * 0.19], snow, [-width * 0.25, height + 0.055, -depth * 0.25]);
+  }
+  present([-0.72, 0.085, 0.69], [0.53, 0.41, 0.48], red, gold, -0.23);
+  present([0.08, 0.085, 0.87], [0.58, 0.3, 0.45], material(0x355e6d), white, 0.15);
+  present([0.75, 0.085, 0.57], [0.42, 0.57, 0.44], material(0x547543), gold, -0.18);
+  present([0.71, 0.085, -0.35], [0.43, 0.34, 0.4], darkRed, white, 0.3);
+  return root;
+}
+
 export function buildBossModel(boss: BossModelId): THREE.Group {
   switch (boss) {
     case "duck": return makeDuck();
@@ -1235,6 +1345,7 @@ export function buildBossModel(boss: BossModelId): THREE.Group {
     case "kollontay": return makeKollontay();
     case "partisan": return makePartisan();
     case "sanitar": return makeSanitar();
+    case "santa-claus": return makeSantaClaus();
     case "shadow-of-tagilla": return makeShadowOfTagilla();
     case "special-cultists": return makeSpecialCultists();
     case "tagilla": return makeTagilla();

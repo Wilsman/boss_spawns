@@ -29,6 +29,7 @@ export const BOSS_MODELS = [
   { id: "partisan", name: "Partisan", image: "/eft_boss_parasan.webp", Viewer: model("partisan") },
   { id: "reshala", name: "Reshala", image: "/eft_boss_reshala.webp", Viewer: lazy(() => import("./Reshala3D")) },
   { id: "sanitar", name: "Sanitar", image: "/eft_boss_sanny.webp", Viewer: model("sanitar") },
+  { id: "santa-claus", name: "Santa Claus", Viewer: model("santa-claus") },
   { id: "shturman", name: "Shturman", image: "/eft_boss_shturman.webp", Viewer: lazy(() => import("./Shturman3D")) },
   { id: "wedgie", name: "Wedgie", image: "/eft_boss_wedgie.png", Viewer: model("wedgie") },
   { id: "zryachiy", name: "Zryachiy", image: "/eft_boss_zryachiy.png", Viewer: model("zryachiy") },
