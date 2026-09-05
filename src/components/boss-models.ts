@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 // Procedural minifigures based on the corresponding public/eft_boss_*.webp art.
 // Local axes: +Z is the face, +X is the figure's left. Weapons use +X as barrel.
-export type BossModelId = "goons" | "jaeger" | "kaban" | "killa" | "partisan" | "sanitar" | "tagilla" | "wedgie" | "zryachiy";
+export type BossModelId = "glukhar" | "goons" | "jaeger" | "kaban" | "killa" | "kollontay" | "partisan" | "sanitar" | "tagilla" | "wedgie" | "zryachiy";
 type Point = [number, number, number];
 type Parent = THREE.Group;
 type Mat = THREE.Material;
@@ -271,6 +271,164 @@ function makeKilla() {
   }
   const pistol = rifle("pistol"); pistol.position.set(-1.1, 2.69, 0.62); pistol.rotation.z = 1.8; root.add(pistol);
   const backGun = rifle(); backGun.position.set(0.55, 2.39, -0.63); backGun.rotation.z = 1.36; backGun.scale.setScalar(0.8); root.add(backGun);
+  return root;
+}
+
+function makeKollontay() {
+  const root = new THREE.Group();
+  const armor = material(0x252c30), trim = material(0x11191d), steel = material(0x525c60, 0.4);
+  const urbanMap = texture(g => {
+    g.fillStyle = "#8caaae"; g.fillRect(0, 0, 256, 256);
+    const colors = ["#d6dfd6", "#415d6d", "#243a47", "#748b88"];
+    for (let i = 0; i < 64; i++) {
+      const x = (i * 73) % 288 - 24, y = (i * 47) % 256;
+      g.fillStyle = colors[i % colors.length];
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + 43, y - 9);
+      g.lineTo(x + 69, y + 3); g.lineTo(x + 34, y + 13);
+      g.lineTo(x + 13, y + 25); g.lineTo(x - 18, y + 18); g.closePath(); g.fill();
+    }
+  });
+  const uniform = new THREE.MeshStandardMaterial({ map: urbanMap, roughness: 0.95 });
+  body(root, { coat: uniform, pants: uniform, boots: trim, width: 1.08 });
+  vest(root, 0x2c3435, 1, 3, 1.08);
+  box(root, [0.97, 0.4, 0.19], armor, [0, 2.43, 0.49]);
+  box(root, [0.67, 0.42, 0.16], armor, [0, 1.34, 0.44]);
+  box(root, [1.32, 0.16, 0.76], trim, [0, 1.56, 0]);
+  box(root, [0.23, 0.18, 0.055], steel, [0, 1.56, 0.414]);
+  for (const side of [-1, 1]) {
+    box(root, [0.33, 0.44, 0.31], armor, [side * 0.72, 1.67, 0.02]);
+    box(root, [0.61, 0.13, 0.7], trim, [side * 0.48, 0.91, side * 0.07]);
+    box(root, [0.49, 0.4, 0.17], armor, [side * 0.48, 0.84, side * 0.07 + 0.36]);
+    box(root, [0.43, 0.48, 0.14], armor, [side * 0.55, 0.45, side * 0.1 + 0.34]);
+    for (const y of [0.32, 0.52]) box(root, [0.58, 0.065, 0.67], trim, [side * 0.55, y, side * 0.1]);
+    for (let i = 0; i < 3; i++) {
+      const plate = box(root, [0.46, 0.16, 0.62], armor, [side * (0.74 + i * 0.065), 2.66 - i * 0.13, 0]);
+      plate.rotation.z = side * 0.24;
+    }
+    curve(root, [[side * 0.28, 2.76, -0.2], [side * 0.47, 2.71, 0.06], [side * 0.46, 2.56, 0.43]], 0.09, armor);
+  }
+  for (let i = 0; i < 10; i++) {
+    tube(root, 0.034, 0.17, material(0x737844), [-0.5 + i * 0.11, 1.57, 0.425]);
+    tube(root, 0.036, 0.04, material(0xafa06a, 0.4), [-0.5 + i * 0.11, 1.67, 0.425]);
+  }
+
+  const mask = new THREE.Group(); mask.position.y = 3.15; root.add(mask);
+  oval(mask, [0.54, 0.53, 0.49], trim, [0, 0, 0]);
+  const dome = mesh(mask, new THREE.SphereGeometry(0.59, 28, 18, 0, Math.PI * 2, 0, Math.PI / 2), armor, [0, 0.12, -0.03]);
+  dome.scale.y = 0.88;
+  tube(mask, 0.59, 0.08, trim, [0, 0.13, -0.03]);
+  const visor = mesh(mask, new THREE.CylinderGeometry(0.61, 0.64, 0.64, 32, 1, true, -1.22, 2.44), material(0x18252c, 0.45), [0, -0.16, 0]);
+  visor.material.side = THREE.DoubleSide;
+  for (const y of [-0.49, 0.17]) {
+    const radius = y < 0 ? 0.64 : 0.61;
+    curve(mask, Array.from({ length: 13 }, (_, i): Point => {
+      const angle = -1.22 + i / 12 * 2.44;
+      return [Math.sin(angle) * radius, y, Math.cos(angle) * radius];
+    }), 0.023, steel);
+  }
+  for (const side of [-1, 1]) {
+    tube(mask, 0.084, 0.08, steel, [side * 0.58, 0.14, 0.2], "x");
+    tube(mask, 0.038, 0.088, trim, [side * 0.58, 0.14, 0.2], "x");
+  }
+
+  const gun = new THREE.Group(); gun.position.set(0.02, 2.43, 0.92); gun.scale.setScalar(0.86); root.add(gun);
+  const wood = material(0xb85920);
+  box(gun, [0.69, 0.23, 0.2], trim, [-0.86, -0.05, 0]);
+  box(gun, [0.12, 0.34, 0.25], armor, [-1.2, -0.08, 0]);
+  box(gun, [0.91, 0.25, 0.23], steel, [-0.1, 0, 0]);
+  box(gun, [0.17, 0.36, 0.17], trim, [-0.3, -0.22, 0]);
+  box(gun, [0.62, 0.22, 0.25], wood, [0.65, 0, 0]);
+  tube(gun, 0.36, 0.27, trim, [0.22, -0.4, 0], "z");
+  tube(gun, 0.28, 0.012, armor, [0.22, -0.4, 0.143], "z");
+  tube(gun, 0.15, 0.015, trim, [0.22, -0.4, 0.158], "z");
+  tube(gun, 0.06, 1.02, steel, [1.4, 0.025, 0], "x");
+  tube(gun, 0.039, 0.77, armor, [1.31, 0.15, 0], "x");
+  tube(gun, 0.086, 0.2, armor, [1.92, 0.025, 0], "x");
+  tube(gun, 0.046, 0.009, trim, [2.024, 0.025, 0], "x");
+  box(gun, [0.07, 0.3, 0.08], steel, [1.78, 0.14, 0]);
+  box(gun, [0.25, 0.12, 0.15], trim, [-0.15, 0.2, 0]);
+  for (let i = 0; i < 4; i++) box(gun, [0.04, 0.06, 0.26], armor, [0.44 + i * 0.12, 0.12, 0], false);
+  arm(root, [-0.79, 2.5, 0], [-0.94, 2.09, 0.45], [-0.238, 2.241, 0.92], uniform, trim);
+  arm(root, [0.79, 2.5, 0], [1.05, 2.18, 0.47], [0.605, 2.344, 0.92], uniform, trim);
+  limb(root, [-0.91, 2.1, 0.59], [-0.43, 2.22, 0.94], 0.37, armor, 0.16);
+  limb(root, [1.04, 2.19, 0.61], [0.73, 2.31, 0.94], 0.37, armor, 0.16);
+  return root;
+}
+
+function makeGlukhar() {
+  const root = new THREE.Group(), upper = new THREE.Group();
+  const shirt = material(0x30392a), pants = material(0x44473a), boots = material(0x373c30);
+  const skin = material(YELLOW), glove = material(0x1a231c), rig = material(0x858772), woodland = camo();
+  upper.position.set(0, -0.57, 0.13); upper.rotation.x = 0.09; root.add(upper);
+  const torso = mesh(upper, new THREE.CylinderGeometry(0.8, 0.67, 1.18, 4), shirt, [0, 2.1, 0], true);
+  torso.rotation.y = Math.PI / 4; torso.scale.set(1.18, 1, 0.8);
+  tube(upper, 0.23, 0.19, skin, [0, 2.78, 0]);
+  const h = head(upper, { bald: true });
+  const hair = material(0x302b24);
+  const crop = mesh(h, new THREE.SphereGeometry(0.49, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2), hair, [0, 0.29, -0.09]);
+  crop.scale.set(0.81, 0.18, 0.79);
+  box(h, [0.77, 0.29, 0.17], hair, [0, 0.15, -0.4], false);
+  for (const side of [-1, 1]) box(h, [0.07, 0.22, 0.18], hair, [side * 0.44, 0.13, -0.14], false);
+  box(upper, [1.09, 0.77, 0.12], rig, [0, 1.96, 0.47]);
+  box(upper, [1.11, 0.99, 0.17], woodland, [0, 2.1, -0.48]);
+  for (const side of [-1, 1]) {
+    box(upper, [0.25, 0.97, 0.16], woodland, [side * 0.49, 2.23, 0.43]);
+    curve(upper, [[side * 0.49, 2.63, 0.44], [side * 0.52, 2.79, 0], [side * 0.49, 2.62, -0.47]], 0.13, woodland);
+    box(upper, [0.37, 0.4, 0.18], rig, [side * 0.29, 1.84, 0.61]);
+    box(upper, [0.38, 0.1, 0.03], material(0x60634e), [side * 0.29, 1.97, 0.715]);
+  }
+  box(root, [1.21, 0.28, 0.68], pants, [0, 1.01, 0.2]);
+  for (const side of [-1, 1]) {
+    const hip: Point = [side * 0.35, 1.06, 0.19];
+    const knee: Point = [side * 0.65, side < 0 ? 0.94 : 0.68, 0.94];
+    const ankle: Point = [side * 0.57, 0.24, side < 0 ? 0.4 : -0.19];
+    limb(root, hip, knee, 0.58, pants, 0.63);
+    oval(root, [0.3, 0.28, 0.32], pants, knee);
+    limb(root, knee, ankle, 0.5, pants, 0.56);
+    box(root, [0.6, 0.31, 0.83], boots, [ankle[0], 0.2, ankle[2] + 0.14]);
+    box(root, [0.62, 0.08, 0.85], glove, [ankle[0], 0.055, ankle[2] + 0.14]);
+    for (let i = 0; i < 3; i++) box(root, [0.31, 0.025, 0.04], rig, [ankle[0], 0.365, ankle[2] + 0.18 + i * 0.1], false);
+  }
+
+  const gun = new THREE.Group(); gun.position.set(0.03, 2.26, 0.94); gun.rotation.y = -0.32; gun.scale.setScalar(0.88); upper.add(gun);
+  const steel = material(0x404a42, 0.35);
+  box(gun, [0.97, 0.35, 0.27], steel, [-0.25, 0, 0]);
+  box(gun, [0.44, 0.32, 0.25], glove, [-0.94, -0.05, 0]);
+  box(gun, [0.12, 0.43, 0.3], boots, [-1.17, -0.06, 0]);
+  box(gun, [0.23, 0.48, 0.22], glove, [-0.49, -0.33, 0]);
+  box(gun, [0.17, 0.34, 0.18], glove, [0.09, -0.25, 0]);
+  box(gun, [0.83, 0.32, 0.29], steel, [0.65, 0, 0]);
+  box(gun, [0.15, 0.28, 0.17], glove, [0.7, -0.24, 0]);
+  for (let i = 0; i < 7; i++) box(gun, [0.045, 0.36, 0.33], glove, [0.3 + i * 0.105, 0, 0], false);
+  tube(gun, 0.082, 0.5, steel, [1.27, 0.04, 0], "x");
+  tube(gun, 0.14, 0.32, boots, [1.6, 0.04, 0], "x");
+  tube(gun, 0.081, 0.01, glove, [1.766, 0.04, 0], "x");
+  for (const x of [-0.42, 0.12]) box(gun, [0.08, 0.21, 0.13], glove, [x, 0.26, 0]);
+  tube(gun, 0.12, 0.71, steel, [-0.18, 0.41, 0], "x");
+  tube(gun, 0.19, 0.23, glove, [0.27, 0.41, 0], "x");
+  tube(gun, 0.151, 0.012, material(0x64837a, 0.45), [0.392, 0.41, 0], "x");
+  tube(gun, 0.075, 0.15, glove, [-0.14, 0.55, 0]);
+  for (const side of [-1, 1]) {
+    const shoulder: Point = [side * 0.78, 2.51, 0];
+    const sleeveEnd: Point = [side * 0.89, 2.28, 0.12];
+    const elbow: Point = [side * 1.01, 1.98, 0.41];
+    const grip = new THREE.Vector3(side < 0 ? 0.09 : 0.7, -0.24, 0).multiplyScalar(0.88).applyEuler(gun.rotation).add(gun.position);
+    const wrist: Point = [grip.x, grip.y, grip.z];
+    limb(upper, shoulder, sleeveEnd, 0.46, shirt);
+    limb(upper, sleeveEnd, elbow, 0.4, skin);
+    oval(upper, [0.22, 0.22, 0.22], skin, elbow);
+    const forearm = limb(upper, elbow, wrist, 0.37, skin);
+    hand(upper, wrist, glove);
+    const ink = new THREE.Group(); ink.position.copy(forearm.position); ink.quaternion.copy(forearm.quaternion); upper.add(ink);
+    decal(ink, 0.31, 0.37, [0, 0, 0.191], g => {
+      g.strokeStyle = "#343d29"; g.lineWidth = 12; g.lineJoin = "miter";
+      g.beginPath(); g.moveTo(128, 222); g.lineTo(101, 119); g.lineTo(28, 53);
+      g.lineTo(95, 77); g.lineTo(128, 26); g.lineTo(161, 77);
+      g.lineTo(228, 53); g.lineTo(155, 119); g.closePath(); g.stroke();
+      g.beginPath(); g.moveTo(49, 103); g.lineTo(75, 170); g.lineTo(103, 145);
+      g.moveTo(207, 103); g.lineTo(181, 170); g.lineTo(153, 145); g.stroke();
+    });
+  }
   return root;
 }
 
@@ -669,10 +827,12 @@ function makeZryachiy() {
 
 export function buildBossModel(boss: BossModelId): THREE.Group {
   switch (boss) {
+    case "glukhar": return makeGlukhar();
     case "goons": return makeGoons();
     case "jaeger": return makeJaeger();
     case "kaban": return makeKaban();
     case "killa": return makeKilla();
+    case "kollontay": return makeKollontay();
     case "partisan": return makePartisan();
     case "sanitar": return makeSanitar();
     case "tagilla": return makeTagilla();
