@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 // Procedural minifigures based on the corresponding public/eft_boss_*.webp art.
 // Local axes: +Z is the face, +X is the figure's left. Weapons use +X as barrel.
-export type BossModelId = "goons" | "jaeger" | "kaban" | "killa" | "partisan" | "sanitar" | "tagilla";
+export type BossModelId = "goons" | "jaeger" | "kaban" | "killa" | "partisan" | "sanitar" | "tagilla" | "wedgie";
 type Point = [number, number, number];
 type Parent = THREE.Group;
 type Mat = THREE.Material;
@@ -433,6 +433,97 @@ function makeGoons() {
   return root;
 }
 
+function makeWedgie() {
+  const root = new THREE.Group();
+  const coat = material(0x303a3e), trim = material(0x18272d), armor = material(0x253137);
+  const steel = material(0x526167, 0.35), glove = material(0x273338), black = material(0x0c171d);
+  body(root, { coat, pants: material(0x35434a), boots: trim, width: 1.08 });
+  backpack(root, 0x303b3d);
+  vest(root, 0x344146, 1, 3);
+  // Heavy open parka, stitched panels and frost on the shoulders.
+  for (const side of [-1, 1]) {
+    box(root, [0.32, 1.43, 0.18], coat, [side * 0.59, 1.92, 0.43]);
+    const lapel = box(root, [0.29, 0.67, 0.17], trim, [side * 0.53, 2.5, 0.44]);
+    lapel.rotation.z = side * 0.2;
+    curve(root, [[side * 0.48, 2.69, 0.56], [side * 0.44, 2.17, 0.58], [side * 0.49, 1.33, 0.54]], 0.018, material(0x8b8872));
+    box(root, [0.29, 0.32, 0.07], trim, [side * 0.6, 1.48, 0.56]);
+    box(root, [0.48, 0.31, 0.07], armor, [side * 0.44, 0.85, side * 0.07 + 0.33]);
+  }
+  // Individual low-poly tufts give the collar volume all the way around.
+  const furColors = [0x5d6055, 0x77776a, 0x444d47, 0x949485];
+  for (let i = 0; i < 38; i++) {
+    const angle = -Math.PI * 0.6 + i / 37 * Math.PI * 1.2;
+    const x = Math.sin(angle) * 0.74, z = -Math.cos(angle) * 0.46;
+    const y = 2.73 + Math.cos(angle) * 0.16;
+    const tuft = mesh(root, new THREE.IcosahedronGeometry(0.145, 0), material(furColors[i % 4]), [x, y, z]);
+    tuft.scale.set(0.85, 1.1 + (i % 3) * 0.17, 0.85);
+    tuft.rotation.set(i * 0.7, i * 0.9, -x * 0.6);
+  }
+  box(root, [0.65, 0.36, 0.045], black, [0, 2.43, 0.54]);
+  decal(root, 0.6, 0.3, [0, 2.43, 0.567], g => {
+    g.strokeStyle = "#a63c32"; g.lineWidth = 15;
+    g.beginPath(); g.arc(69, 128, 57, 0.6, 5.7); g.stroke();
+    g.fillStyle = "#d1d6ca"; g.font = "bold 36px sans-serif";
+    g.fillText("BLACK", 62, 117); g.fillText("DIVISION", 62, 159);
+  });
+
+  const face = new THREE.Group(); face.position.y = 3.15; root.add(face);
+  oval(face, [0.47, 0.44, 0.43], trim, [0, -0.02, 0]);
+  // Respirator: distinct round eyepieces, central grille and side filter canister.
+  oval(face, [0.33, 0.32, 0.18], armor, [0, -0.15, 0.35]);
+  for (const side of [-1, 1]) {
+    tube(face, 0.145, 0.105, steel, [side * 0.22, 0.04, 0.419], "z");
+    tube(face, 0.113, 0.012, black, [side * 0.22, 0.04, 0.477], "z");
+    tube(face, 0.083, 0.014, material(0x263e49, 0.5), [side * 0.22, 0.04, 0.487], "z");
+    curve(face, [[side * 0.33, -0.04, 0.4], [side * 0.27, -0.13, 0.44]], 0.013, material(0x9e493e));
+  }
+  oval(face, [0.155, 0.2, 0.1], steel, [0, -0.28, 0.49]);
+  for (let i = 0; i < 7; i++) box(face, [0.012, 0.105, 0.014], black, [-0.072 + i * 0.024, -0.245, 0.586], false);
+  tube(face, 0.064, 0.019, black, [0, -0.37, 0.582], "z");
+  tube(face, 0.029, 0.022, steel, [0, -0.37, 0.595], "z");
+  const filter = tube(face, 0.145, 0.23, armor, [0.36, -0.23, 0.29], "x"); filter.rotation.z += 0.25;
+  tube(face, 0.13, 0.02, steel, [0.49, -0.2, 0.29], "x");
+  // Armored dome, side rails and folded optics mounted above the mask.
+  const dome = mesh(face, new THREE.SphereGeometry(0.55, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2), coat, [0, 0.2, -0.015]);
+  dome.scale.y = 0.87;
+  tube(face, 0.54, 0.1, trim, [0, 0.22, 0]);
+  for (const side of [-1, 1]) {
+    box(face, [0.09, 0.16, 0.36], steel, [side * 0.53, 0.29, 0.015]);
+    curve(face, [[side * 0.29, 0.25, 0.46], [side * 0.25, 0.57, 0.18], [side * 0.23, 0.6, -0.15]], 0.023, steel);
+    tube(face, 0.118, 0.13, trim, [side * 0.36, 0.23, 0.48], "z");
+    tube(face, 0.088, 0.01, material(0x6b756e), [side * 0.36, 0.23, 0.551], "z");
+  }
+  box(face, [0.2, 0.42, 0.16], trim, [0, 0.46, 0.42]);
+  for (const y of [0.33, 0.49, 0.65]) box(face, [0.23, 0.055, 0.05], steel, [0, y, 0.516]);
+  tube(face, 0.055, 0.06, black, [0, 0.28, 0.575], "z");
+
+  // Compact suppressed weapon held below the face, with both hands on it.
+  const gun = new THREE.Group(); gun.position.set(0.03, 2.08, 0.87); gun.rotation.z = -0.26; root.add(gun);
+  box(gun, [0.95, 0.28, 0.23], armor, [0.02, 0, 0]);
+  box(gun, [0.42, 0.14, 0.15], trim, [-0.61, -0.04, 0]);
+  box(gun, [0.09, 0.28, 0.2], trim, [-0.84, -0.09, 0]);
+  box(gun, [0.18, 0.29, 0.19], glove, [-0.27, -0.23, 0]);
+  box(gun, [0.2, 0.48, 0.19], trim, [0.12, -0.32, 0]);
+  box(gun, [0.43, 0.22, 0.25], coat, [0.67, 0, 0]);
+  tube(gun, 0.09, 0.64, steel, [1.19, 0, 0], "x");
+  tube(gun, 0.065, 0.007, black, [1.514, 0, 0], "x");
+  box(gun, [0.24, 0.18, 0.19], trim, [0.08, 0.24, 0]);
+  box(gun, [0.11, 0.1, 0.12], material(0x62858b, 0.4), [0.21, 0.25, 0]);
+  tube(gun, 0.058, 0.28, steel, [0.66, 0.18, 0.13], "x");
+  for (let i = 0; i < 8; i++) box(gun, [0.032, 0.04, 0.26], steel, [-0.34 + i * 0.12, 0.16, 0], false);
+  const grip = (x: number, y: number): Point => {
+    const p = new THREE.Vector3(x, y, 0.03).applyAxisAngle(new THREE.Vector3(0, 0, 1), -0.26).add(gun.position);
+    return [p.x, p.y, p.z];
+  };
+  arm(root, [-0.8, 2.51, 0], [-0.96, 2.03, 0.34], grip(-0.27, -0.2), coat, glove);
+  arm(root, [0.8, 2.51, 0], [0.93, 1.91, 0.34], grip(0.64, -0.12), coat, glove);
+  for (const side of [-1, 1]) {
+    box(root, [0.25, 0.28, 0.055], armor, [side * 0.89, 2.31, 0.22]);
+    curve(root, [[side * 0.76, 2.62, 0.02], [side * 0.87, 2.44, 0.14]], 0.024, material(0x91a3a4));
+  }
+  return root;
+}
+
 export function buildBossModel(boss: BossModelId): THREE.Group {
   switch (boss) {
     case "goons": return makeGoons();
@@ -442,5 +533,6 @@ export function buildBossModel(boss: BossModelId): THREE.Group {
     case "partisan": return makePartisan();
     case "sanitar": return makeSanitar();
     case "tagilla": return makeTagilla();
+    case "wedgie": return makeWedgie();
   }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as THREE from "three";
 import { buildBossModel, type BossModelId } from "./boss-models";
+import { createBossSnow } from "./boss-snow";
 
 interface BossModel3DProps {
   boss: BossModelId;
@@ -115,6 +116,7 @@ export function BossModel3D({
     fitCamera(W / H);
     disc.scale.set(Math.max(1, radius / 1.7), 1, Math.max(1, radius / 1.7));
     ground.scale.setScalar(Math.max(1, radius / 1.7));
+    const snow = boss === "wedgie" ? createBossSnow(scene) : null;
 
     // ---- Horizontal-only drag (mouse + touch) ----
     const el = renderer.domElement;
@@ -149,6 +151,7 @@ export function BossModel3D({
     const animate = () => {
       raf = requestAnimationFrame(animate);
       const dt = Math.min(clock.getDelta(), 0.05);
+      snow?.update(dt);
       idleRef.current += dt;
       const spin = spinRef.current;
       if (spin && !draggingRef.current) {
@@ -185,6 +188,7 @@ export function BossModel3D({
 
     return () => {
       cancelAnimationFrame(raf);
+      snow?.dispose();
       window.removeEventListener("resize", onResize);
       resizeObs.disconnect();
       obs.disconnect();

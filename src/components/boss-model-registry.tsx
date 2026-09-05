@@ -26,4 +26,5 @@ export const BOSS_MODELS = [
   { id: "reshala", name: "Reshala", image: "/eft_boss_reshala.webp", Viewer: lazy(() => import("./Reshala3D")) },
   { id: "sanitar", name: "Sanitar", image: "/eft_boss_sanny.webp", Viewer: model("sanitar") },
   { id: "shturman", name: "Shturman", image: "/eft_boss_shturman.webp", Viewer: lazy(() => import("./Shturman3D")) },
+  { id: "wedgie", name: "Wedgie", image: "/eft_boss_wedgie.png", Viewer: model("wedgie") },
 ];
