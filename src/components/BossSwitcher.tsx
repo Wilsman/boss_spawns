@@ -4,7 +4,12 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BOSS_MODELS } from "./boss-model-registry";
 
 const DUCK_ENABLED_IN_HEADER = false;
-const HEADER_BOSS_MODELS = BOSS_MODELS.filter(boss => boss.id !== "duck" || DUCK_ENABLED_IN_HEADER);
+const SHADOW_OF_TAGILLA_ENABLED_IN_HEADER = false;
+const HEADER_BOSS_MODELS = BOSS_MODELS.filter(boss => {
+  if (boss.id === "duck") return DUCK_ENABLED_IN_HEADER;
+  if (boss.id === "shadow-of-tagilla") return SHADOW_OF_TAGILLA_ENABLED_IN_HEADER;
+  return true;
+});
 
 export function BossSwitcher() {
   const [selection, setSelection] = useState(() => ({

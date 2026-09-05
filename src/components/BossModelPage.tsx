@@ -7,7 +7,7 @@ export default function BossModelPage({ boss = "goons" }: { boss?: string }) {
   const Viewer = selected.Viewer;
   return (
     <div className="container mx-auto max-w-3xl px-3 pt-6 pb-24 sm:px-4">
-      <h1 className="mb-1 text-center text-xl font-bold text-white">Lego {selected.name} - 3D</h1>
+      <h1 className="mb-1 text-center text-xl font-bold text-white">{selected.id === "shadow-of-tagilla" ? "" : "Lego "}{selected.name} - 3D</h1>
       <p className="mb-4 text-center text-sm text-gray-400">Drag horizontally to spin. Use the arrows for a closer look from each side.</p>
       <nav aria-label="Boss models" className="mb-4 flex flex-wrap justify-center gap-2">
         {BOSS_MODELS.map(model => (

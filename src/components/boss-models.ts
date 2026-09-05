@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 // Procedural minifigures based on the corresponding public/eft_boss_*.webp art.
 // Local axes: +Z is the face, +X is the figure's left. Weapons use +X as barrel.
-export type BossModelId = "duck" | "glukhar" | "goons" | "jaeger" | "kaban" | "killa" | "kollontay" | "partisan" | "sanitar" | "special-cultists" | "tagilla" | "wedgie" | "zryachiy";
+export type BossModelId = "duck" | "glukhar" | "goons" | "jaeger" | "kaban" | "killa" | "kollontay" | "partisan" | "sanitar" | "shadow-of-tagilla" | "special-cultists" | "tagilla" | "wedgie" | "zryachiy";
 type Point = [number, number, number];
 type Parent = THREE.Group;
 type Mat = THREE.Material;
@@ -998,6 +998,232 @@ function makeDuck() {
   return root;
 }
 
+function makeShadowOfTagilla() {
+  const root = new THREE.Group();
+  let seed = 613;
+  function random() { return ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296); }
+  function worn(base: string, metalness = 0, roughness = 0.85) {
+    const map = texture(g => {
+      g.fillStyle = base; g.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 1800; i++) {
+        g.fillStyle = i % 2 ? "rgba(12,15,12,.12)" : "rgba(230,220,195,.09)";
+        g.fillRect(random() * 256, random() * 256, 1 + random() * 5, 1 + random() * 4);
+      }
+      for (let i = 0; i < 65; i++) {
+        const x = random() * 256, y = random() * 256;
+        g.strokeStyle = i % 3 ? "rgba(17,19,15,.16)" : "rgba(215,204,173,.22)";
+        g.lineWidth = 0.5 + random(); g.beginPath(); g.moveTo(x, y);
+        g.lineTo(x + random() * 21 - 10, y + 3 + random() * 29); g.stroke();
+      }
+    });
+    return new THREE.MeshStandardMaterial({ map, bumpMap: map, bumpScale: metalness ? 0.018 : 0.009, metalness, roughness });
+  }
+  function panel(parent: Parent, size: Point, mat: Mat, at: Point, bevel = 0.025) {
+    const shape = new THREE.Shape();
+    shape.moveTo(-size[0] / 2, -size[1] / 2); shape.lineTo(size[0] / 2, -size[1] / 2);
+    shape.lineTo(size[0] / 2, size[1] / 2); shape.lineTo(-size[0] / 2, size[1] / 2); shape.closePath();
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: size[2], bevelEnabled: true, bevelSize: bevel, bevelThickness: bevel, bevelSegments: 3, steps: 1 });
+    geometry.translate(0, 0, -size[2] / 2);
+    return mesh(parent, geometry, mat, at);
+  }
+  function sculpt(parent: Parent, from: Point, to: Point, radii: number[], mat: Mat, depth = 1) {
+    const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to), length = a.distanceTo(b);
+    const profile = new THREE.SplineCurve(radii.map((radius, i) => new THREE.Vector2(radius, i / (radii.length - 1) * length)));
+    const part = mesh(parent, new THREE.LatheGeometry(profile.getPoints(32), 28), mat, from);
+    part.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.sub(a).normalize());
+    part.scale.z = depth;
+    return part;
+  }
+  const skin = worn("#b4a18d"), cloth = worn("#555b40"), darkCloth = worn("#343b2d");
+  const leather = worn("#252922"), red = worn("#973d2b"), metal = worn("#555047", 0.65, 0.67);
+  const edge = worn("#bdc2ba", 0.8, 0.38), bladeMetal = worn("#878e87", 0.72, 0.56);
+  const black = material(0x111513), seam = material(0x898574), rust = material(0x4d3021, 0.3);
+  const pants = camo(); pants.color.setHex(0x777e6d);
+  const tattooMap = texture(g => {
+    g.fillStyle = "#b4a18d"; g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 1300; i++) {
+      g.fillStyle = i % 2 ? "rgba(83,58,48,.1)" : "rgba(226,210,187,.12)";
+      g.fillRect(random() * 256, random() * 256, 1 + random() * 4, 1 + random() * 4);
+    }
+    g.strokeStyle = "rgba(45,43,36,.66)"; g.lineWidth = 2;
+    for (const x of [48, 175]) {
+      g.beginPath(); g.ellipse(x, 92, 28, 38, -0.12, 0, Math.PI * 2); g.stroke();
+      g.beginPath(); g.moveTo(x - 18, 119); g.lineTo(x - 13, 140); g.lineTo(x + 13, 140); g.lineTo(x + 20, 117); g.stroke();
+      g.fillStyle = "rgba(45,43,36,.53)";
+      for (const side of [-1, 1]) { g.beginPath(); g.ellipse(x + side * 12, 91, 8, 10, side * 0.3, 0, Math.PI * 2); g.fill(); }
+      g.beginPath(); g.moveTo(x, 102); g.lineTo(x - 5, 114); g.lineTo(x + 5, 114); g.closePath(); g.fill();
+      for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(x + i * 5, 124); g.lineTo(x + i * 5, 138); g.stroke(); }
+    }
+    for (let i = 0; i < 14; i++) {
+      const x = (i * 61) % 244 + 6, y = i % 2 ? 163 + i * 4 : 9 + i * 3;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + 12, y + 8); g.lineTo(x - 3, y + 22); g.lineTo(x + 15, y + 31); g.stroke();
+    }
+    g.strokeStyle = "rgba(110,58,45,.32)"; g.lineWidth = 3;
+    for (let i = 0; i < 8; i++) { const x = random() * 256; g.beginPath(); g.moveTo(x, 150); g.lineTo(x + 12, 178); g.stroke(); }
+  });
+  const tattooedSkin = new THREE.MeshStandardMaterial({ map: tattooMap, bumpMap: tattooMap, bumpScale: 0.006, roughness: 0.87 });
+
+  sculpt(root, [0, 1.76, 0], [0, 3.24, -0.04], [0.28, 0.4, 0.36, 0.43, 0.57, 0.55, 0.22], skin, 0.63);
+  oval(root, [0.44, 0.28, 0.28], pants, [0, 1.78, 0]);
+  for (const side of [-1, 1]) {
+    const hip: Point = [side * 0.28, 1.72, 0];
+    const knee: Point = [side * 0.55, side < 0 ? 0.96 : 1.04, side < 0 ? 0.25 : -0.05];
+    const ankle: Point = [side * 0.68, 0.32, side < 0 ? 0.44 : -0.28];
+    sculpt(root, hip, knee, [0.19, 0.28, 0.275, 0.23, 0.18], pants, 1.08);
+    oval(root, [0.21, 0.22, 0.23], pants, knee);
+    sculpt(root, knee, ankle, [0.18, 0.22, 0.2, 0.145, 0.14], pants, 1.03);
+    const boot = new THREE.Group(); boot.position.set(ankle[0], 0, ankle[2]); boot.rotation.y = side * 0.13; root.add(boot);
+    oval(boot, [0.19, 0.36, 0.19], leather, [0, 0.4, 0]);
+    oval(boot, [0.2, 0.15, 0.36], leather, [0, 0.18, 0.13]);
+    panel(boot, [0.34, 0.065, 0.57], black, [0, 0.07, 0.1], 0.035);
+    for (let i = 0; i < 6; i++) {
+      curve(boot, [[-0.12, 0.31 + i * 0.044, 0.15], [0, 0.29 + i * 0.044, 0.2], [0.12, 0.31 + i * 0.044, 0.15]], 0.011, seam);
+      panel(boot, [0.39, 0.035, 0.025], leather, [0, 0.055, -0.16 + i * 0.1], 0.008);
+    }
+    const kneePad = panel(root, [0.31, 0.33, 0.08], darkCloth, [knee[0], knee[1], knee[2] + 0.225], 0.06); kneePad.rotation.x = -0.14;
+    panel(root, [0.21, 0.22, 0.055], leather, [knee[0], knee[1], knee[2] + 0.3], 0.035);
+    for (const dy of [-0.17, 0.17]) {
+      const strap = tube(root, 0.215, 0.055, leather, [knee[0], knee[1] + dy, knee[2]]); strap.scale.z = 1.09;
+    }
+    panel(root, [0.26, 0.36, 0.075], pants, [side * 0.42, 1.43, 0.2], 0.035);
+    for (let i = 0; i < 4; i++) curve(root, [[side * 0.45, 1.43 - i * 0.17, 0.16], [side * 0.57, 1.4 - i * 0.17, 0.21], [side * 0.64, 1.43 - i * 0.17, 0.16]], 0.012, darkCloth);
+  }
+  const belt = tube(root, 0.415, 0.14, leather, [0, 1.96, 0]); belt.scale.z = 0.76;
+  panel(root, [0.18, 0.12, 0.035], metal, [0, 1.96, 0.335], 0.014);
+  panel(root, [0.11, 0.075, 0.018], black, [0, 1.96, 0.363], 0.006);
+  for (const x of [-0.28, 0.28]) panel(root, [0.05, 0.19, 0.025], cloth, [x, 1.97, 0.28], 0.007);
+
+  const chest = panel(root, [0.82, 0.85, 0.12], cloth, [0, 2.68, 0.295], 0.075); chest.rotation.x = -0.04;
+  panel(root, [0.79, 0.91, 0.13], darkCloth, [0, 2.71, -0.34], 0.065);
+  for (const side of [-1, 1]) {
+    curve(root, [[side * 0.33, 2.96, 0.37], [side * 0.4, 3.23, 0.18], [side * 0.36, 3.27, -0.2], [side * 0.31, 2.97, -0.41]], 0.077, cloth);
+    panel(root, [0.12, 0.2, 0.055], metal, [side * 0.35, 3.03, 0.33], 0.009);
+    panel(root, [0.07, 0.13, 0.024], leather, [side * 0.35, 3.03, 0.37], 0.006);
+    panel(root, [0.13, 0.45, 0.52], darkCloth, [side * 0.42, 2.5, 0], 0.025);
+  }
+  panel(root, [0.6, 0.22, 0.075], darkCloth, [0, 2.93, 0.407], 0.026);
+  for (const x of [-0.27, 0, 0.27]) {
+    panel(root, [0.2, 0.39, 0.14], cloth, [x, 2.49, 0.438], 0.028);
+    panel(root, [0.21, 0.095, 0.04], darkCloth, [x, 2.67, 0.53], 0.016);
+    curve(root, [[x - 0.09, 2.31, 0.515], [x - 0.09, 2.61, 0.527], [x + 0.09, 2.61, 0.527], [x + 0.09, 2.31, 0.515]], 0.005, seam);
+  }
+  for (let i = 0; i < 5; i++) panel(root, [0.7, 0.033, 0.025], cloth, [0, 2.4 + i * 0.13, -0.43], 0.005);
+
+  sculpt(root, [0, 3.14, -0.03], [0, 3.61, -0.04], [0.17, 0.185, 0.16, 0.14], skin);
+  const mask = new THREE.Group(); mask.position.set(0, 3.77, -0.06); mask.rotation.x = 0.1; root.add(mask);
+  oval(mask, [0.295, 0.37, 0.29], leather, [0, 0.01, 0]);
+  const shell = mesh(mask, new THREE.SphereGeometry(0.34, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.77), metal, [0, 0.06, -0.025]); shell.scale.set(1, 1.31, 0.94);
+  panel(mask, [0.48, 0.46, 0.07], metal, [0, -0.015, 0.255], 0.05);
+  panel(mask, [0.385, 0.18, 0.055], edge, [0, 0.055, 0.322], 0.018);
+  panel(mask, [0.32, 0.12, 0.03], black, [0, 0.055, 0.366], 0.009);
+  panel(mask, [0.27, 0.072, 0.009], new THREE.MeshStandardMaterial({ color: 0x777666, roughness: 0.2, metalness: 0.8 }), [0, 0.055, 0.389], 0.004);
+  curve(mask, [[-0.115, 0.064, 0.4], [-0.055, 0.049, 0.4], [0.02, 0.071, 0.4], [0.1, 0.046, 0.4]], 0.008, seam);
+  panel(mask, [0.4, 0.23, 0.035], black, [0, -0.22, 0.3], 0.02);
+  for (const x of [-0.18, -0.09, 0, 0.09, 0.18]) curve(mask, [[x, -0.105, 0.341], [x * 0.9, -0.25, 0.373], [x * 0.76, -0.38, 0.274]], 0.018, metal);
+  curve(mask, [[-0.24, -0.17, 0.29], [-0.19, -0.36, 0.27], [0, -0.4, 0.28], [0.19, -0.36, 0.27], [0.24, -0.17, 0.29]], 0.031, metal);
+  for (const side of [-1, 1]) {
+    tube(mask, 0.06, 0.045, rust, [side * 0.31, 0.025, 0.11], "x");
+    const path = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(side * 0.27, 0.25, -0.04), new THREE.Vector3(side * 0.53, 0.26, -0.09),
+      new THREE.Vector3(side * 0.76, 0.43, -0.13), new THREE.Vector3(side * 0.77, 0.6, -0.09),
+      new THREE.Vector3(side * 0.57, 0.7, 0), new THREE.Vector3(side * 0.33, 0.72, 0.05),
+      new THREE.Vector3(side * 0.23, 0.87, 0.08),
+    ]);
+    const horn = new THREE.TubeGeometry(path, 48, 1, 12, false);
+    const positions = horn.attributes.position;
+    for (let i = 0; i <= 48; i++) {
+      const center = path.getPointAt(i / 48), radius = 0.093 * Math.pow(1 - i / 48, 0.78) + 0.001;
+      for (let j = 0; j <= 12; j++) {
+        const index = i * 13 + j;
+        const v = new THREE.Vector3().fromBufferAttribute(positions, index).sub(center).multiplyScalar(radius).add(center);
+        positions.setXYZ(index, v.x, v.y, v.z);
+      }
+    }
+    horn.computeVertexNormals(); mesh(mask, horn, worn("#37372e", 0.2), [0, 0, 0]);
+  }
+  for (const y of [0.25, 0.39]) {
+    const wire = Array.from({ length: 49 }, (_, i): Point => {
+      const angle = i / 48 * Math.PI * 2;
+      return [Math.sin(angle) * 0.335, y + Math.sin(angle * 5) * 0.017, Math.cos(angle) * 0.305 - 0.025];
+    });
+    curve(mask, wire, 0.009, rust);
+    for (let i = 0; i < 9; i++) {
+      const angle = i / 9 * Math.PI * 2, x = Math.sin(angle) * 0.34, z = Math.cos(angle) * 0.31 - 0.025;
+      curve(mask, [[x - 0.028, y - 0.04, z], [x, y, z], [x + 0.032, y + 0.045, z + 0.022]], 0.006, black);
+    }
+  }
+
+  const axe = new THREE.Group(); axe.position.set(-0.24, 4.62, -0.43); axe.rotation.set(-0.12, 0.08, 0.16); root.add(axe);
+  tube(axe, 0.047, 3.6, worn("#716954"), [0.15, 0, 0], "x");
+  tube(axe, 0.063, 0.07, metal, [-1.63, 0, 0], "x");
+  for (let i = 0; i < 34; i++) tube(axe, 0.052, 0.046, i % 3 ? leather : metal, [-1.45 + i * 0.067, 0, 0], "x");
+  const axeHead = new THREE.Group(); axeHead.position.x = 1.7; axe.add(axeHead);
+  tube(axeHead, 0.145, 0.3, metal, [0, 0, 0], "x");
+  for (const side of [-1, 1]) {
+    const blade = new THREE.Shape();
+    blade.moveTo(-0.14, 0.07); blade.quadraticCurveTo(-0.24, 0.4, -0.89, 0.41);
+    blade.absarc(0, 0, 0.98, Math.PI * 0.86, Math.PI * 0.14, true);
+    blade.quadraticCurveTo(0.24, 0.4, 0.14, 0.07); blade.closePath();
+    for (let i = 0; i < 9; i++) {
+      const angle = Math.PI * (0.2 + i * 0.075), hole = new THREE.Path();
+      hole.absarc(Math.cos(angle) * 0.82, Math.sin(angle) * 0.82, 0.029 + i % 2 * 0.008, 0, Math.PI * 2, false); blade.holes.push(hole);
+    }
+    const group = new THREE.Group(); group.rotation.z = side < 0 ? Math.PI : 0; axeHead.add(group);
+    const geometry = new THREE.ExtrudeGeometry(blade, { depth: 0.07, bevelEnabled: true, bevelSize: 0.018, bevelThickness: 0.016, bevelSegments: 2, steps: 1 });
+    geometry.translate(0, 0, -0.035); mesh(group, geometry, bladeMetal, [0, 0, 0]);
+    const cuttingEdge = new THREE.Shape();
+    cuttingEdge.absarc(0, 0, 0.993, Math.PI * 0.86, Math.PI * 0.14, true);
+    cuttingEdge.absarc(0, 0, 0.945, Math.PI * 0.14, Math.PI * 0.86, false); cuttingEdge.closePath();
+    const bevel = new THREE.ExtrudeGeometry(cuttingEdge, { depth: 0.035, bevelEnabled: true, bevelSize: 0.007, bevelThickness: 0.007, bevelSegments: 2, steps: 1 });
+    bevel.translate(0, 0, -0.0175); mesh(group, bevel, edge, [0, 0, 0]);
+    for (const z of [-0.058, 0.058]) {
+      for (const radius of [0.49, 0.57, 0.69]) curve(group, Array.from({ length: 25 }, (_, i): Point => {
+        const angle = Math.PI * (0.22 + i / 24 * 0.56);
+        return [Math.cos(angle) * radius, Math.sin(angle) * radius, z];
+      }), 0.006, metal);
+      for (let i = 0; i < 13; i++) {
+        const angle = Math.PI * (0.22 + i * 0.047);
+        curve(group, [[Math.cos(angle) * 0.6, Math.sin(angle) * 0.6, z], [Math.cos(angle + 0.023) * 0.65, Math.sin(angle + 0.023) * 0.65, z]], 0.006, rust);
+      }
+    }
+  }
+  for (let i = 0; i < 29; i++) {
+    const t = i / 28, angle = t * Math.PI * 5;
+    const link = mesh(axeHead, new THREE.TorusGeometry(0.032, 0.008, 6, 12), metal, [Math.sin(angle) * 0.18, -0.74 + t * 1.48, Math.cos(angle) * 0.085]);
+    link.scale.y = 1.45; link.rotation.y = i % 2 ? Math.PI / 2 : 0;
+  }
+
+  for (const side of [-1, 1]) {
+    const gripX = side < 0 ? -0.62 : 0.55;
+    const gripPosition = new THREE.Vector3(gripX, 0, 0).applyEuler(axe.rotation).add(axe.position);
+    const wrist: Point = [gripPosition.x, gripPosition.y - 0.12, gripPosition.z + 0.045];
+    const shoulder: Point = [side * 0.57, 3.16, -0.035];
+    const elbow: Point = [side * 1.02, side < 0 ? 3.9 : 4.02, -0.19];
+    oval(root, [0.245, 0.27, 0.245], tattooedSkin, shoulder);
+    sculpt(root, shoulder, elbow, [0.19, 0.225, 0.24, 0.19, 0.145], tattooedSkin, 0.98);
+    oval(root, [0.155, 0.17, 0.16], skin, elbow);
+    sculpt(root, elbow, wrist, [0.145, 0.19, 0.17, 0.12, 0.095], side < 0 ? skin : tattooedSkin);
+    if (side < 0) {
+      const start = new THREE.Vector3(...elbow), end = new THREE.Vector3(...wrist);
+      const wrapping = new THREE.Group(); wrapping.position.copy(start); wrapping.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize()); root.add(wrapping);
+      for (let i = 0; i < 9; i++) {
+        const band = tube(wrapping, 0.185 - i * 0.004, 0.05, i % 3 ? cloth : seam, [0, 0.12 + i * 0.048, 0]); band.rotation.z = 0.05;
+      }
+    }
+    const handGroup = new THREE.Group(); handGroup.position.copy(gripPosition); handGroup.rotation.copy(axe.rotation); root.add(handGroup);
+    oval(handGroup, [0.14, 0.145, 0.085], red, [0, -0.045, -0.075]);
+    sculpt(handGroup, [0, -0.2, 0], [0, -0.07, -0.05], [0.11, 0.13, 0.12], red);
+    for (let i = 0; i < 4; i++) {
+      const x = -0.09 + i * 0.061;
+      curve(handGroup, [[x, -0.1, -0.12], [x, 0.035, -0.105], [x, 0.095, -0.01], [x, 0.067, 0.083], [x, -0.012, 0.087]], 0.03, red);
+      curve(handGroup, [[x - 0.018, 0.093, -0.035], [x + 0.018, 0.094, -0.035]], 0.008, black);
+    }
+    curve(handGroup, [[0.13, -0.11, -0.04], [0.16, -0.08, 0.08], [0.07, -0.04, 0.12], [0.005, -0.025, 0.1]], 0.038, red);
+    curve(handGroup, [[-0.11, -0.18, 0.035], [0, -0.2, 0.07], [0.11, -0.18, 0.035]], 0.015, black);
+  }
+  return root;
+}
+
 export function buildBossModel(boss: BossModelId): THREE.Group {
   switch (boss) {
     case "duck": return makeDuck();
@@ -1009,6 +1235,7 @@ export function buildBossModel(boss: BossModelId): THREE.Group {
     case "kollontay": return makeKollontay();
     case "partisan": return makePartisan();
     case "sanitar": return makeSanitar();
+    case "shadow-of-tagilla": return makeShadowOfTagilla();
     case "special-cultists": return makeSpecialCultists();
     case "tagilla": return makeTagilla();
     case "wedgie": return makeWedgie();

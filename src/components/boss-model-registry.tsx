@@ -25,6 +25,7 @@ export const BOSS_MODELS = [
   { id: "kollontay", name: "Kollontay", Viewer: model("kollontay") },
   { id: "glukhar", name: "Glukhar", Viewer: model("glukhar") },
   { id: "tagilla", name: "Tagilla", image: "/eft_boss_tagilla.webp", Viewer: model("tagilla") },
+  { id: "shadow-of-tagilla", name: "Shadow of Tagilla", Viewer: model("shadow-of-tagilla") },
   { id: "partisan", name: "Partisan", image: "/eft_boss_parasan.webp", Viewer: model("partisan") },
   { id: "reshala", name: "Reshala", image: "/eft_boss_reshala.webp", Viewer: lazy(() => import("./Reshala3D")) },
   { id: "sanitar", name: "Sanitar", image: "/eft_boss_sanny.webp", Viewer: model("sanitar") },
