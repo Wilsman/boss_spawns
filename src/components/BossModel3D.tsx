@@ -114,12 +114,18 @@ export function BossModel3D({
     const headerSlam = transparent && !!slam;
     // Keep his body at showcase scale; the full swing envelope is for the model page.
     if (headerSlam) center.set(0, 2.35, 0);
+    const headerSanta = transparent && boss === "santa-claus";
+    // The tree and presents inflate the full-scene bounds, which shrinks
+    // Santa in the header. Frame his body at showcase scale instead; the
+    // full scene is still shown on the model page.
+    if (headerSanta) center.set(0, 1.75, 0);
     camera.lookAt(center);
+    const headerShowcase = headerSlam || headerSanta;
     const fitCamera = (aspect: number) => {
       const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
-      const vertical = (headerSlam ? 4.8 : size.y) * 0.56 / Math.tan(halfFov);
-      const horizontal = (headerSlam ? 1.1 : radius) * 1.12 / (Math.tan(halfFov) * aspect);
-      camera.position.set(center.x, center.y + 0.25, center.z + (Math.max(vertical, horizontal) + (headerSlam ? 0.6 : radius)) * (headerSlam ? 1.12 : 1));
+      const vertical = (headerSlam ? 4.8 : headerSanta ? 3.8 : size.y) * 0.56 / Math.tan(halfFov);
+      const horizontal = (headerSlam ? 1.1 : headerSanta ? 1.5 : radius) * 1.12 / (Math.tan(halfFov) * aspect);
+      camera.position.set(center.x, center.y + 0.25, center.z + (Math.max(vertical, horizontal) + (headerShowcase ? 0.6 : radius)) * (headerShowcase ? 1.12 : 1));
       camera.lookAt(center);
     };
     fitCamera(W / H);
