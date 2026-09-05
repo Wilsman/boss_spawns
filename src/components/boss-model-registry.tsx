@@ -19,6 +19,7 @@ function model(boss: BossModelId) {
 export const BOSS_MODELS = [
   { id: "jaeger", name: "Jaeger", image: "/eft_boss_jaeger.webp", Viewer: model("jaeger") },
   { id: "goons", name: "Goons", image: "/eft_boss_goons.webp", Viewer: model("goons") },
+  { id: "special-cultists", name: "Oni, Harbinger and Ghost", Viewer: model("special-cultists") },
   { id: "kaban", name: "Kaban", image: "/eft_boss_keban.webp", Viewer: model("kaban") },
   { id: "killa", name: "Killa", image: "/eft_boss_killer.webp", Viewer: model("killa") },
   { id: "kollontay", name: "Kollontay", Viewer: model("kollontay") },

@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 // Procedural minifigures based on the corresponding public/eft_boss_*.webp art.
 // Local axes: +Z is the face, +X is the figure's left. Weapons use +X as barrel.
-export type BossModelId = "glukhar" | "goons" | "jaeger" | "kaban" | "killa" | "kollontay" | "partisan" | "sanitar" | "tagilla" | "wedgie" | "zryachiy";
+export type BossModelId = "glukhar" | "goons" | "jaeger" | "kaban" | "killa" | "kollontay" | "partisan" | "sanitar" | "special-cultists" | "tagilla" | "wedgie" | "zryachiy";
 type Point = [number, number, number];
 type Parent = THREE.Group;
 type Mat = THREE.Material;
@@ -591,6 +591,119 @@ function makeGoons() {
   return root;
 }
 
+function makeSpecialCultists() {
+  const root = new THREE.Group(), black = material(0x141b1e), cloth = material(0x303436);
+  const armor = material(0x293b39), steel = material(0x4a5555, 0.35), bone = material(0xa4a798);
+  const oni = new THREE.Group(); oni.name = "Oni"; oni.position.set(-1.36, 0, -0.38); oni.rotation.y = -0.23; root.add(oni);
+  const ghost = new THREE.Group(); ghost.name = "Ghost"; ghost.position.set(1.36, 0, -0.38); ghost.rotation.y = 0.23; root.add(ghost);
+  const harbinger = new THREE.Group(); harbinger.name = "Harbinger"; harbinger.position.z = 0.66; root.add(harbinger);
+
+  function weapon(parent: Parent, kind: "sniper" | "carbine" | "machine-gun", at: Point, angle: number, sleeve: Mat) {
+    const gun = new THREE.Group(); gun.position.set(...at); gun.rotation.z = angle; gun.scale.setScalar(0.76); parent.add(gun);
+    box(gun, [0.82, 0.25, 0.23], steel, [-0.13, 0, 0]);
+    box(gun, [0.63, 0.12, 0.15], black, [-0.84, -0.02, 0]);
+    box(gun, [0.11, 0.32, 0.22], black, [-1.16, -0.1, 0]);
+    box(gun, [0.17, 0.34, 0.18], black, [-0.3, -0.22, 0]);
+    box(gun, [0.74, 0.23, 0.25], armor, [0.64, 0, 0]);
+    for (let i = 0; i < 6; i++) box(gun, [0.035, 0.27, 0.28], black, [0.35 + i * 0.12, 0, 0], false);
+    if (kind === "machine-gun") {
+      box(gun, [0.58, 0.54, 0.42], armor, [0.17, -0.38, 0.1]);
+      box(gun, [0.61, 0.09, 0.45], steel, [0.17, -0.15, 0.1]);
+      tube(gun, 0.065, 1.33, steel, [1.66, 0.04, 0], "x");
+      tube(gun, 0.09, 0.15, black, [2.34, 0.04, 0], "x");
+      tube(gun, 0.043, 0.008, black, [2.419, 0.04, 0], "x");
+      for (const z of [-0.13, 0.13]) limb(gun, [1.38, -0.04, z], [2.12, -0.16, z], 0.035, steel);
+      curve(gun, [[-0.25, 0.17, 0], [-0.25, 0.42, 0], [0.23, 0.42, 0], [0.23, 0.17, 0]], 0.035, black);
+    } else {
+      const magazine = box(gun, [0.25, 0.5, 0.19], black, [0.13, -0.34, 0]); magazine.rotation.z = -0.12;
+      const length = kind === "sniper" ? 1.2 : 0.54;
+      tube(gun, 0.065, length, steel, [1.02 + length / 2, 0.02, 0], "x");
+      tube(gun, 0.115, 0.61, black, [1.28 + length, 0.02, 0], "x");
+      tube(gun, 0.058, 0.008, steel, [1.59 + length, 0.02, 0], "x");
+      box(gun, [0.09, 0.15, 0.11], black, [-0.12, 0.2, 0]);
+      if (kind === "sniper") {
+        tube(gun, 0.11, 0.75, black, [-0.08, 0.32, 0], "x");
+        tube(gun, 0.16, 0.18, steel, [0.36, 0.32, 0], "x");
+        tube(gun, 0.128, 0.01, material(0x4c777b, 0.45), [0.455, 0.32, 0], "x");
+      } else {
+        box(gun, [0.31, 0.22, 0.23], black, [-0.09, 0.32, 0]);
+        box(gun, [0.018, 0.13, 0.15], material(0x607d79, 0.4), [0.075, 0.34, 0]);
+      }
+    }
+    function grip(x: number, y: number): Point {
+      const p = new THREE.Vector3(x, y, 0).multiplyScalar(0.76).applyEuler(gun.rotation).add(gun.position);
+      return [p.x, p.y, p.z];
+    }
+    arm(parent, [-0.73, 2.5, 0], [-0.96, 2.02, 0.35], grip(-0.3, -0.22), sleeve, black);
+    arm(parent, [0.73, 2.5, 0], [0.94, 1.96, 0.38], grip(0.68, -0.1), sleeve, black);
+  }
+
+  body(oni, { coat: cloth, pants: black, boots: black }); vest(oni, 0x263735, 2, 3); backpack(oni, 0x253635);
+  tube(oni, 0.3, 0.23, black, [0, 2.8, 0]);
+  const oniHead = new THREE.Group(); oniHead.position.y = 3.14; oni.add(oniHead);
+  tube(oniHead, 0.47, 0.71, black, [0, 0, 0]);
+  const skullMap = texture(g => {
+    g.fillStyle = "#192125"; g.fillRect(0, 0, 256, 256);
+    g.fillStyle = "#a8ad9f";
+    g.beginPath(); g.moveTo(39, 112); g.lineTo(81, 132); g.lineTo(128, 117);
+    g.lineTo(175, 132); g.lineTo(217, 112); g.lineTo(200, 187);
+    g.lineTo(169, 226); g.lineTo(87, 226); g.lineTo(56, 187); g.closePath(); g.fill();
+    g.fillStyle = "#242c2b"; g.beginPath(); g.moveTo(128, 139); g.lineTo(109, 171); g.lineTo(147, 171); g.closePath(); g.fill();
+    g.strokeStyle = "#242c2b"; g.lineWidth = 7;
+    g.beginPath(); g.moveTo(70, 185); g.quadraticCurveTo(128, 207, 187, 185); g.stroke();
+    for (let x = 81; x < 189; x += 18) { g.beginPath(); g.moveTo(x, 182); g.lineTo(x - 3, 220); g.stroke(); }
+    g.fillStyle = "#8b7855";
+    for (const x of [77, 180]) { g.fillRect(x - 23, 78, 46, 17); g.fillStyle = "#151d1c"; g.fillRect(x - 8, 79, 13, 16); g.fillStyle = "#8b7855"; }
+  });
+  mesh(oniHead, new THREE.CylinderGeometry(0.478, 0.478, 0.71, 32, 1, true, -1.06, 2.12), new THREE.MeshStandardMaterial({ map: skullMap, roughness: 0.95 }), [0, 0, 0]);
+  beanie(oniHead, 0x283c3b);
+  for (const side of [-1, 1]) {
+    box(oniHead, [0.18, 0.39, 0.27], armor, [side * 0.52, 0.08, -0.02]);
+    box(oniHead, [0.09, 0.25, 0.18], black, [side * 0.64, 0.08, -0.02]);
+  }
+  curve(oniHead, [[-0.54, 0.16, 0], [-0.43, 0.61, 0], [0, 0.72, 0], [0.43, 0.61, 0], [0.54, 0.16, 0]], 0.048, black);
+  curve(oniHead, [[-0.59, -0.04, 0.1], [-0.56, -0.22, 0.38], [-0.27, -0.24, 0.53]], 0.028, steel);
+  weapon(oni, "sniper", [-0.39, 2.2, 0.86], -1.72, cloth);
+
+  body(ghost, { coat: armor, pants: material(0x263130), boots: black }); vest(ghost, 0x39423a, 2, 3); backpack(ghost, 0x303c32);
+  tube(ghost, 0.3, 0.23, black, [0, 2.8, 0]);
+  const ghostHead = new THREE.Group(); ghostHead.position.y = 3.14; ghost.add(ghostHead);
+  oval(ghostHead, [0.54, 0.51, 0.5], black, [0, 0.02, 0]);
+  const dome = mesh(ghostHead, new THREE.SphereGeometry(0.61, 28, 18, 0, Math.PI * 2, 0, Math.PI / 2), armor, [0, 0.14, -0.03]); dome.scale.y = 0.88;
+  tube(ghostHead, 0.61, 0.11, black, [0, 0.15, -0.03]);
+  const visor = mesh(ghostHead, new THREE.CylinderGeometry(0.63, 0.65, 0.63, 32, 1, true, -1.16, 2.32), material(0x233637, 0.5), [0, -0.14, 0]); visor.material.side = THREE.DoubleSide;
+  for (const y of [-0.46, 0.18]) curve(ghostHead, Array.from({ length: 13 }, (_, i): Point => {
+    const angle = -1.16 + i / 12 * 2.32;
+    return [Math.sin(angle) * 0.65, y, Math.cos(angle) * 0.65];
+  }), 0.022, steel);
+  for (const side of [-1, 1]) {
+    tube(ghostHead, 0.1, 0.1, steel, [side * 0.6, 0.16, 0.17], "x");
+    box(ghost, [0.44, 0.28, 0.54], armor, [side * 0.78, 2.53, 0]);
+    box(ghost, [0.46, 0.35, 0.13], black, [side * 0.44, 0.85, side * 0.07 + 0.34]);
+  }
+  box(ghostHead, [0.15, 0.19, 0.23], steel, [-0.6, 0.33, 0.04]);
+  curve(ghostHead, [[-0.36, 0.08, 0.56], [-0.39, -0.1, 0.55], [-0.38, -0.31, 0.56]], 0.012, material(0x6a7c77));
+  weapon(ghost, "machine-gun", [0.25, 1.98, 0.96], -1.23, armor);
+
+  body(harbinger, { coat: cloth, pants: black, boots: black });
+  const face = head(harbinger, { bald: true }); face.scale.setScalar(0.93);
+  const hood = mesh(harbinger, new THREE.SphereGeometry(0.66, 28, 20, 0, Math.PI * 2, 0.79, Math.PI - 0.79), cloth, [0, 3.16, 0]);
+  hood.rotation.x = Math.PI / 2; hood.scale.set(1, 1.02, 1.25); hood.material.side = THREE.DoubleSide;
+  curve(harbinger, [[-0.43, 2.76, 0.4], [-0.56, 3.12, 0.46], [-0.36, 3.62, 0.41], [0, 3.86, 0.24], [0.36, 3.62, 0.41], [0.56, 3.12, 0.46], [0.43, 2.76, 0.4]], 0.095, cloth);
+  curve(harbinger, [[0, 3.87, 0.25], [0, 3.92, -0.12], [0, 3.57, -0.67], [0, 2.89, -0.55]], 0.015, material(0x555350));
+  box(harbinger, [0.77, 0.13, 0.25], black, [0, 3.38, 0.4], false);
+  const robe = mesh(harbinger, new THREE.CylinderGeometry(0.64, 0.95, 1.31, 8, 1, true), cloth, [0, 1.04, 0], true); robe.scale.z = 0.73; robe.material.side = THREE.DoubleSide;
+  for (const side of [-1, 1]) {
+    curve(harbinger, [[side * 0.51, 2.72, 0.34], [side * 0.41, 2.46, 0.5], [side * 0.18, 2.29, 0.51]], 0.11, black);
+    curve(harbinger, [[side * 0.32, 1.58, 0.43], [side * 0.43, 1.02, 0.55], [side * 0.53, 0.4, 0.56]], 0.022, black);
+    box(harbinger, [0.43, 0.27, 0.055], black, [side * 0.36, 1.76, 0.45]);
+  }
+  curve(harbinger, [[-0.4, 2.68, 0.48], [0.02, 2.19, 0.55], [0.48, 1.64, 0.49]], 0.065, black);
+  tube(harbinger, 0.045, 0.11, bone, [-0.3, 2.56, 0.57]);
+  weapon(harbinger, "carbine", [0.02, 2.04, 0.88], -0.56, cloth);
+  return root;
+}
+
 function makeWedgie() {
   const root = new THREE.Group();
   const coat = material(0x303a3e), trim = material(0x18272d), armor = material(0x253137);
@@ -835,6 +948,7 @@ export function buildBossModel(boss: BossModelId): THREE.Group {
     case "kollontay": return makeKollontay();
     case "partisan": return makePartisan();
     case "sanitar": return makeSanitar();
+    case "special-cultists": return makeSpecialCultists();
     case "tagilla": return makeTagilla();
     case "wedgie": return makeWedgie();
     case "zryachiy": return makeZryachiy();
