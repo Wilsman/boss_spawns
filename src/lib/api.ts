@@ -24,7 +24,7 @@ import {
 
 export type { SpawnData };
 
-const CACHE_VERSION = 14;
+const CACHE_VERSION = 15;
 const CHANGES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for changes data (can be adjusted independently)
 const CHANGES_CACHE_VERSION = 2;
 const CHANGES_FAILURE_RETRY_DELAY = 60 * 60 * 1000;
@@ -607,20 +607,20 @@ function getExpiredCachedData(
   try {
     const { data } = JSON.parse(cached);
 
+    // Legacy/test snapshots may omit catalogs; default them to empty and
+    // refill on the next successful fetch.
     if (
       data?.regular &&
       data?.pve &&
-      data?.["pvp-season"] &&
-      data?.catalogs?.regular &&
-      data?.catalogs?.pve &&
-      data?.catalogs?.["pvp-season"]
+      data?.["pvp-season"]
     ) {
+      const emptyCatalogs = { regular: {}, pve: {}, "pvp-season": {} };
       return {
         regular: applyLocalData(data.regular, "regular"),
         pve: applyLocalData(data.pve, "pve"),
         "pvp-season": applyLocalData(data["pvp-season"], "pvp-season"),
         goonReports: data.goonReports ?? { regular: [], pve: [], "pvp-season": [] },
-        catalogs: data.catalogs,
+        catalogs: data.catalogs ?? emptyCatalogs,
       };
     }
   } catch (error) {
@@ -645,23 +645,55 @@ function clearLegacySpawnCacheSnapshots(): void {
   });
 }
 
-function writeSpawnCache(key: string, value: string): void {
+export const SPAWN_CACHE_META_KEY = "maps_combined_meta";
+export const BOSS_PORTRAIT_INDEX_KEY = "maps_boss_index";
+
+export interface BossPortraitIndexEntry {
+  imagePortraitLink: string | null;
+  mapName: string;
+  wiki?: string;
+  spawnLocations: string[];
+}
+
+export type BossPortraitIndex = Record<string, BossPortraitIndexEntry>;
+
+/**
+ * The full spawn payload (maps + equipment/loot catalogs x3 modes) is
+ * ~20MB+, far beyond the ~5MB localStorage quota - even a maps-only snapshot
+ * cannot fit. So persistence is deliberately tiny: a freshness timestamp plus
+ * a KB-sized boss portrait index (used by BossNotice for images). In-memory
+ * data plus the fetch guards in App.tsx handle freshness; nothing here can
+ * throw a QuotaExceededError.
+ */
+function writeSmallSpawnCacheEntry(key: string, value: string): void {
   try {
     localStorage.setItem(key, value);
-    return;
-  } catch (error) {
-    clearLegacySpawnCacheSnapshots();
+  } catch {
+    // Best-effort only; the app runs fine on in-memory data.
+  }
+}
 
-    try {
-      localStorage.setItem(key, value);
-      return;
-    } catch (retryError) {
-      console.warn(
-        `Failed to persist ${key}; continuing with in-memory data:`,
-        retryError
-      );
+export function buildBossPortraitIndex(maps: SpawnData[]): BossPortraitIndex {
+  const index: BossPortraitIndex = {};
+
+  for (const map of maps) {
+    for (const encounter of map.bosses ?? []) {
+      const name = encounter.boss?.name;
+      if (!name || index[name]) {
+        continue;
+      }
+      index[name] = {
+        imagePortraitLink: encounter.boss.imagePortraitLink ?? null,
+        mapName: map.name,
+        wiki: map.wiki,
+        spawnLocations: (encounter.spawnLocations ?? []).map(
+          (location) => location.name
+        ),
+      };
     }
   }
+
+  return index;
 }
 
 // Helper function to merge spawn data with temporary boss data and apply overrides
@@ -744,9 +776,19 @@ export function applyLocalData(currentData: SpawnData[], mode: GameMode): SpawnD
   return mergedData;
 }
 
+let inFlightSpawnFetch: Promise<SpawnApiData> | null = null;
+
 export async function fetchAllSpawnData(options?: {
   forceRefresh?: boolean;
 }): Promise<SpawnApiData> {
+  // Dedupe concurrent callers (React StrictMode double-mount, the 5-minute
+  // interval, and the visibility-change check can otherwise fire 3-4
+  // identical network bursts at once).
+  if (!options?.forceRefresh && inFlightSpawnFetch) {
+    return inFlightSpawnFetch;
+  }
+
+  const run = async (): Promise<SpawnApiData> => {
   const CACHE_KEY = "maps_combined";
 
   // Check cache version and clear if outdated
@@ -777,22 +819,24 @@ export async function fetchAllSpawnData(options?: {
         const cacheAge = now - timestamp;
         const FIVE_MINUTES = 5 * 60 * 1000;
         
-        // Return cached data only if it's less than 5 minutes old
+        // Return cached data only if it's less than 5 minutes old.
+        // NOTE: nothing writes "maps_combined" anymore (the payload can never
+        // fit in localStorage); this branch only honors small legacy/test
+        // snapshots. Freshness for real data is tracked in-memory in App.tsx.
+        // Catalogs are optional here so slim snapshots still prevent refetch.
         if (
           data?.regular &&
           data?.pve &&
           data?.["pvp-season"] &&
-          data?.catalogs?.regular &&
-          data?.catalogs?.pve &&
-          data?.catalogs?.["pvp-season"] &&
           cacheAge < FIVE_MINUTES
         ) {
+          const emptyCatalogs = { regular: {}, pve: {}, "pvp-season": {} };
           return {
             regular: applyLocalData(data.regular, "regular"),
             pve: applyLocalData(data.pve, "pve"),
             "pvp-season": applyLocalData(data["pvp-season"], "pvp-season"),
             goonReports: data.goonReports ?? { regular: [], pve: [], "pvp-season": [] },
-            catalogs: data.catalogs,
+            catalogs: data.catalogs ?? emptyCatalogs,
           };
         }
       } catch (error) {
@@ -820,14 +864,11 @@ export async function fetchAllSpawnData(options?: {
     const expiredCachedData = getExpiredCachedData(cached);
 
     if (expiredCachedData) {
-      console.log("Using cached data");
       return expiredCachedData;
     }
 
     throw new Error("Failed to fetch data");
   }
-
-  console.log("API fetch successful");
 
   const cacheData: SpawnApiData = {
     regular: regularResult.maps,
@@ -852,17 +893,38 @@ export async function fetchAllSpawnData(options?: {
     "pvp-season": applyLocalData(cacheData["pvp-season"], "pvp-season"),
   };
 
-  // Update cache with transformed data. Persistence is best-effort; fresh data
-  // should still render if localStorage is full.
-  writeSpawnCache(
-    CACHE_KEY,
-    JSON.stringify({
-      data: cacheData,
-      timestamp: new Date().getTime(),
-    })
+  // Persist only tiny entries (see writeSmallSpawnCacheEntry): the full
+  // payload can never fit in localStorage, and stringifying ~20MB every
+  // refresh janks the main thread. Freshness is tracked in-memory in App.tsx.
+  const timestamp = new Date().getTime();
+  writeSmallSpawnCacheEntry(
+    SPAWN_CACHE_META_KEY,
+    JSON.stringify({ timestamp })
+  );
+  writeSmallSpawnCacheEntry(
+    BOSS_PORTRAIT_INDEX_KEY,
+    JSON.stringify(
+      buildBossPortraitIndex([
+        ...finalData.regular,
+        ...finalData.pve,
+        ...finalData["pvp-season"],
+      ])
+    )
   );
 
   return finalData;
+  };
+
+  if (options?.forceRefresh) {
+    return run();
+  }
+
+  inFlightSpawnFetch = run();
+  try {
+    return await inFlightSpawnFetch;
+  } finally {
+    inFlightSpawnFetch = null;
+  }
 }
 
 function buildChangesApiEndpointUrl(path: string): URL {

@@ -122,6 +122,14 @@ export function useChangeMonitor({
   );
 
   const notificationSound = useRef<HTMLAudioElement | null>(null);
+  // Lazily created on first actual playback so the wav is not fetched on
+  // every page load (which also avoids dev-server 304 cache-read noise).
+  const getNotificationSound = useCallback(() => {
+    if (!notificationSound.current) {
+      notificationSound.current = new Audio("/notification2.wav");
+    }
+    return notificationSound.current;
+  }, []);
   const notificationsInitializedRef = useRef(false);
   const wasChangesPageRef = useRef(false);
   const pendingVisitMarkRef = useRef(false);
@@ -160,9 +168,10 @@ export function useChangeMonitor({
   );
 
   const testNotification = useCallback(() => {
-    if (soundEnabled && notificationSound.current) {
-      notificationSound.current.currentTime = 0;
-      notificationSound.current.play().catch((error) => {
+    if (soundEnabled) {
+      const sound = getNotificationSound();
+      sound.currentTime = 0;
+      sound.play().catch((error) => {
         console.error("Error playing notification sound:", error);
       });
     }
@@ -173,7 +182,7 @@ export function useChangeMonitor({
         icon: "/favicon.ico",
       });
     }
-  }, [soundEnabled]);
+  }, [soundEnabled, getNotificationSound]);
 
   const toggleAutoRefresh = useCallback(() => {
     setAutoRefreshEnabled((current) => {
@@ -260,8 +269,6 @@ export function useChangeMonitor({
   }, [changes.length, latestTimestamp, notificationsEnabled, syncNotificationBaseline]);
 
   useEffect(() => {
-    notificationSound.current = new Audio("/notification2.wav");
-
     return () => {
       notificationSound.current = null;
     };
@@ -345,9 +352,10 @@ export function useChangeMonitor({
       });
     }
 
-    if (soundEnabled && notificationSound.current) {
-      notificationSound.current.currentTime = 0;
-      notificationSound.current.play().catch((error) => {
+    if (soundEnabled) {
+      const sound = getNotificationSound();
+      sound.currentTime = 0;
+      sound.play().catch((error) => {
         console.error("Error playing notification sound:", error);
       });
     }
@@ -357,6 +365,7 @@ export function useChangeMonitor({
     changes,
     changes.length,
     changesLoaded,
+    getNotificationSound,
     lastNotifiedCount,
     lastNotifiedLatestTimestamp,
     latestTimestamp,

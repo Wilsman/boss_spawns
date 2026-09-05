@@ -48,7 +48,7 @@ export function BossModel3D({
     renderer.setSize(W, H);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.domElement.style.touchAction = "pan-y";
     renderer.domElement.style.cursor = "grab";
@@ -157,10 +157,11 @@ export function BossModel3D({
     el.addEventListener("pointercancel", onUp);
 
     let raf = 0;
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
     const animate = () => {
       raf = requestAnimationFrame(animate);
-      const dt = Math.min(clock.getDelta(), 0.05);
+      timer.update();
+      const dt = Math.min(timer.getDelta(), 0.05);
       snow?.update(dt);
       mist?.update(dt);
       slam?.update(dt);
@@ -200,6 +201,7 @@ export function BossModel3D({
 
     return () => {
       cancelAnimationFrame(raf);
+      timer.dispose();
       snow?.dispose();
       mist?.dispose();
       window.removeEventListener("resize", onResize);

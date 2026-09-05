@@ -111,10 +111,18 @@ function MainApp() {
   // Use refs to track data existence without causing re-renders
   const hasDataRef = useRef(false);
   const hasChangesRef = useRef(false);
+  // In-memory freshness + in-flight guards. localStorage persistence is
+  // best-effort (the full payload can exceed quota), so these refs - not the
+  // presence of a localStorage entry - decide whether a refresh is needed.
+  // Otherwise a missing cache entry refetches in a tight loop.
+  const lastFetchAtRef = useRef(0);
+  const inFlightRef = useRef(false);
 
   const loadData = useCallback(
     async (options?: { forceRefresh?: boolean }) => {
       if (fatalError) return; // 🚫 prevent retry loop
+      if (inFlightRef.current && !options?.forceRefresh) return; // dedupe concurrent triggers
+      inFlightRef.current = true;
 
       // Only show full loading state on initial load (no data yet)
       // For background refreshes, show subtle refreshing indicator
@@ -139,10 +147,12 @@ function MainApp() {
         setCatalogs(fetchedCatalogs);
         setGoonReports(fetchedGoonReports);
         hasDataRef.current = true; // Mark that we have data now
+        lastFetchAtRef.current = Date.now();
       } catch (error) {
         console.error("Failed to fetch data:", error);
         setFatalError(true); // ☠️ block retries
       } finally {
+        inFlightRef.current = false;
         setLoading(false);
         setIsRefreshing(false);
       }
@@ -156,7 +166,7 @@ function MainApp() {
 
     // Set up interval to refresh data every 5 minutes
     const intervalId = setInterval(() => {
-      if (!loading) {
+      if (Date.now() - lastFetchAtRef.current >= CACHE_EXPIRY_TIME) {
         loadData();
       }
     }, 5 * 60 * 1000);
@@ -203,6 +213,16 @@ function MainApp() {
   useEffect(() => {
     const checkCacheAndRefresh = () => {
       if (loading || fatalError) return; // ✅ STOP if fatalError set
+
+      // Prefer in-memory freshness: if we already hold fresh data, do not
+      // refetch just because localStorage persistence was skipped on quota.
+      if (hasDataRef.current) {
+        if (Date.now() - lastFetchAtRef.current < CACHE_EXPIRY_TIME) {
+          return;
+        }
+        loadData();
+        return;
+      }
 
       const combinedCache = localStorage.getItem("maps_combined");
       if (!combinedCache) {

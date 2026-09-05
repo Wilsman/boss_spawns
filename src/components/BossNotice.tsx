@@ -7,6 +7,10 @@ import { HelpCircle, ExternalLink, AlertCircle } from "lucide-react";
 import type { BossEventConfig } from "@/types/bossEvents";
 import { BossRotationTimeline } from "./BossRotationTimeline";
 import { MANUAL_BOSS_HINT } from "@/config/bossEvents";
+import {
+  BOSS_PORTRAIT_INDEX_KEY,
+  type BossPortraitIndex,
+} from "@/lib/api";
 
 // Helper function to format duration with leading zeros
 function formatPaddedDuration(duration: Duration): string {
@@ -83,6 +87,27 @@ export function BossNotice({
       let fetchedSpawnLocationsText: string | undefined = undefined;
 
       try {
+        // Prefer the KB-sized portrait index (persisted on every successful
+        // fetch). Fall back to a legacy maps_combined snapshot if present.
+        const portraitIndexRaw = localStorage.getItem(BOSS_PORTRAIT_INDEX_KEY);
+        if (portraitIndexRaw) {
+          const portraitIndex = JSON.parse(portraitIndexRaw) as BossPortraitIndex;
+          details = details.map((bossDetail, index) => {
+            const entry = portraitIndex[bossDetail.name];
+            if (!entry) {
+              return bossDetail;
+            }
+            if (index === 0 && !propMapName) {
+              fetchedMapName = entry.mapName;
+              fetchedMapWiki = entry.wiki;
+              fetchedSpawnLocationsText = (entry.spawnLocations ?? []).join(", ");
+            }
+            return {
+              ...bossDetail,
+              imageUrl: entry.imagePortraitLink ?? undefined,
+            };
+          });
+        } else {
         const cached = localStorage.getItem("maps_combined");
         if (cached) {
           const { data } = JSON.parse(cached);
@@ -125,6 +150,7 @@ export function BossNotice({
             "BossNotice: maps_combined cache is empty. Displaying names only."
           );
         }
+        } // end legacy maps_combined fallback
       } catch (e) {
         console.error("Error processing boss data from cache:", e);
         // On error, details still contains names with undefined images from initial mapping
