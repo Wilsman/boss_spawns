@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 // Procedural minifigures based on the corresponding public/eft_boss_*.webp art.
 // Local axes: +Z is the face, +X is the figure's left. Weapons use +X as barrel.
-export type BossModelId = "goons" | "jaeger" | "kaban" | "killa" | "partisan" | "sanitar" | "tagilla" | "wedgie";
+export type BossModelId = "goons" | "jaeger" | "kaban" | "killa" | "partisan" | "sanitar" | "tagilla" | "wedgie" | "zryachiy";
 type Point = [number, number, number];
 type Parent = THREE.Group;
 type Mat = THREE.Material;
@@ -524,6 +524,149 @@ function makeWedgie() {
   return root;
 }
 
+function makeZryachiy() {
+  const root = new THREE.Group();
+  const figure = new THREE.Group(); figure.position.set(-0.5, 0, 0.72); root.add(figure);
+  const woodland = camo(), olive = material(0x505d36), dark = material(0x253026);
+  const bone = material(0x9a9275), glove = material(0x596541);
+  body(figure, { coat: woodland, pants: woodland, boots: dark });
+  vest(figure, 0x4a5637, 2, 3); backpack(figure, 0x414b31);
+  for (const side of [-1, 1]) {
+    box(figure, [0.43, 0.33, 0.09], dark, [side * 0.44, 0.84, side * 0.07 + 0.33]);
+    box(figure, [0.45, 0.5, 0.13], woodland, [side * 0.37, 1.34, 0.33]);
+  }
+  // An open ghillie hood frames the printed skull balaclava.
+  const hood = mesh(figure, new THREE.SphereGeometry(0.64, 28, 20, 0, Math.PI * 2, 0.74, Math.PI - 0.74), olive, [0, 3.15, 0]);
+  hood.rotation.x = Math.PI / 2;
+  hood.scale.set(1, 0.92, 1.12);
+  const hoodRim = mesh(figure, new THREE.TorusGeometry(0.435, 0.075, 10, 32), dark, [0, 3.12, 0.465]);
+  hoodRim.scale.y = 1.16;
+  tube(figure, 0.445, 0.72, dark, [0, 3.12, 0.03]);
+  const mask = texture(g => {
+    g.fillStyle = "#252c28"; g.fillRect(0, 0, 256, 256);
+    g.fillStyle = "#c5c6b7";
+    g.beginPath(); g.ellipse(128, 119, 98, 103, 0, 0, Math.PI * 2); g.fill();
+    // Broken vertical print keeps the skull looking like cloth rather than armor.
+    g.strokeStyle = "#62685d"; g.lineWidth = 2;
+    for (let x = 34; x < 230; x += 7) {
+      g.beginPath(); g.moveTo(x, 29 + (x % 13)); g.lineTo(x - 3, 224 - (x % 17)); g.stroke();
+    }
+    g.fillStyle = "#202921";
+    for (const x of [78, 180]) {
+      g.beginPath(); g.ellipse(x, 111, 37, 26, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#c7a55f";
+      g.beginPath(); g.ellipse(x, 111, 27, 15, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "#26362e";
+      g.fillRect(x - 17, 108, 34, 5);
+      g.fillStyle = "#a8c2b5"; g.fillRect(x - 3, 108, 6, 5);
+      g.fillStyle = "#202921";
+    }
+    g.beginPath(); g.moveTo(128, 139); g.lineTo(112, 162); g.lineTo(142, 162); g.closePath(); g.fill();
+    g.fillRect(121, 12, 13, 64);
+    g.strokeStyle = "#252c28"; g.lineWidth = 5;
+    g.beginPath(); g.moveTo(64, 190); g.quadraticCurveTo(128, 209, 194, 190); g.stroke();
+    for (let x = 74; x < 193; x += 18) { g.beginPath(); g.moveTo(x, 178); g.lineTo(x, 220); g.stroke(); }
+  });
+  mesh(figure, new THREE.CylinderGeometry(0.454, 0.454, 0.72, 32, 1, true, -1.05, 2.1), new THREE.MeshStandardMaterial({ map: mask, roughness: 0.95 }), [0, 3.12, 0.03]);
+
+  // Branched antlers, tapering to points, lashed across the top of the hood.
+  const antler = material(0x827b5f);
+  const branch = (from: Point, to: Point, base: number, tip: number) => {
+    const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to);
+    const part = mesh(figure, new THREE.CylinderGeometry(tip, base, a.distanceTo(b), 7), antler, [0, 0, 0]);
+    part.position.copy(a.clone().add(b).multiplyScalar(0.5));
+    part.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.sub(a).normalize());
+  };
+  for (const side of [-1, 1]) {
+    branch([side * 0.3, 3.63, 0.1], [side * 0.48, 3.94, 0.02], 0.09, 0.065);
+    branch([side * 0.48, 3.94, 0.02], [side * 0.56, 4.25, 0], 0.065, 0.045);
+    branch([side * 0.56, 4.25, 0], [side * 0.42, 4.65, -0.04], 0.045, 0.003);
+    branch([side * 0.48, 3.95, 0.02], [side * 0.8, 4.15, 0.04], 0.045, 0.003);
+    branch([side * 0.54, 4.19, 0.01], [side * 0.78, 4.49, -0.02], 0.035, 0.003);
+    branch([side * 0.53, 4.27, 0], [side * 0.27, 4.42, 0.02], 0.03, 0.003);
+    tube(figure, 0.105, 0.075, bone, [side * 0.31, 3.67, 0.17], "z");
+  }
+  curve(figure, [[-0.5, 4.03, 0.04], [0, 3.99, 0.025], [0.52, 4.16, 0.02]], 0.009, dark);
+  curve(figure, [[-0.53, 4.27, 0], [0, 4.23, 0.01], [0.5, 4.34, 0]], 0.008, dark);
+
+  holdRifle(figure, "scope", [0.05, 2.02, 0.9], -0.38, woodland, glove, 0.9);
+  // Loose strips cover shoulders, hood, back, sleeves and trousers.
+  const stripMats = [0x414f30, 0x6c7445, 0x797348, 0x37492f, 0x56543a].map(materialColor => material(materialColor));
+  let seed = 127;
+  const random = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const strip = (at: Point, length: number, angle: number) => {
+    const ribbon = box(figure, [0.07 + random() * 0.055, length, 0.016], stripMats[Math.floor(random() * stripMats.length)], at, false);
+    ribbon.rotation.set((random() - 0.5) * 0.6, angle, (random() - 0.5) * 0.8);
+  };
+  for (let i = 0; i < 42; i++) {
+    const angle = i / 42 * Math.PI * 2;
+    // Keep the opening clear so the skull and eyes remain readable.
+    if (Math.cos(angle) < 0.55) strip([Math.sin(angle) * 0.6, 3.3 + random() * 0.3, Math.cos(angle) * 0.53], 0.22 + random() * 0.28, angle);
+  }
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 23; i++) {
+      strip([side * (0.62 + random() * 0.39), 2.05 + random() * 0.59, random() * 0.72 - 0.29], 0.18 + random() * 0.3, random());
+    }
+    for (let i = 0; i < 16; i++) strip([side * (0.3 + random() * 0.35), 0.5 + random() * 0.88, random() * 0.66 - 0.22], 0.18 + random() * 0.28, random());
+  }
+  for (let i = 0; i < 24; i++) strip([(random() - 0.5) * 1.15, 1.64 + random() * 1.14, -0.92], 0.2 + random() * 0.3, random());
+  curve(figure, [[-0.32, 2.72, 0.51], [0, 2.6, 0.57], [0.32, 2.72, 0.51]], 0.026, material(0x6b5437));
+  for (let i = 0; i < 5; i++) {
+    const tooth = mesh(figure, new THREE.ConeGeometry(0.038, 0.16, 6), bone, [-0.24 + i * 0.12, 2.59 + Math.abs(i - 2) * 0.03, 0.57]);
+    tooth.rotation.z = Math.PI + (i - 2) * 0.16;
+  }
+
+  // A compact, weathered lighthouse diorama behind the figure.
+  const tower = new THREE.Group(); tower.position.set(0.85, 0, -1.26); root.add(tower);
+  const stone = material(0x696a5e), metal = material(0x394e4c, 0.25);
+  const plasterMap = texture(g => {
+    g.fillStyle = "#b8a28b"; g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 75; i++) {
+      g.fillStyle = i % 2 ? "rgba(72,66,54,.16)" : "rgba(222,211,177,.19)";
+      g.fillRect(random() * 256, random() * 256, 2 + random() * 7, 5 + random() * 34);
+    }
+    g.strokeStyle = "rgba(72,66,54,.26)"; g.lineWidth = 1;
+    for (const y of [52, 118, 191]) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); }
+  });
+  const plaster = new THREE.MeshStandardMaterial({ map: plasterMap, roughness: 0.95 });
+  for (let i = 0; i < 12; i++) {
+    const angle = i / 12 * Math.PI * 2;
+    const rock = mesh(tower, new THREE.IcosahedronGeometry(0.44, 0), stone, [Math.sin(angle) * 0.77, 0.13, Math.cos(angle) * 0.69]);
+    rock.scale.set(1, 0.55 + random() * 0.3, 1); rock.rotation.y = angle;
+  }
+  mesh(tower, new THREE.CylinderGeometry(0.47, 0.63, 3.7, 32), plaster, [0, 2.16, 0]);
+  tube(tower, 0.89, 0.99, plaster, [-0.25, 0.85, 0.13]);
+  tube(tower, 0.92, 0.075, stone, [-0.25, 1.38, 0.13]);
+  tube(tower, 0.93, 0.12, stone, [-0.25, 0.35, 0.13]);
+  box(tower, [0.29, 0.57, 0.055], material(0x39403a), [-0.28, 0.72, 1.022]);
+  // Stacked narrow windows sit radially on the tapering walls.
+  for (const y of [1.72, 2.46, 3.22, 3.76]) for (const angle of [0, Math.PI * 0.7, Math.PI * 1.4]) {
+    const r = 0.63 - (y - 0.31) / 3.7 * 0.16;
+    const window = new THREE.Group(); window.position.set(Math.sin(angle) * (r + 0.009), y, Math.cos(angle) * (r + 0.009)); window.rotation.y = angle; tower.add(window);
+    box(window, [0.17, 0.31, 0.045], stone, [0, 0, 0]);
+    box(window, [0.115, 0.25, 0.018], material(0x283b3b), [0, 0, 0.029]);
+    box(window, [0.12, 0.018, 0.02], stone, [0, 0.02, 0.042]);
+  }
+  tube(tower, 0.63, 0.1, stone, [0, 4.05, 0]);
+  // Balcony rails and a glazed lantern with a warm, steady beacon.
+  for (let i = 0; i < 16; i++) {
+    const angle = i / 16 * Math.PI * 2;
+    tube(tower, 0.014, 0.24, metal, [Math.sin(angle) * 0.59, 4.2, Math.cos(angle) * 0.59]);
+  }
+  const rail = mesh(tower, new THREE.TorusGeometry(0.59, 0.018, 6, 32), metal, [0, 4.32, 0]); rail.rotation.x = Math.PI / 2;
+  const glass = new THREE.MeshStandardMaterial({ color: 0x8daaa6, transparent: true, opacity: 0.28, roughness: 0.3, depthWrite: false });
+  tube(tower, 0.35, 0.49, glass, [0, 4.37, 0]);
+  tube(tower, 0.09, 0.32, new THREE.MeshStandardMaterial({ color: 0xffe1a1, emissive: 0xffc16e, emissiveIntensity: 1.1 }), [0, 4.37, 0]);
+  for (let i = 0; i < 8; i++) {
+    const angle = i / 8 * Math.PI * 2;
+    tube(tower, 0.018, 0.5, metal, [Math.sin(angle) * 0.35, 4.37, Math.cos(angle) * 0.35]);
+  }
+  tube(tower, 0.39, 0.055, metal, [0, 4.64, 0]);
+  mesh(tower, new THREE.SphereGeometry(0.39, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), metal, [0, 4.66, 0]);
+  tube(tower, 0.026, 0.23, metal, [0, 5.1, 0]);
+  return root;
+}
+
 export function buildBossModel(boss: BossModelId): THREE.Group {
   switch (boss) {
     case "goons": return makeGoons();
@@ -534,5 +677,6 @@ export function buildBossModel(boss: BossModelId): THREE.Group {
     case "sanitar": return makeSanitar();
     case "tagilla": return makeTagilla();
     case "wedgie": return makeWedgie();
+    case "zryachiy": return makeZryachiy();
   }
 }
