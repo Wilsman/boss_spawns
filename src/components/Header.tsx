@@ -11,7 +11,7 @@ import { BossNotice } from "./BossNotice";
 import { Notice } from "./Notice";
 // import { MaintenanceNotice } from "./MaintenanceNotice";
 import type { BossEventConfig } from "@/types/bossEvents";
-import type { GoonReport, GameMode } from "@/types";
+import type { GoonReport, GameMode, SpawnData } from "@/types";
 import { GoonTracker } from "./GoonTracker";
 
 // Change this to "maintenance" when we need to swap out the boss notice for the maintenance message
@@ -23,12 +23,14 @@ interface HeaderProps {
   primaryDisplayEvent: BossEventConfig | null;
   allBossEvents?: BossEventConfig[];
   goonReports?: Record<GameMode, GoonReport[]>;
+  spawnData?: Partial<Record<GameMode, SpawnData[]>>;
 }
 
 export const Header = memo(function Header({
   primaryDisplayEvent,
   allBossEvents = [],
   goonReports,
+  spawnData,
 }: HeaderProps) {
   return (
     <div className="">
@@ -140,7 +142,7 @@ export const Header = memo(function Header({
                 />
               )
             )}
-            <GoonTracker reports={goonReports} />
+            <GoonTracker reports={goonReports} spawnData={spawnData} />
           </div>
 
           {/* Collapsible Update Message */}

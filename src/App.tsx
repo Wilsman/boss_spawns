@@ -596,6 +596,7 @@ function MainApp() {
           primaryDisplayEvent={primaryDisplayEvent}
           allBossEvents={CURRENT_BOSS_CONFIGS}
           goonReports={goonReports}
+          spawnData={{ regular: regularData ?? [], pve: pveData ?? [], "pvp-season": seasonData ?? [] }}
         />
 
         <div className="flex flex-col gap-4">
