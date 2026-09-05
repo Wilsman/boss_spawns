@@ -26,7 +26,7 @@ export type { SpawnData };
 
 const CACHE_VERSION = 14;
 const CHANGES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for changes data (can be adjusted independently)
-const CHANGES_CACHE_VERSION = 1;
+const CHANGES_CACHE_VERSION = 2;
 const CHANGES_FAILURE_RETRY_DELAY = 60 * 60 * 1000;
 const CHANGES_QUOTA_RESET_GRACE = 5 * 60 * 1000;
 const DEFAULT_CHANGES_API_BASE_URL = "https://bossdata.cultistcircle.workers.dev";
@@ -875,15 +875,84 @@ function buildChangesApiEndpointUrl(path: string): URL {
   return url;
 }
 
-function buildChangesApiUrl(since?: number): string {
+interface ChangesHistoryCursor {
+  beforeTimestamp: number;
+  beforeId: number;
+}
+
+interface ApiDataChange {
+  id: number;
+  map: string;
+  boss: string;
+  field: string;
+  old_value: string;
+  new_value: string;
+  timestamp: number;
+  game_mode: string;
+}
+
+function buildChangesApiUrl(options: {
+  since?: number;
+  cursor?: ChangesHistoryCursor;
+} = {}): string {
   const url = buildChangesApiEndpointUrl(CHANGES_API_PATH);
   url.searchParams.set("limit", CHANGES_API_LIMIT.toString());
 
-  if (typeof since === "number" && Number.isFinite(since) && since > 0) {
-    url.searchParams.set("since", since.toString());
+  if (
+    typeof options.since === "number" &&
+    Number.isFinite(options.since) &&
+    options.since > 0
+  ) {
+    url.searchParams.set("since", options.since.toString());
+  }
+
+  if (options.cursor) {
+    url.searchParams.set(
+      "beforeTimestamp",
+      options.cursor.beforeTimestamp.toString()
+    );
+    url.searchParams.set("beforeId", options.cursor.beforeId.toString());
   }
 
   return url.toString();
+}
+
+function isValidApiDataChange(change: unknown): change is ApiDataChange {
+  if (!change || typeof change !== "object") {
+    return false;
+  }
+
+  const candidate = change as Record<string, unknown>;
+  return (
+    typeof candidate.id === "number" &&
+    Number.isSafeInteger(candidate.id) &&
+    candidate.id >= 0 &&
+    typeof candidate.map === "string" &&
+    candidate.map.length > 0 &&
+    typeof candidate.boss === "string" &&
+    candidate.boss.length > 0 &&
+    typeof candidate.field === "string" &&
+    candidate.field.length > 0 &&
+    typeof candidate.old_value === "string" &&
+    candidate.old_value.length > 0 &&
+    typeof candidate.new_value === "string" &&
+    candidate.new_value.length > 0 &&
+    typeof candidate.timestamp === "number" &&
+    Number.isFinite(candidate.timestamp) &&
+    getChangeGameModeLabel(candidate.game_mode) !== null
+  );
+}
+
+function transformApiDataChanges(changes: ApiDataChange[]): DataChange[] {
+  return changes.map((change) => ({
+    map: change.map,
+    boss: change.boss,
+    field: change.field,
+    oldValue: change.old_value,
+    newValue: change.new_value,
+    timestamp: change.timestamp,
+    gameMode: getChangeGameModeLabel(change.game_mode) as ChangeGameModeLabel,
+  }));
 }
 
 function isNullableNumber(value: unknown): value is number | null {
@@ -1040,11 +1109,12 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
     const { force = false } = options;
     const cachedChanges = getCachedChanges();
     const cacheVersion = readChangeStorageNumber("cacheVersion");
-    const requiresFullSync = force || cacheVersion !== CHANGES_CACHE_VERSION;
+    const requiresFullSync = cacheVersion !== CHANGES_CACHE_VERSION;
     const timestamp = readChangeStorageNumber("cacheTimestamp");
     const retryAfter = readChangeStorageNumber("retryAfter");
 
     if (
+      !force &&
       !requiresFullSync &&
       cachedChanges.length &&
       now - timestamp < CHANGES_CACHE_DURATION
@@ -1063,96 +1133,77 @@ export async function fetchChanges(options: { force?: boolean } = {}): Promise<D
     const latestCachedTimestamp = requiresFullSync
       ? 0
       : getLatestChangeTimestamp(cachedChanges);
-    const response = await fetch(buildChangesApiUrl(latestCachedTimestamp || undefined), {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    });
+    const isFullHistoryRequest = latestCachedTimestamp === 0;
+    const apiChanges: ApiDataChange[] = [];
+    let cursor: ChangesHistoryCursor | undefined;
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        if (requiresFullSync) {
-          writeChangeStorage("cache", "[]");
+    while (true) {
+      const response = await fetch(
+        buildChangesApiUrl({
+          since: isFullHistoryRequest ? undefined : latestCachedTimestamp,
+          cursor,
+        }),
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          if (isFullHistoryRequest && apiChanges.length === 0) {
+            writeChangeStorage("cache", "[]");
+            writeChangeStorage("cacheTimestamp", now.toString());
+            writeChangeStorageNumber("cacheVersion", CHANGES_CACHE_VERSION);
+            return [];
+          }
+
+          if (isFullHistoryRequest) {
+            break;
+          }
+
           writeChangeStorage("cacheTimestamp", now.toString());
-          writeChangeStorageNumber("cacheVersion", CHANGES_CACHE_VERSION);
-          return [];
+          return cachedChanges;
         }
 
-        writeChangeStorage("cacheTimestamp", now.toString());
+        const quotaReached = await isWorkersQuotaResponse(response);
+        pauseChangesRequestsUntil(
+          quotaReached
+            ? getNextWorkersQuotaReset(now)
+            : now + CHANGES_FAILURE_RETRY_DELAY,
+        );
+        console.warn(
+          quotaReached
+            ? "Changes service quota reached; using cached data until the next reset."
+            : `Changes service unavailable (${response.status}); using cached data.`,
+        );
         return cachedChanges;
       }
 
-      const quotaReached = await isWorkersQuotaResponse(response);
-      pauseChangesRequestsUntil(
-        quotaReached
-          ? getNextWorkersQuotaReset(now)
-          : now + CHANGES_FAILURE_RETRY_DELAY,
-      );
-      console.warn(
-        quotaReached
-          ? "Changes service quota reached; using cached data until the next reset."
-          : `Changes service unavailable (${response.status}); using cached data.`,
-      );
-      return cachedChanges;
-    }
-
-    const data = await response.json();
-
-    if (!Array.isArray(data)) {
-      pauseChangesRequestsUntil(now + CHANGES_FAILURE_RETRY_DELAY);
-      console.warn("Changes service returned an invalid response; using cached data.");
-      return cachedChanges;
-    }
-
-    const isValidChange = (change: unknown): change is {
-      map: string;
-      boss: string;
-      field: string;
-      old_value: string;
-      new_value: string;
-      timestamp: number;
-      game_mode: string;
-    } => {
-      if (!change || typeof change !== "object") {
-        return false;
+      const data: unknown = await response.json();
+      if (!Array.isArray(data) || !data.every(isValidApiDataChange)) {
+        pauseChangesRequestsUntil(now + CHANGES_FAILURE_RETRY_DELAY);
+        console.warn("Changes service returned invalid change data; using cached data.");
+        return cachedChanges;
       }
 
-      const candidate = change as Record<string, unknown>;
-      return (
-        typeof candidate.map === "string" &&
-        candidate.map.length > 0 &&
-        typeof candidate.boss === "string" &&
-        candidate.boss.length > 0 &&
-        typeof candidate.field === "string" &&
-        candidate.field.length > 0 &&
-        typeof candidate.old_value === "string" &&
-        candidate.old_value.length > 0 &&
-        typeof candidate.new_value === "string" &&
-        candidate.new_value.length > 0 &&
-        typeof candidate.timestamp === "number" &&
-        Number.isFinite(candidate.timestamp) &&
-        getChangeGameModeLabel(candidate.game_mode) !== null
-      );
-    };
+      apiChanges.push(...data);
+      if (!isFullHistoryRequest || data.length < CHANGES_API_LIMIT) {
+        break;
+      }
 
-    if (!data.every(isValidChange)) {
-      pauseChangesRequestsUntil(now + CHANGES_FAILURE_RETRY_DELAY);
-      console.warn("Changes service returned an invalid change; using cached data.");
-      return cachedChanges;
+      const lastChange = data[data.length - 1];
+      cursor = {
+        beforeTimestamp: lastChange.timestamp,
+        beforeId: lastChange.id,
+      };
     }
 
-    const transformedData = data
-      .map((change) => ({
-        map: change.map,
-        boss: change.boss,
-        field: change.field,
-        oldValue: change.old_value,
-        newValue: change.new_value,
-        timestamp: change.timestamp,
-        gameMode: getChangeGameModeLabel(change.game_mode) as ChangeGameModeLabel,
-      }))
-      .sort((a, b) => b.timestamp - a.timestamp); // Sort by newest first
+    const transformedData = transformApiDataChanges(apiChanges).sort(
+      (a, b) => b.timestamp - a.timestamp
+    );
 
     const mergedChanges = requiresFullSync
       ? transformedData

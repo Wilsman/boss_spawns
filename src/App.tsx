@@ -1,3 +1,4 @@
+import { BOSS_MODELS } from "@/components/boss-model-registry";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   BrowserRouter,
@@ -22,6 +23,7 @@ import type { DataMode, GameMode, MobCatalog, GoonReport } from "@/types";
 import { BossEventConfig } from "@/types/bossEvents";
 import bossEvents from "@/config/bossEvents";
 import { About, Privacy } from "@/pages";
+import { lazy, Suspense } from "react";
 import { useChangeMonitor } from "@/hooks/useChangeMonitor";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
@@ -241,18 +243,6 @@ function MainApp() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [loadData, loading, fatalError]);
-
-  useEffect(() => {
-    void getStoredChanges()
-      .then((changesData) => {
-        setChanges(changesData);
-        setChangesLoaded(true);
-        hasChangesRef.current = true;
-      })
-      .catch((error) => {
-        console.error("Failed to fetch changes:", error);
-      });
-  }, []);
 
   // Dynamic SEO management
   useEffect(() => {
@@ -829,6 +819,9 @@ function MainApp() {
   );
 }
 
+// Lazy so three.js only loads when the 3D viewer is actually shown.
+const BossModelPageLazy = lazy(() => import("@/components/BossModelPage"));
+
 function App() {
   return (
     <BrowserRouter>
@@ -838,6 +831,22 @@ function App() {
           <Routes>
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />
+            {BOSS_MODELS.map(model => (
+              <Route
+                key={model.id}
+                path={`/${model.id}-3d`}
+                element={
+                  <Suspense fallback={<div className="p-8 text-center text-gray-400">Loading 3D viewer...</div>}>
+                    <BossModelPageLazy boss={model.id} />
+                  </Suspense>
+                }
+              />
+            ))}
+            <Route path="/bosses-3d" element={
+              <Suspense fallback={<div className="p-8 text-center text-gray-400">Loading 3D viewer...</div>}>
+                <BossModelPageLazy />
+              </Suspense>
+            } />
             <Route path="/pvp" element={<MainApp />} />
             <Route path="/pve" element={<MainApp />} />
             <Route path="/season" element={<MainApp />} />

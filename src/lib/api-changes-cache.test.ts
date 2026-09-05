@@ -30,6 +30,7 @@ const cachedChange = {
 };
 
 const serverChange = {
+  id: 2,
   boss: "raider",
   field: "spawnChance",
   game_mode: "regular",
@@ -120,7 +121,7 @@ describe("changes cache synchronization", () => {
     expect(requestedUrl).not.toContain("since=");
     expect(changes).toHaveLength(1);
     expect(changes[0].boss).toBe("raider");
-    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("1");
+    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("2");
     expect(localStorage.getItem(STORAGE_KEYS.notificationsEnabled)).toBe("true");
     expect(localStorage.getItem(STORAGE_KEYS.soundEnabled)).toBe("false");
     expect(localStorage.getItem(STORAGE_KEYS.autoRefreshEnabled)).toBe("true");
@@ -135,8 +136,8 @@ describe("changes cache synchronization", () => {
     );
   });
 
-  test("manual refresh replaces a current cache instead of merging", async () => {
-    seedCache({ fresh: true, version: 1 });
+  test("manual refresh bypasses freshness while remaining incremental", async () => {
+    seedCache({ fresh: true, version: 2 });
     let requestedUrl = "";
     globalThis.fetch = async (input) => {
       requestedUrl = input.toString();
@@ -145,13 +146,13 @@ describe("changes cache synchronization", () => {
 
     const changes = await fetchChanges({ force: true });
 
-    expect(requestedUrl).not.toContain("since=");
-    expect(changes).toHaveLength(1);
-    expect(changes[0].boss).toBe("raider");
+    expect(requestedUrl).toContain(`since=${cachedChange.timestamp}`);
+    expect(changes).toHaveLength(2);
+    expect(changes.some((change) => change.boss === "raider")).toBe(true);
   });
 
   test("normal refresh stays incremental after the cache is current", async () => {
-    seedCache({ version: 1 });
+    seedCache({ version: 2 });
     let requestedUrl = "";
     globalThis.fetch = async (input) => {
       requestedUrl = input.toString();
@@ -165,7 +166,7 @@ describe("changes cache synchronization", () => {
   });
 
   test("changes requests remain simple CORS requests without preflight-only headers", async () => {
-    seedCache({ version: 1 });
+    seedCache({ version: 2 });
     let requestedInit: RequestInit | undefined;
     globalThis.fetch = async (_input, init) => {
       requestedInit = init;
@@ -193,7 +194,7 @@ describe("changes cache synchronization", () => {
   });
 
   test("a quota response keeps cached data and pauses requests until the next UTC reset", async () => {
-    seedCache({ version: 1 });
+    seedCache({ version: 2 });
     let requestCount = 0;
     globalThis.fetch = async () => {
       requestCount += 1;
@@ -230,7 +231,7 @@ describe("changes cache synchronization", () => {
   });
 
   test("a successful retry clears an expired circuit breaker", async () => {
-    seedCache({ version: 1 });
+    seedCache({ version: 2 });
     localStorage.setItem(STORAGE_KEYS.retryAfter, (Date.now() - 1).toString());
     globalThis.fetch = async () => successfulResponse();
 
@@ -241,7 +242,7 @@ describe("changes cache synchronization", () => {
   });
 
   test("a malformed upgrade response keeps the stale cache and version", async () => {
-    seedCache({ version: 0 });
+    seedCache({ version: 1 });
     globalThis.fetch = async () => successfulResponse([
       { ...serverChange, timestamp: "not-a-number" } as unknown as typeof serverChange,
     ]);
@@ -249,7 +250,7 @@ describe("changes cache synchronization", () => {
     const changes = await fetchChanges();
 
     expect(changes).toEqual([cachedChange]);
-    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("0");
+    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("1");
   });
 
   test("maps Season changes explicitly and rejects unknown game modes", async () => {
@@ -278,8 +279,39 @@ describe("changes cache synchronization", () => {
 
     expect(changes).toEqual([]);
     expect(localStorage.getItem(STORAGE_KEYS.cache)).toBe("[]");
-    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("1");
+    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("2");
     expect(localStorage.getItem(STORAGE_KEYS.notificationsEnabled)).toBe("true");
+  });
+
+  test("a full synchronization follows stable cursors beyond 1000 rows", async () => {
+    const firstPage = Array.from({ length: 1000 }, (_, index) => ({
+      ...serverChange,
+      id: 2000 - index,
+      timestamp: 1784038000000,
+    }));
+    const finalChange = {
+      ...serverChange,
+      id: 1000,
+      timestamp: 1784038000000,
+    };
+    const requestedUrls: string[] = [];
+
+    globalThis.fetch = async (input) => {
+      const url = input.toString();
+      requestedUrls.push(url);
+      return requestedUrls.length === 1
+        ? successfulResponse(firstPage)
+        : successfulResponse([finalChange]);
+    };
+
+    const changes = await fetchChanges();
+
+    expect(changes).toHaveLength(1001);
+    expect(requestedUrls).toHaveLength(2);
+    expect(requestedUrls[0]).not.toContain("beforeTimestamp=");
+    expect(requestedUrls[1]).toContain("beforeTimestamp=1784038000000");
+    expect(requestedUrls[1]).toContain("beforeId=1001");
+    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("2");
   });
 });
 

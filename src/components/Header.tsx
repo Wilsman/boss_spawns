@@ -1,4 +1,5 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
+import { BossSwitcher } from "./BossSwitcher";
 import { Calculator, Database } from "lucide-react";
 import {
   Accordion,
@@ -18,22 +19,6 @@ const NOTICE_VARIANT: "boss" | "maintenance" = "maintenance";
 // Toggle this to switch between BossNotice and Notice components when NOTICE_VARIANT === "boss"
 const USE_NOTICE_COMPONENT = true;
 
-const BOSS_IMAGES = [
-  "/eft_boss_jaeger.webp",
-  "/eft_boss_goons.webp",
-  "/eft_boss_keban.webp",
-  "/eft_boss_killer.webp",
-  "/eft_boss_tagilla.webp",
-  "/eft_boss_parasan.webp",
-  "/eft_boss_reshala.webp",
-  "/eft_boss_sanny.webp",
-  "/eft_boss_shturman.webp",
-];
-
-function getRandomBossImage(): string {
-  return BOSS_IMAGES[Math.floor(Math.random() * BOSS_IMAGES.length)];
-}
-
 interface HeaderProps {
   primaryDisplayEvent: BossEventConfig | null;
   allBossEvents?: BossEventConfig[];
@@ -45,27 +30,11 @@ export const Header = memo(function Header({
   allBossEvents = [],
   goonReports,
 }: HeaderProps) {
-  // Memoize the random image so it doesn't change on every render
-  const bossImage = useMemo(() => getRandomBossImage(), []);
-
   return (
     <div className="">
       {/* Title Section */}
       <div className="flex flex-col items-center space-y-4">
-        <div className="flex items-center">
-          <a href="/">
-            <img
-              src={bossImage}
-              alt="EFT Boss Spawns - Tarkov Real-Time Boss Spawn Tracker"
-              width={260}
-              height={90}
-              className="max-w-[56vw] h-auto contrast-110 saturate-75"
-            />
-          </a>
-          <h1 className="sr-only">
-            EFT Boss Spawns - Escape from Tarkov Real-Time Boss Tracking
-          </h1>
-        </div>
+        <BossSwitcher />
 
         {/* Links + Notice Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 w-full max-w-4xl">
