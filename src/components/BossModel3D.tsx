@@ -111,12 +111,15 @@ export function BossModel3D({
       ? Math.hypot(Math.max(Math.abs(slam.bounds.min.x), Math.abs(slam.bounds.max.x)), Math.max(Math.abs(slam.bounds.min.z), Math.abs(slam.bounds.max.z)))
       : Math.hypot(size.x, size.z) / 2;
     if (slam) center.set(0, center.y, 0);
+    const headerSlam = transparent && !!slam;
+    // Keep his body at showcase scale; the full swing envelope is for the model page.
+    if (headerSlam) center.set(0, 2.35, 0);
     camera.lookAt(center);
     const fitCamera = (aspect: number) => {
       const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
-      const vertical = size.y * 0.56 / Math.tan(halfFov);
-      const horizontal = radius * 1.12 / (Math.tan(halfFov) * aspect);
-      camera.position.set(center.x, center.y + 0.25, center.z + Math.max(vertical, horizontal) + radius);
+      const vertical = (headerSlam ? 4.8 : size.y) * 0.56 / Math.tan(halfFov);
+      const horizontal = (headerSlam ? 1.1 : radius) * 1.12 / (Math.tan(halfFov) * aspect);
+      camera.position.set(center.x, center.y + 0.25, center.z + (Math.max(vertical, horizontal) + (headerSlam ? 0.6 : radius)) * (headerSlam ? 1.12 : 1));
       camera.lookAt(center);
     };
     fitCamera(W / H);
