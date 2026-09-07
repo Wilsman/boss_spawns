@@ -130,4 +130,25 @@ describe("spawn data cache synchronization", () => {
     ]);
     expect(data["pvp-season"][0].bosses[0].spawnChance).toBe(0.4);
   });
+
+  test("maps retain validated coordinates and record IDs separately in each mode", async () => {
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const payload = mapsPayload(0.4);
+      const map = payload.data.maps.customs;
+      const x = input.toString().includes("/pve/") ? 20 : input.toString().includes("/pvp-season/") ? 30 : 10;
+      delete (map as { id?: string }).id;
+      Object.assign(map.bosses[0].spawnLocations[0], { positions: [{ x, y: 1, z: 2 }, { x: null, y: 1, z: 2 }] });
+      Object.assign(map, { spawns: [
+        { categories: ["player"], position: { x, y: 0, z: 5 } },
+        { categories: ["bot"], position: { x: 99, y: 0, z: 0 } },
+      ] });
+      return Response.json(payload);
+    }) as typeof fetch;
+    const result = await fetchAllSpawnData({ forceRefresh: true });
+    for (const [mode, x] of [["regular", 10], ["pve", 20], ["pvp-season", 30]] as const) {
+      expect(result[mode][0].id).toBe("customs");
+      expect(result[mode][0].bosses[0].spawnLocations[0].positions).toEqual([{ x, y: 1, z: 2 }]);
+      expect(result[mode][0].playerSpawns).toEqual([{ x, y: 0, z: 5 }]);
+    }
+  });
 });

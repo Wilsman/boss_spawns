@@ -8,6 +8,8 @@ import { CacheStatus } from "@/components/CacheStatus";
 import { ChangeNotificationControls } from "@/components/ChangeNotificationControls";
 import { CalendarDays, Crosshair, History, Scale, Swords } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { List } from "lucide-react";
 
 interface DataWorkspaceProps {
   children: ReactNode;
@@ -64,6 +66,10 @@ export function DataWorkspace({
   soundEnabled,
   unreadCount,
 }: DataWorkspaceProps) {
+  const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const canShowMap = location.pathname !== "/compare";
+  const mapView = canShowMap && params.get("view") === "map";
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notificationRef = useRef<HTMLDivElement | null>(null);
   const maps = Array.from(new Set(filterData?.map((map) => map.name) ?? [])).sort();
@@ -108,10 +114,13 @@ export function DataWorkspace({
               <button type="button" onClick={onExport} className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-500"><FileDown className="h-4 w-4" /><span className="hidden sm:inline">Export</span></button>
             </div>
           </div>
-          <div className="grid gap-2 md:grid-cols-[minmax(0,1.4fr)_minmax(150px,0.8fr)_minmax(150px,0.8fr)]">
+          <div className={`grid gap-2 ${canShowMap ? "md:grid-cols-[minmax(0,1.4fr)_minmax(130px,0.8fr)_minmax(130px,0.8fr)_auto]" : "md:grid-cols-[minmax(0,1.4fr)_minmax(150px,0.8fr)_minmax(150px,0.8fr)]"}`}>
             <label className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-600" /><input value={searchQuery} onChange={(event) => onSearchQueryChange(event.target.value)} placeholder="Search..." className="w-full rounded-md border border-white/[0.09] bg-[#0b0b0c] py-2.5 pl-9 pr-3 text-sm text-gray-300 outline-none placeholder:text-gray-600 focus:border-blue-500/70" /></label>
             <label className="relative"><Map className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" /><select value={mapFilter} onChange={(event) => onMapFilterChange(event.target.value)} aria-label="Map" className={cn(selectClass, "pl-9")}><option value="">All Maps</option>{maps.map((map) => <option key={map} value={map}>{map}</option>)}</select></label>
             <label className="relative"><User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" /><select value={bossFilter} onChange={(event) => onBossFilterChange(event.target.value)} aria-label="Boss" className={cn(selectClass, "pl-9")}><option value="">All Bosses</option>{bosses.map((boss) => <option key={boss} value={boss}>{boss}</option>)}</select></label>
+            {canShowMap && <div className="flex w-fit items-center gap-1 rounded-md border border-white/[0.09] bg-[#0b0b0c] p-1" role="group" aria-label="Results view">
+              {([false, true] as const).map((isMap) => <button type="button" key={String(isMap)} aria-pressed={mapView === isMap} onClick={() => { const next = new URLSearchParams(params); if (isMap) next.set("view", "map"); else next.delete("view"); setParams(next); }} className={`inline-flex items-center gap-1.5 rounded px-3 py-1.5 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 ${mapView === isMap ? "bg-blue-500/15 text-blue-200 ring-1 ring-blue-400/25" : "text-gray-500 hover:text-white"}`}>{isMap ? <Map size={14} /> : <List size={14} />}{isMap ? "Map" : "Table"}</button>)}
+            </div>}
           </div>
         </div>
       </section>

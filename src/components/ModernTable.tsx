@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowUpDown, ChevronDown, ChevronRight, ChevronUp, Info, X } from "lucide-react";
+import { ArrowUpDown, ChevronDown, ChevronRight, ChevronUp, Info, MapPin, X } from "lucide-react";
 import { SpawnData, Boss, DataMode, Health, Escort, GameMode, MobCatalog } from "@/types";
 import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
 import { mergeSpawnLocations } from "@/lib/spawn-location-utils";
 import { BossDetailsPanel } from "@/components/BossDetailsPanel";
 import { buildBossComparisons } from "@/lib/compare";
+import { getMapMeta } from "@/lib/map-meta";
 import {
   HoverCard,
   HoverCardContent,
@@ -20,6 +21,7 @@ interface DataTableProps {
   mode: DataMode;
   filters: { map: string; boss: string; search: string };
   catalog?: MobCatalog;
+  onOpenMap?: (map: SpawnData, boss: string, location?: string) => void;
 }
 
 function getLocationClasses(location: string, chance: number) {
@@ -99,7 +101,7 @@ function mergeEscorts(escorts: Escort[]): Escort[] {
   }, []);
 }
 
-export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProps) {
+export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: DataTableProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const isCompare = mode === "compare";
   const urlSort = searchParams.get("sort") || (isCompare ? "pvp" : "spawn");
@@ -486,24 +488,16 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                       return (
                         <div key={row.boss} className="rounded-md overflow-hidden">
                           <div
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`${isExpanded ? "Close" : "Open"} ${row.boss} details`}
-                            aria-expanded={isExpanded}
+                            role="group"
+                            aria-label={row.boss}
                             onClick={toggleExpanded}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                toggleExpanded();
-                              }
-                            }}
                             className={`group relative grid cursor-pointer grid-cols-12 items-center gap-3 rounded-md px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/30 ${
                               isExpanded
                                 ? "bg-white/[0.045]"
                                 : "hover:bg-white/[0.025]"
                             }`}
                           >
-                            <div className="col-span-12 pr-20 sm:col-span-5 sm:pr-0">
+                            <div className="col-span-12 pr-44 sm:col-span-5 sm:pr-0">
                               <div className="flex min-w-0 items-center gap-2">
                                 <span
                                   aria-hidden="true"
@@ -539,16 +533,20 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                                 </div>
                               </div>
                             </div>
-                            <div className="col-span-6 flex flex-wrap gap-1 sm:col-span-4 sm:pr-20">
+                            <div className="col-span-6 flex flex-wrap gap-1 sm:col-span-4 sm:pr-44">
                               {locs.length === 0 ? (
                                 <span className="italic text-gray-500">
                                   (No specific location)
                                 </span>
                               ) : (
                                 locs.map((l, idx) => (
-                                  <span
+                                  <button
+                                    type="button"
+                                    disabled={!mapDetails || !getMapMeta(mapDetails.normalizedName) || !row.encounters.some((b) => b.spawnLocations.some((loc) => loc.name === l.name && loc.positions?.length))}
+                                    aria-label={`Show ${row.boss} at ${l.name} on map`}
+                                    onClick={(event) => { event.stopPropagation(); if (mapDetails) onOpenMap?.(mapDetails, row.boss, l.name); }}
                                     key={`${l.name}-${idx}`}
-                                    className={`rounded bg-[#171719] px-2 py-1 text-gray-200 ring-1 ring-white/[0.09] ${getLocationClasses(
+                                    className={`rounded bg-[#171719] px-2 py-1 text-left text-gray-200 ring-1 ring-white/[0.09] enabled:hover:bg-blue-500/15 enabled:hover:ring-blue-400/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 disabled:cursor-default ${getLocationClasses(
                                       l.name,
                                       l.chance
                                     )}`}
@@ -559,13 +557,18 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                                         ? `${(l.chance * 100).toFixed(0)}%`
                                         : "-"}
                                     </span>
-                                  </span>
+                                  </button>
                                 ))
                               )}
                             </div>
-                            <span
-                              aria-hidden="true"
-                              className={`pointer-events-none absolute right-3 inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] transition-all top-3 sm:top-1/2 sm:-translate-y-1/2 ${
+                            <div className="absolute right-3 top-3 flex items-center gap-2 sm:top-1/2 sm:-translate-y-1/2">
+                            {onOpenMap && mapDetails && <button type="button" aria-label={`View ${row.boss} spawns on ${mapName}`} title={!getMapMeta(mapDetails.normalizedName) ? "Map background unavailable" : !row.encounters.some((b) => b.spawnLocations.some((l) => l.positions?.length)) ? "No mapped spawn positions" : "View spawns"} disabled={!getMapMeta(mapDetails.normalizedName) || !row.encounters.some((b) => b.spawnLocations.some((l) => l.positions?.length))} onClick={(event) => { event.stopPropagation(); onOpenMap(mapDetails, row.boss); }} className="inline-flex items-center gap-1 rounded-full border border-blue-400/20 bg-blue-500/[0.07] px-2 py-1 text-[10px] text-blue-200/80 hover:bg-blue-500/15 disabled:cursor-default disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"><MapPin size={12} />View spawns</button>}
+                            <button
+                              type="button"
+                              aria-label={`${isExpanded ? "Close" : "Open"} ${row.boss} details`}
+                              aria-expanded={isExpanded}
+                              onClick={(event) => { event.stopPropagation(); toggleExpanded(); }}
+                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 ${
                                 isExpanded
                                   ? "border-white/[0.2] bg-white/[0.08] text-white"
                                   : "border-white/[0.1] bg-[#171719] text-gray-500 group-hover:border-white/[0.18] group-hover:bg-white/[0.05] group-hover:text-gray-200"
@@ -576,7 +579,8 @@ export function ModernTable({ data, mode, filters, catalog = {} }: DataTableProp
                                 size={13}
                                 className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}
                               />
-                            </span>
+                            </button>
+                            </div>
                           </div>
                           {row.escorts && row.escorts.length > 0 && (
                             <EscortRows escorts={row.escorts} />

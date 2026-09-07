@@ -1,9 +1,16 @@
 export type DataMode = "regular" | "pve" | "pvp-season" | "compare" | "changes";
 
+export interface GamePosition {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface SpawnLocation {
   name: string;
   chance: number;
   spawnKey?: string | null;
+  positions?: GamePosition[];
 }
 
 // Define the Health interface based on your API fetch
@@ -113,6 +120,7 @@ export interface SpawnData {
   minPlayerLevel?: number;
   maxPlayerLevel?: number;
   bosses: Boss[];
+  playerSpawns?: GamePosition[];
 }
 
 export interface ActionResponse<T = unknown> {

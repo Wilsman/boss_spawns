@@ -24,7 +24,7 @@ import {
 
 export type { SpawnData };
 
-const CACHE_VERSION = 15;
+const CACHE_VERSION = 16;
 const CHANGES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for changes data (can be adjusted independently)
 const CHANGES_CACHE_VERSION = 2;
 const CHANGES_FAILURE_RETRY_DELAY = 60 * 60 * 1000;
@@ -91,6 +91,7 @@ interface TarkovJsonMap {
   minPlayerLevel?: number | null;
   maxPlayerLevel?: number | null;
   bosses?: TarkovJsonBoss[];
+  spawns?: Array<{ categories?: string[]; position?: { x: number; y: number; z: number } }>;
 }
 
 interface TarkovJsonBoss {
@@ -109,6 +110,7 @@ interface TarkovJsonSpawnLocation {
   name?: string | null;
   chance?: number | null;
   spawnKey?: string | null;
+  positions?: Array<{ x: number; y: number; z: number }>;
 }
 
 interface TarkovJsonEscort {
@@ -410,6 +412,9 @@ function normalizeSpawnLocations(
     name: getTranslatedName(location.name),
     chance: location.chance ?? 0,
     spawnKey: location.spawnKey ?? location.name ?? null,
+    positions: (location.positions ?? []).filter((p) =>
+      p && [p.x, p.y, p.z].every(Number.isFinite)
+    ),
   }));
 }
 
@@ -550,8 +555,8 @@ function normalizeMapsPayload(payload: TarkovJsonResponse): {
 
   return {
     catalog: normalizeMobCatalog(mobs),
-    maps: Object.values(maps).map((map) => ({
-    id: map.id ?? undefined,
+    maps: Object.entries(maps).map(([id, map]) => ({
+    id: map.id ?? id,
     name: getMapDisplayName(map),
     normalizedName: map.normalizedName ?? undefined,
     nameId: map.nameId ?? undefined,
@@ -570,6 +575,11 @@ function normalizeMapsPayload(payload: TarkovJsonResponse): {
     minPlayerLevel: map.minPlayerLevel ?? undefined,
     maxPlayerLevel: map.maxPlayerLevel ?? undefined,
     bosses: (map.bosses ?? []).map((boss) => normalizeBoss(boss, mobs)),
+    playerSpawns: (map.spawns ?? []).flatMap((spawn) =>
+      spawn.categories?.includes("player") && spawn.position &&
+      [spawn.position.x, spawn.position.y, spawn.position.z].every(Number.isFinite)
+        ? [spawn.position] : []
+    ),
     })),
   };
 }

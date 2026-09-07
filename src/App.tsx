@@ -9,7 +9,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { SpawnData, fetchAllSpawnData } from "./lib/api";
-import ModernTable from "@/components/ModernTable";
+import SpawnResults from "@/components/SpawnResults";
 import { Header } from "@/components/Header";
 import { DataChange } from "@/lib/diff";
 import { ChangesTable } from "@/components/ChangesTable";
@@ -760,7 +760,7 @@ function MainApp() {
               </div>
             </div>
           ) : (
-            <ModernTable
+            <SpawnResults
               data={
                 mode === "compare"
                   ? {
