@@ -35,13 +35,21 @@ export interface MapMeta {
 }
 export const INTERACTIVE_MAPS = metadata as MapMeta[];
 export function getMapMeta(normalizedName?: string): MapMeta | undefined {
-  return INTERACTIVE_MAPS.find((m) => m.normalizedName === normalizedName || m.altMaps?.includes(normalizedName ?? ""));
+  return INTERACTIVE_MAPS.find(
+    (m) =>
+      m.normalizedName === normalizedName ||
+      m.altMaps?.includes(normalizedName ?? ""),
+  );
 }
 export function getMapLevels(meta: MapMeta): MapLevel[] {
   const defaultLayer = meta.layers?.find((l) => l.show);
   return [
-    { name: defaultLayer?.name ?? "Ground", tilePath: meta.tilePath, svgLayer: meta.svgLayer,
-      extents: meta.heightRange ? [{ height: meta.heightRange }] : undefined },
+    {
+      name: defaultLayer?.name ?? "Ground",
+      tilePath: meta.tilePath,
+      svgLayer: meta.svgLayer,
+      extents: meta.heightRange ? [{ height: meta.heightRange }] : undefined,
+    },
     ...(meta.layers ?? []).filter((l) => l !== defaultLayer),
   ];
 }
