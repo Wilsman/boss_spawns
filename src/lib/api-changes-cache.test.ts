@@ -121,7 +121,7 @@ describe("changes cache synchronization", () => {
     expect(requestedUrl).not.toContain("since=");
     expect(changes).toHaveLength(1);
     expect(changes[0].boss).toBe("raider");
-    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("2");
+    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("3");
     expect(localStorage.getItem(STORAGE_KEYS.notificationsEnabled)).toBe("true");
     expect(localStorage.getItem(STORAGE_KEYS.soundEnabled)).toBe("false");
     expect(localStorage.getItem(STORAGE_KEYS.autoRefreshEnabled)).toBe("true");
@@ -137,7 +137,7 @@ describe("changes cache synchronization", () => {
   });
 
   test("manual refresh bypasses freshness while remaining incremental", async () => {
-    seedCache({ fresh: true, version: 2 });
+    seedCache({ fresh: true, version: 3 });
     let requestedUrl = "";
     globalThis.fetch = async (input) => {
       requestedUrl = input.toString();
@@ -152,7 +152,7 @@ describe("changes cache synchronization", () => {
   });
 
   test("normal refresh stays incremental after the cache is current", async () => {
-    seedCache({ version: 2 });
+    seedCache({ version: 3 });
     let requestedUrl = "";
     globalThis.fetch = async (input) => {
       requestedUrl = input.toString();
@@ -166,7 +166,7 @@ describe("changes cache synchronization", () => {
   });
 
   test("changes requests remain simple CORS requests without preflight-only headers", async () => {
-    seedCache({ version: 2 });
+    seedCache({ version: 3 });
     let requestedInit: RequestInit | undefined;
     globalThis.fetch = async (_input, init) => {
       requestedInit = init;
@@ -194,7 +194,7 @@ describe("changes cache synchronization", () => {
   });
 
   test("a quota response keeps cached data and pauses requests until the next UTC reset", async () => {
-    seedCache({ version: 2 });
+    seedCache({ version: 3 });
     let requestCount = 0;
     globalThis.fetch = async () => {
       requestCount += 1;
@@ -231,7 +231,7 @@ describe("changes cache synchronization", () => {
   });
 
   test("a successful retry clears an expired circuit breaker", async () => {
-    seedCache({ version: 2 });
+    seedCache({ version: 3 });
     localStorage.setItem(STORAGE_KEYS.retryAfter, (Date.now() - 1).toString());
     globalThis.fetch = async () => successfulResponse();
 
@@ -279,7 +279,7 @@ describe("changes cache synchronization", () => {
 
     expect(changes).toEqual([]);
     expect(localStorage.getItem(STORAGE_KEYS.cache)).toBe("[]");
-    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("2");
+    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("3");
     expect(localStorage.getItem(STORAGE_KEYS.notificationsEnabled)).toBe("true");
   });
 
@@ -311,7 +311,7 @@ describe("changes cache synchronization", () => {
     expect(requestedUrls[0]).not.toContain("beforeTimestamp=");
     expect(requestedUrls[1]).toContain("beforeTimestamp=1784038000000");
     expect(requestedUrls[1]).toContain("beforeId=1001");
-    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("2");
+    expect(localStorage.getItem(STORAGE_KEYS.cacheVersion)).toBe("3");
   });
 });
 

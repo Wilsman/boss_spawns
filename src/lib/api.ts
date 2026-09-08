@@ -26,7 +26,10 @@ export type { SpawnData };
 
 const CACHE_VERSION = 16;
 const CHANGES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes for changes data (can be adjusted independently)
-const CHANGES_CACHE_VERSION = 2;
+// Bumped to 3 to force a full resync after the 2026-09-08 server cleanup that
+// deleted a net-zero PvE flap episode: incremental syncs only append, so stale
+// deleted rows would otherwise linger in browser caches.
+const CHANGES_CACHE_VERSION = 3;
 const CHANGES_FAILURE_RETRY_DELAY = 60 * 60 * 1000;
 const CHANGES_QUOTA_RESET_GRACE = 5 * 60 * 1000;
 const DEFAULT_CHANGES_API_BASE_URL = "https://bossdata.cultistcircle.workers.dev";
