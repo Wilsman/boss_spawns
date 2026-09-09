@@ -8,7 +8,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import { SpawnData, fetchAllSpawnData } from "./lib/api";
+import { SpawnData, fetchAllSpawnData, isPveHiddenMap } from "./lib/api";
 import SpawnResults from "@/components/SpawnResults";
 import { Header } from "@/components/Header";
 import { DataChange } from "@/lib/diff";
@@ -107,6 +107,23 @@ function MainApp() {
     params.delete("search");
     setSearchParams(params);
   };
+
+  // Dark Labs is hidden in PvE. If the map filter still points at it after
+  // switching to PvE (or via a shared /pve?map=Dark+Labs URL), the table
+  // would show "No results found". Retarget to The Lab instead.
+  useEffect(() => {
+    if (mode !== "pve" || !mapFilter || !pveData) return;
+    if (!isPveHiddenMap({ name: mapFilter, normalizedName: mapFilter })) return;
+    if (pveData.some((m) => m.name.toLowerCase() === mapFilter.toLowerCase())) return;
+    const target =
+      pveData.find((m) => m.normalizedName === "the-lab") ??
+      pveData.find((m) => m.name === "The Lab");
+    const params = new URLSearchParams(searchParams);
+    if (target) params.set("map", target.name);
+    else params.delete("map");
+    setSearchParams(params, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, mapFilter, pveData]);
 
   // Use refs to track data existence without causing re-renders
   const hasDataRef = useRef(false);

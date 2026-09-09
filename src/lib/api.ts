@@ -171,6 +171,40 @@ const MAP_NAME_OVERRIDES: Record<string, string> = {
   icebreaker: "Icebreaker",
 };
 
+// Dark Labs is not currently active in PvE; the upstream payload still lists
+// it, which misleads players into planning around an unavailable map.
+const PVE_HIDDEN_MAP_IDS = new Set([
+  "6a294a5b5eb5f9a1700417b",
+  "the-lab-dark",
+]);
+
+export function isPveHiddenMap(map?: {
+  id?: string;
+  normalizedName?: string | null;
+  nameId?: string | null;
+  name?: string | null;
+}): boolean {
+  if (!map) return false;
+  const candidates = [map.id, map.normalizedName, map.nameId]
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (candidates.some((value) => PVE_HIDDEN_MAP_IDS.has(value))) return true;
+  return map.name?.trim().toLowerCase() === "dark labs";
+}
+
+export function filterPveMaps(maps: SpawnData[]): SpawnData[] {
+  return maps.filter((map) => !isPveHiddenMap(map));
+}
+
+export function filterPveGoonReports(reports: GoonReport[]): GoonReport[] {
+  return reports.filter(
+    (report) =>
+      !PVE_HIDDEN_MAP_IDS.has(report.map?.trim().toLowerCase() ?? "") &&
+      report.map?.trim().toLowerCase() !== "dark labs",
+  );
+}
+
 const DISPLAY_NAME_TRANSLATIONS: Record<string, string> = {
   blackDivision: "Black Division",
   bossBoar: "Kaban",
@@ -628,11 +662,15 @@ function getExpiredCachedData(
       data?.["pvp-season"]
     ) {
       const emptyCatalogs = { regular: {}, pve: {}, "pvp-season": {} };
+      const goonReports = data.goonReports ?? { regular: [], pve: [], "pvp-season": [] };
       return {
         regular: applyLocalData(data.regular, "regular"),
         pve: applyLocalData(data.pve, "pve"),
         "pvp-season": applyLocalData(data["pvp-season"], "pvp-season"),
-        goonReports: data.goonReports ?? { regular: [], pve: [], "pvp-season": [] },
+        goonReports: {
+          ...goonReports,
+          pve: filterPveGoonReports(goonReports.pve ?? []),
+        },
         catalogs: data.catalogs ?? emptyCatalogs,
       };
     }
@@ -786,6 +824,10 @@ export function applyLocalData(currentData: SpawnData[], mode: GameMode): SpawnD
     });
   }
 
+  if (mode === "pve") {
+    return filterPveMaps(mergedData);
+  }
+
   return mergedData;
 }
 
@@ -844,11 +886,15 @@ export async function fetchAllSpawnData(options?: {
           cacheAge < FIVE_MINUTES
         ) {
           const emptyCatalogs = { regular: {}, pve: {}, "pvp-season": {} };
+          const cachedReports = data.goonReports ?? { regular: [], pve: [], "pvp-season": [] };
           return {
             regular: applyLocalData(data.regular, "regular"),
             pve: applyLocalData(data.pve, "pve"),
             "pvp-season": applyLocalData(data["pvp-season"], "pvp-season"),
-            goonReports: data.goonReports ?? { regular: [], pve: [], "pvp-season": [] },
+            goonReports: {
+              ...cachedReports,
+              pve: filterPveGoonReports(cachedReports.pve ?? []),
+            },
             catalogs: data.catalogs ?? emptyCatalogs,
           };
         }
@@ -904,6 +950,10 @@ export async function fetchAllSpawnData(options?: {
     regular: applyLocalData(cacheData.regular, "regular"),
     pve: applyLocalData(cacheData.pve, "pve"),
     "pvp-season": applyLocalData(cacheData["pvp-season"], "pvp-season"),
+    goonReports: {
+      ...cacheData.goonReports,
+      pve: filterPveGoonReports(cacheData.goonReports.pve),
+    },
   };
 
   // Persist only tiny entries (see writeSmallSpawnCacheEntry): the full
