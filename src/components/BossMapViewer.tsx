@@ -11,7 +11,7 @@ import {
   isOnLevel,
   leafletBounds,
 } from "@/lib/map-coords";
-import { clusterPins, getSpawnPins, type SpawnPin } from "@/lib/map-spawns";
+import { getSpawnPins, layoutOverlappingMarkers, type SpawnPin } from "@/lib/map-spawns";
 import "leaflet/dist/leaflet.css";
 import "./boss-map.css";
 
@@ -544,7 +544,6 @@ function MapCanvas({
   useEffect(() => {
     if (!map || map !== liveMap.current) return;
     const layer = L.layerGroup().addTo(map);
-    const spider = L.layerGroup().addTo(map);
     function addPin(
       pin: SpawnPin,
       destination: L.LayerGroup,
@@ -609,96 +608,30 @@ function MapCanvas({
       }
       marker.bindPopup(popup, { maxWidth: 290 }).addTo(destination);
     }
-    function render() {
-      if (!map) return;
-      layer.clearLayers();
-      spider.clearLayers();
-      if (players)
-        for (const p of data.playerSpawns ?? [])
-          L.circleMarker(gameLatLng(p), {
-            radius: 3,
-            color: "#c4b5fd",
-            weight: 1,
-            fillOpacity: isOnLevel(p, levels, level) ? 0.8 : 0.15,
-            opacity: isOnLevel(p, levels, level) ? 0.8 : 0.15,
-          })
-            .bindTooltip("Possible player spawn")
-            .addTo(layer);
-      // Keep other floors in separate groups so their fade remains meaningful.
-      for (const onLevel of [false, true]) {
-        const groups = clusterPins(
-          pins.filter((p) => isOnLevel(p.position, levels, level) === onLevel),
-          (p) => map.latLngToLayerPoint(gameLatLng(p.position)),
-        );
-        for (const group of groups) {
-          if (group.length === 1) {
-            addPin(group[0], layer);
-            continue;
-          }
-          const center = group
-            .reduce(
-              (point, pin) =>
-                point.add(map.latLngToLayerPoint(gameLatLng(pin.position))),
-              L.point(0, 0),
-            )
-            .divideBy(group.length);
-          const names = [...new Set(group.map((p) => p.bossName))];
-          const marker = L.marker(map.layerPointToLatLng(center), {
-            title: `${group.length} spawn positions: ${names.join(", ")}`,
-            icon: L.divIcon({
-              className: `boss-pin-cluster ${onLevel ? "" : "off-level"}`,
-              html: String(group.length),
-              iconSize: [34, 34],
-              iconAnchor: [17, 17],
-            }),
-          }).addTo(layer);
-          marker.on("click", () => {
-            const spread = Math.max(
-              ...group.map((p) =>
-                center.distanceTo(
-                  map.latLngToLayerPoint(gameLatLng(p.position)),
-                ),
-              ),
-            );
-            if (spread > 12 && map.getZoom() < map.getMaxZoom()) {
-              map.setView(
-                marker.getLatLng(),
-                Math.min(map.getZoom() + 1.5, map.getMaxZoom()),
-              );
-              return;
-            }
-            spider.clearLayers();
-            group.forEach((pin, i) => {
-              const angle = (i * Math.PI * 2) / group.length;
-              const radius = Math.max(30, group.length * 6);
-              const end = center.add(
-                L.point(Math.cos(angle) * radius, Math.sin(angle) * radius),
-              );
-              const start = map.latLngToLayerPoint(gameLatLng(pin.position));
-              L.polyline(
-                [gameLatLng(pin.position), map.layerPointToLatLng(end)],
-                {
-                  color: "#8db8f8",
-                  weight: 1,
-                  opacity: 0.65,
-                  interactive: false,
-                },
-              ).addTo(spider);
-              addPin(pin, spider, end.subtract(start));
-            });
-          });
-        }
-      }
+    // Spread pins that share the exact same game position onto a small pixel
+    // circle so stacked bosses are all visible without clicking a count badge.
+    const overlapOffsets = layoutOverlappingMarkers(pins);
+    if (players)
+      for (const p of data.playerSpawns ?? [])
+        L.circleMarker(gameLatLng(p), {
+          radius: 3,
+          color: "#c4b5fd",
+          weight: 1,
+          fillOpacity: isOnLevel(p, levels, level) ? 0.8 : 0.15,
+          opacity: isOnLevel(p, levels, level) ? 0.8 : 0.15,
+        })
+          .bindTooltip("Possible player spawn")
+          .addTo(layer);
+    // Keep other floors underneath so their fade remains meaningful.
+    for (const onLevel of [false, true]) {
+      pins.forEach((pin, index) => {
+        if (isOnLevel(pin.position, levels, level) !== onLevel) return;
+        const { dx, dy } = overlapOffsets[index];
+        addPin(pin, layer, L.point(dx, dy));
+      });
     }
-    const clearSpider = () => spider.clearLayers();
-    render();
-    map.on("zoomend", render);
-    map.on("click", clearSpider);
     return () => {
-      map.off("zoomend", render);
-      map.off("click", clearSpider);
       layer.remove();
-      spider.remove();
     };
   }, [map, pins, levels, level, players, data.playerSpawns, focus]);
 

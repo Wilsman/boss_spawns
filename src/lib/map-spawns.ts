@@ -64,3 +64,51 @@ export function clusterPins<T>(
   }
   return groups.map((g) => g.pins);
 }
+
+/** Pixel offset + co-located boss names for one pin. */
+export interface MarkerOffset {
+  dx: number;
+  dy: number;
+  sharesWith: string[];
+}
+
+/**
+ * Spread pins that share the exact same game position onto a small pixel
+ * circle so stacked bosses are all visible and clickable. Offsets are in
+ * screen pixels, so separation holds at any zoom without touching the true
+ * game coordinates.
+ */
+export function layoutOverlappingMarkers(pins: SpawnPin[]): MarkerOffset[] {
+  const groups = new Map<string, number[]>();
+  pins.forEach((pin, index) => {
+    const key = `${pin.position.x},${pin.position.z}`;
+    const group = groups.get(key);
+    if (group) group.push(index);
+    else groups.set(key, [index]);
+  });
+  const offsets: MarkerOffset[] = pins.map(() => ({
+    dx: 0,
+    dy: 0,
+    sharesWith: [],
+  }));
+  for (const indices of groups.values()) {
+    if (indices.length < 2) continue;
+    const radius = indices.length <= 3 ? 16 : 20;
+    indices.forEach((pinIndex, k) => {
+      const angle = (2 * Math.PI * k) / indices.length - Math.PI / 2;
+      const sharesWith = [
+        ...new Set(
+          indices
+            .filter((other) => other !== pinIndex)
+            .map((other) => pins[other].bossName),
+        ),
+      ];
+      offsets[pinIndex] = {
+        dx: Math.cos(angle) * radius,
+        dy: Math.sin(angle) * radius,
+        sharesWith,
+      };
+    });
+  }
+  return offsets;
+}
