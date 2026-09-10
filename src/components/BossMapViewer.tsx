@@ -342,6 +342,7 @@ export default function BossMapViewer({
               players={players}
               focus={focus}
               colors={bossColors}
+              onLevelSelect={setLevel}
             />
             <aside
               className="boss-map-roster"
@@ -477,6 +478,7 @@ function MapCanvas({
   players,
   focus,
   colors,
+  onLevelSelect,
 }: {
   meta: MapMeta;
   data: SpawnData;
@@ -486,9 +488,11 @@ function MapCanvas({
   players: boolean;
   focus: Focus;
   colors: Map<string, string>;
+  onLevelSelect: (index: number) => void;
 }) {
   const element = useRef<HTMLDivElement>(null);
   const liveMap = useRef<L.Map | null>(null);
+  const reopenPin = useRef<string | null>(null);
   const [map, setMap] = useState<L.Map | null>(null);
   const [status, setStatus] = useState("");
   const [retry, setRetry] = useState(0);
@@ -743,10 +747,22 @@ function MapCanvas({
       marker
         .bindPopup(popup, { maxWidth: 290, minWidth: 220 })
         .addTo(destination);
+      // Clicking a faded pin jumps to the floor it lives on.
+      marker.on("click", () => {
+        if (onLevel) return;
+        const target = levels.findIndex((_, i) =>
+          isOnLevel(pin.position, levels, i),
+        );
+        if (target < 0) return;
+        reopenPin.current = pin.id;
+        onLevelSelect(target);
+      });
+      return marker;
     }
     // Spread pins that share the exact same game position onto a small pixel
     // circle so stacked bosses are all visible without clicking a count badge.
     const overlapOffsets = layoutOverlappingMarkers(pins);
+    const markerById = new Map<string, L.Marker>();
     if (players)
       for (const p of data.playerSpawns ?? [])
         L.circleMarker(gameLatLng(p), {
@@ -763,14 +779,19 @@ function MapCanvas({
       pins.forEach((pin, index) => {
         if (isOnLevel(pin.position, levels, level) !== onLevel) return;
         const { dx, dy } = overlapOffsets[index];
-        addPin(pin, layer, L.point(dx, dy));
+        markerById.set(pin.id, addPin(pin, layer, L.point(dx, dy)));
       });
+    }
+    // Reopen the popup after a floor switch rebuilds the markers.
+    if (reopenPin.current) {
+      markerById.get(reopenPin.current)?.openPopup();
+      reopenPin.current = null;
     }
     return () => {
       layer.remove();
     };
     // focus.revision is camera-only; markers rebuild when the highlight changes.
-  }, [map, pins, levels, level, players, data.playerSpawns, focus.boss, focus.location, colors]);
+  }, [map, pins, levels, level, players, data.playerSpawns, focus.boss, focus.location, colors, onLevelSelect]);
 
   return (
     <div className="boss-map-canvas-wrap">
