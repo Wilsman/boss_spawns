@@ -75,6 +75,7 @@ export default function BossMapViewer({
     location: initialLocation,
   });
   const [level, setLevel] = useState(() => {
+    if (!initialBoss && !initialLocation) return 0;
     const target = pins.find(
       (p) =>
         (!initialBoss || p.bossName === initialBoss) &&
