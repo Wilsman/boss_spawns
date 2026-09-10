@@ -221,7 +221,13 @@
   height: 32px;
   object-fit: cover;
   border-radius: 50%;
-  border: 1px solid #ffffff25;
+  border: 2px solid #ffffff25;
+}
+.boss-map-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 .boss-map-boss-heading span {
   font-size: 12px;
@@ -338,11 +344,43 @@
   color: #e4e4e7;
   border: 1px solid #ffffff20;
 }
+.boss-map-popup {
+  min-width: 200px;
+}
 .boss-map-popup strong {
+  display: block;
   font-size: 14px;
 }
-.boss-map-popup p {
-  margin: 6px 0 !important;
+.boss-map-popup-location {
+  display: block;
+  margin-top: 1px;
+  font-size: 11px;
+  color: #a4adba;
+}
+.boss-map-popup-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #ffffff14;
+}
+.boss-map-popup-stats b {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.boss-map-popup-stats small {
+  font-size: 9px;
+  color: #8a92a0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.boss-map-popup-stats .is-off b {
+  color: #c9a86a;
+}
+.boss-map-popup-shared {
+  margin: 9px 0 0 !important;
   font-size: 11px;
   color: #b4bdcb;
 }
@@ -370,29 +408,13 @@
   height: 100%;
   object-fit: cover;
 }
-.boss-pin-cluster {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  background: #172c48;
-  border: 2px solid #81b3ff;
-  border-radius: 50%;
-  color: #f0f6ff;
-  font-size: 12px;
-  font-weight: 700;
-  box-shadow:
-    0 0 0 4px #609afa18,
-    0 3px 10px #000a;
-}
-.boss-pin.off-level,
-.boss-pin-cluster.off-level {
+.boss-pin.off-level {
   opacity: 0.25 !important;
 }
 .boss-pin.unfocused {
   opacity: 0.45;
 }
-.boss-pin:focus-visible,
-.boss-pin-cluster:focus-visible {
+.boss-pin:focus-visible {
   outline: 2px solid white;
   outline-offset: 4px;
   border-radius: 50%;

@@ -72,11 +72,20 @@ export default function SpawnResults({
               key={`${mode}:${filtered.name}:${filters.boss}:${filters.search}`}
               data={filtered}
               mode={mode as GameMode}
+              initialLocation={params.get("location") ?? undefined}
+              onLocationFocus={(location) => {
+                if ((params.get("location") ?? undefined) === location) return;
+                const next = new URLSearchParams(params);
+                if (location) next.set("location", location);
+                else next.delete("location");
+                setParams(next);
+              }}
               onShowAllBosses={() => {
                 if (!filters.boss && !filters.search) return;
                 const next = new URLSearchParams(params);
                 next.delete("boss");
                 next.delete("search");
+                next.delete("location");
                 setParams(next);
               }}
             />
@@ -169,6 +178,7 @@ export default function SpawnResults({
                     if (boss) next.set("boss", boss);
                     else next.delete("boss");
                     next.delete("search");
+                    next.delete("location");
                     setParams(next);
                     setPopup(null);
                   }}

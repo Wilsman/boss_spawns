@@ -47,29 +47,10 @@ export function filterMapBosses(
   };
 }
 
-// Screen-space clustering leaves every source position and encounter intact.
-export function clusterPins<T>(
-  pins: T[],
-  project: (pin: T) => { x: number; y: number },
-  radius = 38,
-): T[][] {
-  const groups: Array<{ x: number; y: number; pins: T[] }> = [];
-  for (const pin of pins) {
-    const point = project(pin);
-    const group = groups.find(
-      (g) => Math.hypot(g.x - point.x, g.y - point.y) < radius,
-    );
-    if (group) group.pins.push(pin);
-    else groups.push({ ...point, pins: [pin] });
-  }
-  return groups.map((g) => g.pins);
-}
-
-/** Pixel offset + co-located boss names for one pin. */
+/** Pixel offset for one pin. */
 export interface MarkerOffset {
   dx: number;
   dy: number;
-  sharesWith: string[];
 }
 
 /**
@@ -86,27 +67,15 @@ export function layoutOverlappingMarkers(pins: SpawnPin[]): MarkerOffset[] {
     if (group) group.push(index);
     else groups.set(key, [index]);
   });
-  const offsets: MarkerOffset[] = pins.map(() => ({
-    dx: 0,
-    dy: 0,
-    sharesWith: [],
-  }));
+  const offsets: MarkerOffset[] = pins.map(() => ({ dx: 0, dy: 0 }));
   for (const indices of groups.values()) {
     if (indices.length < 2) continue;
     const radius = indices.length <= 3 ? 16 : 20;
     indices.forEach((pinIndex, k) => {
       const angle = (2 * Math.PI * k) / indices.length - Math.PI / 2;
-      const sharesWith = [
-        ...new Set(
-          indices
-            .filter((other) => other !== pinIndex)
-            .map((other) => pins[other].bossName),
-        ),
-      ];
       offsets[pinIndex] = {
         dx: Math.cos(angle) * radius,
         dy: Math.sin(angle) * radius,
-        sharesWith,
       };
     });
   }

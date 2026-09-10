@@ -13,11 +13,28 @@ import {
 } from "@/lib/map-coords";
 import { getSpawnPins, layoutOverlappingMarkers, type SpawnPin } from "@/lib/map-spawns";
 import "leaflet/dist/leaflet.css";
+import "leaflet-gesture-handling";
+import "leaflet-gesture-handling/dist/leaflet-gesture-handling.css";
 import "./boss-map.css";
 
 type Background = "abstract" | "satellite" | "markers";
 type Focus = { boss?: string; location?: string; revision?: number };
 const MODE_LABELS = { regular: "PVP", pve: "PVE", "pvp-season": "Season" };
+// Roster order assigns these, so colours are always unique within one map.
+const BOSS_COLORS = [
+  "#8db8f8",
+  "#f0a05a",
+  "#7ed9a0",
+  "#e87d8a",
+  "#c49df5",
+  "#f2d06b",
+  "#6fd3d8",
+  "#f08ac8",
+  "#a9c97a",
+  "#e8a87c",
+  "#7fa6e8",
+  "#d6e06e",
+];
 const svgCache = new Map<string, string>();
 const percent = (value: number) => `${Math.round(value * 100)}%`;
 const safeImage = (url?: string | null) =>
@@ -30,6 +47,7 @@ export interface BossMapViewerProps {
   initialLocation?: string;
   onFullMap?: (boss?: string) => void;
   onShowAllBosses?: () => void;
+  onLocationFocus?: (location?: string) => void;
 }
 
 export default function BossMapViewer({
@@ -39,6 +57,7 @@ export default function BossMapViewer({
   initialLocation,
   onFullMap,
   onShowAllBosses,
+  onLocationFocus,
 }: BossMapViewerProps) {
   const meta = getMapMeta(data.normalizedName);
   const pins = useMemo(() => getSpawnPins(data), [data]);
@@ -58,7 +77,7 @@ export default function BossMapViewer({
   const [level, setLevel] = useState(() => {
     const target = pins.find(
       (p) =>
-        p.bossName === initialBoss &&
+        (!initialBoss || p.bossName === initialBoss) &&
         (!initialLocation || p.location === initialLocation),
     );
     return target
@@ -100,7 +119,37 @@ export default function BossMapViewer({
       };
     });
   }, [data, pins]);
+  const bossColors = useMemo(
+    () =>
+      new Map(
+        roster.map((boss, i) => [
+          boss.name,
+          BOSS_COLORS[i % BOSS_COLORS.length],
+        ]),
+      ),
+    [roster],
+  );
   const focusedBoss = roster.find((boss) => boss.name === focus.boss);
+  const layersMenu = useRef<HTMLDetailsElement>(null);
+  const closeLayers = () => {
+    if (layersMenu.current) layersMenu.current.open = false;
+  };
+
+  useEffect(() => {
+    const close = (event: PointerEvent) => {
+      const menu = layersMenu.current;
+      if (menu?.open && !menu.contains(event.target as Node))
+        menu.open = false;
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, []);
+
+  // Follow shared ?location links that change while the map stays mounted.
+  useEffect(() => {
+    if (initialLocation !== undefined) focusOn(initialBoss, initialLocation);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialBoss, initialLocation]);
 
   function focusOn(boss?: string, location?: string) {
     if (boss)
@@ -121,7 +170,24 @@ export default function BossMapViewer({
           levels.findIndex((_, i) => isOnLevel(target.position, levels, i)),
         ),
       );
+    else if (boss && levels.length > 1) {
+      // No location chosen: show the floor holding most of this boss's pins.
+      const bossPins = pins.filter((p) => p.bossName === boss);
+      let best = -1;
+      let bestCount = 0;
+      levels.forEach((_, i) => {
+        const count = bossPins.filter((p) =>
+          isOnLevel(p.position, levels, i),
+        ).length;
+        if (count > bestCount) {
+          bestCount = count;
+          best = i;
+        }
+      });
+      if (best >= 0) setLevel(best);
+    }
     setFocus({ boss, location, revision: Date.now() });
+    onLocationFocus?.(location);
   }
 
   return (
@@ -133,6 +199,8 @@ export default function BossMapViewer({
               className="boss-map-header-portrait"
               src={focusedBoss.portrait}
               alt=""
+              loading="lazy"
+              style={{ borderColor: bossColors.get(focusedBoss.name) }}
             />
           ) : (
             <MapPin size={19} />
@@ -206,7 +274,7 @@ export default function BossMapViewer({
               <Crosshair size={14} />
               Fit spawns
             </button>
-            <details className="boss-map-layers">
+            <details className="boss-map-layers" ref={layersMenu}>
               <summary>
                 <Layers size={14} />
                 Layers
@@ -227,7 +295,10 @@ export default function BossMapViewer({
                               ? !meta.tilePath
                               : false
                         }
-                        onChange={() => setBackground(style)}
+                        onChange={() => {
+                          setBackground(style);
+                          closeLayers();
+                        }}
                       />
                       {style === "markers"
                         ? "Markers only"
@@ -241,7 +312,10 @@ export default function BossMapViewer({
                   <input
                     type="checkbox"
                     checked={players}
-                    onChange={(e) => setPlayers(e.target.checked)}
+                    onChange={(e) => {
+                      setPlayers(e.target.checked);
+                      closeLayers();
+                    }}
                   />
                   <Users size={14} />
                   Player spawns
@@ -266,6 +340,7 @@ export default function BossMapViewer({
               background={background}
               players={players}
               focus={focus}
+              colors={bossColors}
             />
             <aside
               className="boss-map-roster"
@@ -300,7 +375,19 @@ export default function BossMapViewer({
                       onClick={() => focusOn(boss.name)}
                       disabled={!boss.pins.length}
                     >
-                      {boss.portrait && <img src={boss.portrait} alt="" />}
+                      {boss.portrait ? (
+                        <img
+                          src={boss.portrait}
+                          alt=""
+                          loading="lazy"
+                          style={{ borderColor: bossColors.get(boss.name) }}
+                        />
+                      ) : (
+                        <span
+                          className="boss-map-swatch"
+                          style={{ background: bossColors.get(boss.name) }}
+                        />
+                      )}
                       <span>
                         {boss.name}
                         <small>
@@ -327,8 +414,8 @@ export default function BossMapViewer({
                             type="button"
                             key={location}
                             className={
-                              focus.boss === boss.name &&
-                              focus.location === location
+                              focus.location === location &&
+                              (!focus.boss || focus.boss === boss.name)
                                 ? "is-active"
                                 : ""
                             }
@@ -388,6 +475,7 @@ function MapCanvas({
   background,
   players,
   focus,
+  colors,
 }: {
   meta: MapMeta;
   data: SpawnData;
@@ -396,6 +484,7 @@ function MapCanvas({
   background: Background;
   players: boolean;
   focus: Focus;
+  colors: Map<string, string>;
 }) {
   const element = useRef<HTMLDivElement>(null);
   const liveMap = useRef<L.Map | null>(null);
@@ -405,25 +494,51 @@ function MapCanvas({
   const levels = useMemo(() => getMapLevels(meta), [meta]);
 
   useEffect(() => {
-    if (!element.current) return;
-    const instance = L.map(element.current, {
+    const container = element.current;
+    if (!container) return;
+    const instance = L.map(container, {
       crs: createGameCRS(L, meta),
       minZoom: -3,
       maxZoom: (meta.maxZoom ?? 6) + 2,
       zoomSnap: 0.25,
       attributionControl: false,
-      scrollWheelZoom: false,
+      scrollWheelZoom: true,
+      // Touch devices only: one finger scrolls the page, two fingers pan the
+      // map. On desktop the handler stays off so it can't interfere with drag.
+      gestureHandling: L.Browser.mobile,
     });
     liveMap.current = instance;
     instance.fitBounds(leafletBounds(meta.bounds), { padding: [24, 24] });
     const resize = new ResizeObserver(() =>
       instance.invalidateSize({ pan: true }),
     );
-    resize.observe(element.current);
+    resize.observe(container);
+    // Middle-mouse drag pans the map; preventDefault suppresses autoscroll.
+    const onMiddleDown = (e: PointerEvent) => {
+      if (e.button !== 1) return;
+      e.preventDefault();
+      let x = e.clientX;
+      let y = e.clientY;
+      container.style.cursor = "grabbing";
+      const onMove = (ev: PointerEvent) => {
+        instance.panBy([x - ev.clientX, y - ev.clientY], { animate: false });
+        x = ev.clientX;
+        y = ev.clientY;
+      };
+      const onUp = () => {
+        document.removeEventListener("pointermove", onMove);
+        document.removeEventListener("pointerup", onUp);
+        container.style.cursor = "";
+      };
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+    };
+    container.addEventListener("pointerdown", onMiddleDown);
     setMap(instance);
     return () => {
       liveMap.current = null;
       resize.disconnect();
+      container.removeEventListener("pointerdown", onMiddleDown);
       instance.remove();
     };
   }, [meta]);
@@ -551,16 +666,18 @@ function MapCanvas({
     ) {
       const onLevel = isOnLevel(pin.position, levels, level);
       const highlighted =
-        !focus.boss ||
-        (pin.bossName === focus.boss &&
-          (!focus.location || pin.location === focus.location));
+        (!focus.boss || pin.bossName === focus.boss) &&
+        (!focus.location || pin.location === focus.location);
       const node = document.createElement("span");
       node.className = "boss-pin-face";
+      const color = colors.get(pin.bossName);
+      if (color) node.style.borderColor = color;
       const url = safeImage(pin.encounter.boss.imagePortraitLink);
       if (url) {
         const image = document.createElement("img");
         image.src = url;
         image.alt = "";
+        image.loading = "lazy";
         node.append(image);
       } else node.textContent = pin.bossName.slice(0, 1);
       const marker = L.marker(gameLatLng(pin.position), {
@@ -578,16 +695,31 @@ function MapCanvas({
       popup.className = "boss-map-popup";
       const title = document.createElement("strong");
       title.textContent = pin.bossName;
-      popup.append(title);
-      for (const text of [
-        pin.location || "Unnamed location",
-        `${percent(pin.encounter.spawnChance)} boss spawn · ${percent(pin.locationChance)} location chance`,
-        onLevel ? levels[level].name : "Position on another floor",
-      ]) {
-        const line = document.createElement("p");
-        line.textContent = text;
-        popup.append(line);
+      if (color) title.style.color = color;
+      const location = document.createElement("span");
+      location.className = "boss-map-popup-location";
+      location.textContent = pin.location || "Unnamed location";
+      const stats = document.createElement("div");
+      stats.className = "boss-map-popup-stats";
+      const floor = onLevel
+        ? levels[level].name
+        : (levels.find((_, i) => isOnLevel(pin.position, levels, i))?.name ??
+          "Another floor");
+      for (const [label, value, off] of [
+        ["Spawn", percent(pin.encounter.spawnChance), false],
+        ["Location", percent(pin.locationChance), false],
+        ["Floor", floor, !onLevel],
+      ] as const) {
+        const cell = document.createElement("div");
+        if (off) cell.className = "is-off";
+        const v = document.createElement("b");
+        v.textContent = value;
+        const l = document.createElement("small");
+        l.textContent = label;
+        cell.append(v, l);
+        stats.append(cell);
       }
+      popup.append(title, location, stats);
       const shared = [
         ...new Set(
           pins
@@ -603,10 +735,13 @@ function MapCanvas({
       ];
       if (shared.length) {
         const line = document.createElement("p");
+        line.className = "boss-map-popup-shared";
         line.textContent = `Also spawns here: ${shared.join(", ")}`;
         popup.append(line);
       }
-      marker.bindPopup(popup, { maxWidth: 290 }).addTo(destination);
+      marker
+        .bindPopup(popup, { maxWidth: 290, minWidth: 220 })
+        .addTo(destination);
     }
     // Spread pins that share the exact same game position onto a small pixel
     // circle so stacked bosses are all visible without clicking a count badge.
@@ -633,14 +768,16 @@ function MapCanvas({
     return () => {
       layer.remove();
     };
-  }, [map, pins, levels, level, players, data.playerSpawns, focus]);
+    // focus.revision is camera-only; markers rebuild when the highlight changes.
+  }, [map, pins, levels, level, players, data.playerSpawns, focus.boss, focus.location, colors]);
 
   return (
     <div className="boss-map-canvas-wrap">
       <div
         ref={element}
         className="boss-map-canvas"
-        aria-label="Interactive spawn map. Use plus and minus to zoom; drag to pan."
+        role="application"
+        aria-label="Interactive spawn map. Drag to pan; scroll, double-click, or use plus and minus to zoom."
       />
       {status && (
         <div className="boss-map-status" role="status">
@@ -667,7 +804,9 @@ function MapCanvas({
           .
         </div>
       )}
-      <span className="boss-map-pan-hint">Drag to pan · + / − to zoom</span>
+      <span className="boss-map-pan-hint">
+        Drag or middle-drag to pan · Scroll to zoom
+      </span>
     </div>
   );
 }

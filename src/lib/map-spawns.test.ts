@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { SpawnData } from "../types";
-import { clusterPins, filterMapBosses, getSpawnPins } from "./map-spawns";
+import { filterMapBosses, getSpawnPins } from "./map-spawns";
 
 const point = { x: 12, y: 3, z: 24 };
 const data: SpawnData = {
@@ -39,12 +39,6 @@ test("same boss and coordinates retain encounter identity and per-encounter chan
   expect(pins[0].encounter.spawnChance).toBe(0.2);
   expect(pins[2].encounter.spawnChance).toBe(0.4);
   expect(pins[2].locationChance).toBe(0.5);
-  const groups = clusterPins(
-    pins,
-    (p) => ({ x: p.position.x, y: p.position.z }),
-    10,
-  );
-  expect(groups.map((g) => g.length)).toEqual([2, 1]);
   expect(pins[0].position).toEqual(point);
 });
 test("map filtering preserves boss aliases, location search and bosses without pins", () => {
