@@ -556,14 +556,20 @@ function MapCanvas({
     const active = levels[level];
     setStatus("");
     if (background === "satellite") {
-      const tiles = L.tileLayer(active.tilePath ?? meta.tilePath!, {
+      const tileOptions: L.TileLayerOptions = {
         noWrap: true,
         bounds: leafletBounds(meta.bounds),
         tileSize: meta.tileSize ?? 256,
         maxNativeZoom: meta.maxZoom ?? 6,
         maxZoom: (meta.maxZoom ?? 6) + 2,
         minZoom: -3,
-      });
+      };
+      // Faint ghost of the ground floor for spatial context on other floors.
+      if (meta.tilePath && active.tilePath && active.tilePath !== meta.tilePath)
+        layers.addLayer(
+          L.tileLayer(meta.tilePath, { ...tileOptions, opacity: 0.15 }),
+        );
+      const tiles = L.tileLayer(active.tilePath ?? meta.tilePath!, tileOptions);
       tiles.on("tileerror", () =>
         setStatus(
           "Some map tiles could not load. Try another background or retry.",
@@ -602,7 +608,10 @@ function MapCanvas({
               node.id === group ||
                 node.getAttribute("data-keep-with-group") === group
                 ? "display:inline"
-                : "display:none",
+                : node.id === meta.svgLayer ||
+                    node.getAttribute("data-keep-with-group") === meta.svgLayer
+                  ? "display:inline;opacity:0.12"
+                  : "display:none",
             );
           });
         // An image isolates the SVG's style rules from the application document.
