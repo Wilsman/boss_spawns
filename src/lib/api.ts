@@ -489,6 +489,7 @@ function normalizeBoss(
     mobKey: boss.mob ?? undefined,
     boss: {
       name: getMobDisplayName(boss.mob, mob),
+      normalizedName: mob?.normalizedName ?? undefined,
       health: normalizeHealth(mob?.health),
       imagePortraitLink: mob?.imagePortraitLink ?? null,
     },

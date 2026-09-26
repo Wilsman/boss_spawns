@@ -38,3 +38,6 @@ dist-ssr/
 *.sw?
 .windsurf/rules/eftboss.md
 tarkov-boss-spawns-all-modes.json
+
+art/
+sat_tiles_z4/

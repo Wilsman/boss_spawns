@@ -12,6 +12,7 @@ import {
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import type { ChangeVisitSummary } from "@/hooks/useChangeMonitor";
 import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
+import type { SpawnData } from "@/types";
 
 interface ChangesTableProps {
   changes: DataChange[];
@@ -26,6 +27,7 @@ interface ChangesTableProps {
     silent?: boolean;
   }) => Promise<void>;
   visitSummary: ChangeVisitSummary | null;
+  spawnData?: SpawnData[];
 }
 
 export type ChangeGroupBy = "none" | "day" | "week";
@@ -65,6 +67,7 @@ export function ChangesTable({
   changeFilters,
   onChangesUpdate,
   visitSummary,
+  spawnData = [],
 }: ChangesTableProps) {
   const [sortField, setSortField] = useState<SortField>("timestamp");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -72,6 +75,7 @@ export function ChangesTable({
     useState(CHANGE_BATCH_SIZE);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const loadMoreIntersectingRef = useRef(false);
+  const bossPortraits = useMemo(() => buildBossPortraitLookup(spawnData), [spawnData]);
 
   // Apply date range filter before other filters
   const filteredChanges = useMemo(() => {
@@ -331,7 +335,7 @@ export function ChangesTable({
                   {titleCase(change.map)}
                 </td>
                 <td className="px-4 py-3.5 whitespace-nowrap text-sm font-semibold text-sky-200">
-                  {titleCase(getCanonicalBossName(change.boss))}
+                  <BossNameCell boss={change.boss} portraits={bossPortraits} />
                 </td>
                 <td className="px-4 py-3.5 whitespace-nowrap">
                   <ChangeTypeBadge field={change.field} />
@@ -561,6 +565,66 @@ function LastVisitSummary({
           Last viewed {previousVisitRelativeTime || "recently"}.
         </span>
       </div>
+    </div>
+  );
+}
+
+// Same local overrides the main table uses for bosses with bad API portraits.
+const BOSS_PORTRAIT_OVERRIDES: Record<string, string> = {
+  "Shadow of Tagilla": "/Shadow_Tagilla_Long_crop.webp",
+  "Vengeful Killa": "/killa-portrait.webp",
+  BEAR: "/BEAR.webp",
+  USEC: "/USEC.webp",
+  Labyrinthian: "/SCAV.webp",
+};
+
+function toBossKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+// Change rows identify bosses by mob normalizedName ("black-div-season") or a
+// lowercased mob key ("bossbullyblackdiv"), so index portraits by both.
+function buildBossPortraitLookup(maps: SpawnData[]): Map<string, string> {
+  const lookup = new Map<string, string>();
+  for (const map of maps) {
+    for (const encounter of map.bosses ?? []) {
+      const { name, normalizedName, imagePortraitLink } = encounter.boss;
+      const url = BOSS_PORTRAIT_OVERRIDES[name] ?? imagePortraitLink;
+      if (!url) continue;
+      for (const key of [encounter.mobKey, normalizedName, name]) {
+        if (key && !lookup.has(toBossKey(key))) lookup.set(toBossKey(key), url);
+      }
+    }
+  }
+  return lookup;
+}
+
+function BossNameCell({
+  boss,
+  portraits,
+}: {
+  boss: string;
+  portraits: Map<string, string>;
+}) {
+  const name = titleCase(getCanonicalBossName(boss));
+  const portrait =
+    portraits.get(toBossKey(boss)) ?? portraits.get(toBossKey(name));
+
+  return (
+    <div className="flex items-center gap-2.5">
+      {portrait ? (
+        <img
+          src={portrait}
+          alt=""
+          loading="lazy"
+          className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+        />
+      ) : (
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-bold text-gray-400 ring-1 ring-white/10">
+          {name.charAt(0)}
+        </span>
+      )}
+      <span>{name}</span>
     </div>
   );
 }

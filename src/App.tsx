@@ -374,6 +374,11 @@ function MainApp() {
     refreshChanges: refreshChangesSilently,
   });
 
+  const changesSpawnData = useMemo(
+    () => [...(regularData || []), ...(pveData || []), ...(seasonData || [])],
+    [regularData, pveData, seasonData]
+  );
+
   const handleExport = () => {
     if (mode === "changes") {
       exportChanges();
@@ -687,6 +692,7 @@ function MainApp() {
                   changeFilters={changeFilters}
                   onChangesUpdate={handleChangesUpdate}
                   visitSummary={visitSummary}
+                  spawnData={changesSpawnData}
                 />
               )}
             />

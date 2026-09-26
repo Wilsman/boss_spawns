@@ -37,6 +37,7 @@ export interface Boss {
   mobKey?: string;
   boss: {
     name: string;
+    normalizedName?: string;
     // Add the new properties from the API fetch
     health?: Health[] | null; // Health is an array
     imagePortraitLink?: string | null; // Make optional
