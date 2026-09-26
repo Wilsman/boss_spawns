@@ -717,6 +717,7 @@ function MainApp() {
             onMapFilterChange={setMapFilter}
             onBossFilterChange={setBossFilter}
             onSearchQueryChange={setSearchQuery}
+            onClearFilters={clearFilters}
             onExport={handleExport}
             onRefresh={() => loadData({ forceRefresh: true })}
             isRefreshing={isRefreshing}
