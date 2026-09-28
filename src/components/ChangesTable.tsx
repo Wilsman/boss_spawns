@@ -608,19 +608,32 @@ function buildBossPortraitLookup(maps: SpawnData[]): Map<string, string> {
 
 // The main page's boss dropdown uses canonical boss names as option values,
 // while change rows may carry slugs or mob keys. Resolve them so a linked
-// filter selects a real dropdown option.
+// filter selects a real dropdown option. Some slugs are shared by different
+// bosses ("black-div" is both Black Division and Black Div. Raider), so keys
+// that point at more than one boss are left unresolved.
 function buildBossFilterLookup(maps: SpawnData[]): Map<string, string> {
   const bosses = new Map<string, string>();
+  const ambiguous = new Set<string>();
   for (const map of maps) {
     for (const encounter of map.bosses ?? []) {
       const { name, normalizedName } = encounter.boss;
       const value = getCanonicalBossName(name, encounter.spawnChance);
       for (const key of [value, encounter.mobKey, normalizedName, name]) {
-        if (key && !bosses.has(toBossKey(key))) bosses.set(toBossKey(key), value);
+        if (!key) continue;
+        const bossKey = toBossKey(key);
+        const existing = bosses.get(bossKey);
+        if (existing === undefined) bosses.set(bossKey, value);
+        else if (existing !== value) ambiguous.add(bossKey);
       }
     }
   }
+  for (const key of ambiguous) bosses.delete(key);
   return bosses;
+}
+
+// Unresolved slugs ("black-div") become words ("Black Div") for the filter.
+function slugToBossFilter(value: string): string {
+  return titleCase(value.replace(/[-_]+/g, " ").trim());
 }
 
 // Each game mode's main page lives on its own tab route; the boss filter is
@@ -650,7 +663,7 @@ function BossNameCell({
     boss:
       bossFilterValues.get(toBossKey(boss)) ??
       bossFilterValues.get(toBossKey(canonical)) ??
-      canonical,
+      slugToBossFilter(canonical),
   });
   const target = `${bossSpawnsPathForMode(gameMode)}?${params}`;
 
