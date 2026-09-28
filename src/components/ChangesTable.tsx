@@ -77,7 +77,7 @@ export function ChangesTable({
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const loadMoreIntersectingRef = useRef(false);
   const bossPortraits = useMemo(() => buildBossPortraitLookup(spawnData), [spawnData]);
-  const filterValues = useMemo(() => buildFilterValueLookup(spawnData), [spawnData]);
+  const bossFilterValues = useMemo(() => buildBossFilterLookup(spawnData), [spawnData]);
 
   // Apply date range filter before other filters
   const filteredChanges = useMemo(() => {
@@ -339,9 +339,8 @@ export function ChangesTable({
                 <td className="px-4 py-3.5 whitespace-nowrap text-sm font-semibold">
                   <BossNameCell
                     boss={change.boss}
-                    map={change.map}
                     portraits={bossPortraits}
-                    filterValues={filterValues}
+                    bossFilterValues={bossFilterValues}
                     gameMode={change.gameMode}
                   />
                 </td>
@@ -607,21 +606,12 @@ function buildBossPortraitLookup(maps: SpawnData[]): Map<string, string> {
   return lookup;
 }
 
-interface FilterValueLookup {
-  bosses: Map<string, string>;
-  maps: Map<string, string>;
-}
-
-// The main page's map/boss dropdowns use the display map name and the
-// canonical boss name as option values, while change rows may carry slugs or
-// mob keys. Resolve both so a linked filter selects a real dropdown option.
-function buildFilterValueLookup(maps: SpawnData[]): FilterValueLookup {
+// The main page's boss dropdown uses canonical boss names as option values,
+// while change rows may carry slugs or mob keys. Resolve them so a linked
+// filter selects a real dropdown option.
+function buildBossFilterLookup(maps: SpawnData[]): Map<string, string> {
   const bosses = new Map<string, string>();
-  const mapNames = new Map<string, string>();
   for (const map of maps) {
-    for (const key of [map.name, map.normalizedName, map.nameId]) {
-      if (key && !mapNames.has(toBossKey(key))) mapNames.set(toBossKey(key), map.name);
-    }
     for (const encounter of map.bosses ?? []) {
       const { name, normalizedName } = encounter.boss;
       const value = getCanonicalBossName(name, encounter.spawnChance);
@@ -630,11 +620,11 @@ function buildFilterValueLookup(maps: SpawnData[]): FilterValueLookup {
       }
     }
   }
-  return { bosses, maps: mapNames };
+  return bosses;
 }
 
-// Each game mode's main page lives on its own tab route; the map and boss
-// filters are carried over via the shared query params that MainApp reads.
+// Each game mode's main page lives on its own tab route; the boss filter is
+// carried over via the shared "boss" query param that MainApp reads.
 function bossSpawnsPathForMode(gameMode: string): string {
   if (gameMode === "PvE") return "/pve";
   if (gameMode === "Season") return "/season";
@@ -643,15 +633,13 @@ function bossSpawnsPathForMode(gameMode: string): string {
 
 function BossNameCell({
   boss,
-  map,
   portraits,
-  filterValues,
+  bossFilterValues,
   gameMode,
 }: {
   boss: string;
-  map: string;
   portraits: Map<string, string>;
-  filterValues: FilterValueLookup;
+  bossFilterValues: Map<string, string>;
   gameMode: string;
 }) {
   const canonical = getCanonicalBossName(boss);
@@ -659,10 +647,9 @@ function BossNameCell({
   const portrait =
     portraits.get(toBossKey(boss)) ?? portraits.get(toBossKey(name));
   const params = new URLSearchParams({
-    map: filterValues.maps.get(toBossKey(map)) ?? map,
     boss:
-      filterValues.bosses.get(toBossKey(boss)) ??
-      filterValues.bosses.get(toBossKey(canonical)) ??
+      bossFilterValues.get(toBossKey(boss)) ??
+      bossFilterValues.get(toBossKey(canonical)) ??
       canonical,
   });
   const target = `${bossSpawnsPathForMode(gameMode)}?${params}`;
@@ -670,7 +657,7 @@ function BossNameCell({
   return (
     <Link
       to={target}
-      title={`View ${name} spawns on ${titleCase(map)}`}
+      title={`View ${name} spawns on the main page`}
       className="group/boss flex items-center gap-2.5 text-sky-200 transition-colors hover:text-sky-300"
     >
       {portrait ? (
