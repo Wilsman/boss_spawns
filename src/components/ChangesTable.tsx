@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { DataChange } from "@/lib/diff";
 import {
   AlertTriangle,
@@ -76,6 +77,7 @@ export function ChangesTable({
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const loadMoreIntersectingRef = useRef(false);
   const bossPortraits = useMemo(() => buildBossPortraitLookup(spawnData), [spawnData]);
+  const filterValues = useMemo(() => buildFilterValueLookup(spawnData), [spawnData]);
 
   // Apply date range filter before other filters
   const filteredChanges = useMemo(() => {
@@ -334,8 +336,14 @@ export function ChangesTable({
                 <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-violet-200">
                   {titleCase(change.map)}
                 </td>
-                <td className="px-4 py-3.5 whitespace-nowrap text-sm font-semibold text-sky-200">
-                  <BossNameCell boss={change.boss} portraits={bossPortraits} />
+                <td className="px-4 py-3.5 whitespace-nowrap text-sm font-semibold">
+                  <BossNameCell
+                    boss={change.boss}
+                    map={change.map}
+                    portraits={bossPortraits}
+                    filterValues={filterValues}
+                    gameMode={change.gameMode}
+                  />
                 </td>
                 <td className="px-4 py-3.5 whitespace-nowrap">
                   <ChangeTypeBadge field={change.field} />
@@ -599,33 +607,88 @@ function buildBossPortraitLookup(maps: SpawnData[]): Map<string, string> {
   return lookup;
 }
 
+interface FilterValueLookup {
+  bosses: Map<string, string>;
+  maps: Map<string, string>;
+}
+
+// The main page's map/boss dropdowns use the display map name and the
+// canonical boss name as option values, while change rows may carry slugs or
+// mob keys. Resolve both so a linked filter selects a real dropdown option.
+function buildFilterValueLookup(maps: SpawnData[]): FilterValueLookup {
+  const bosses = new Map<string, string>();
+  const mapNames = new Map<string, string>();
+  for (const map of maps) {
+    for (const key of [map.name, map.normalizedName, map.nameId]) {
+      if (key && !mapNames.has(toBossKey(key))) mapNames.set(toBossKey(key), map.name);
+    }
+    for (const encounter of map.bosses ?? []) {
+      const { name, normalizedName } = encounter.boss;
+      const value = getCanonicalBossName(name, encounter.spawnChance);
+      for (const key of [value, encounter.mobKey, normalizedName, name]) {
+        if (key && !bosses.has(toBossKey(key))) bosses.set(toBossKey(key), value);
+      }
+    }
+  }
+  return { bosses, maps: mapNames };
+}
+
+// Each game mode's main page lives on its own tab route; the map and boss
+// filters are carried over via the shared query params that MainApp reads.
+function bossSpawnsPathForMode(gameMode: string): string {
+  if (gameMode === "PvE") return "/pve";
+  if (gameMode === "Season") return "/season";
+  return "/pvp";
+}
+
 function BossNameCell({
   boss,
+  map,
   portraits,
+  filterValues,
+  gameMode,
 }: {
   boss: string;
+  map: string;
   portraits: Map<string, string>;
+  filterValues: FilterValueLookup;
+  gameMode: string;
 }) {
-  const name = titleCase(getCanonicalBossName(boss));
+  const canonical = getCanonicalBossName(boss);
+  const name = titleCase(canonical);
   const portrait =
     portraits.get(toBossKey(boss)) ?? portraits.get(toBossKey(name));
+  const params = new URLSearchParams({
+    map: filterValues.maps.get(toBossKey(map)) ?? map,
+    boss:
+      filterValues.bosses.get(toBossKey(boss)) ??
+      filterValues.bosses.get(toBossKey(canonical)) ??
+      canonical,
+  });
+  const target = `${bossSpawnsPathForMode(gameMode)}?${params}`;
 
   return (
-    <div className="flex items-center gap-2.5">
+    <Link
+      to={target}
+      title={`View ${name} spawns on ${titleCase(map)}`}
+      className="group/boss flex items-center gap-2.5 text-sky-200 transition-colors hover:text-sky-300"
+    >
       {portrait ? (
         <img
           src={portrait}
           alt=""
           loading="lazy"
-          className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+          className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-white/10 transition-shadow group-hover/boss:ring-sky-300/40"
         />
       ) : (
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-bold text-gray-400 ring-1 ring-white/10">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-[11px] font-bold text-gray-400 ring-1 ring-white/10 transition-colors group-hover/boss:bg-white/[0.1]">
           {name.charAt(0)}
         </span>
       )}
-      <span>{name}</span>
-    </div>
+      <span className="underline decoration-sky-200/25 decoration-1 underline-offset-4 group-hover/boss:decoration-sky-300/60">
+        {name}
+      </span>
+    </Link>
   );
 }
 
