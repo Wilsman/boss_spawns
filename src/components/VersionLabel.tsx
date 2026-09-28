@@ -1,3 +1,5 @@
+import { LeagueRankCountdown } from "./LeagueRankCountdown";
+
 export function VersionLabel() {
   return (
     <footer className="fixed bottom-0 left-0 z-50 w-full border-t border-white/[0.07] bg-black/80 py-2 backdrop-blur-md">
@@ -20,8 +22,9 @@ export function VersionLabel() {
               />
             </a>
           </div>
+          <LeagueRankCountdown />
           {/* Version Text - Far Right */}
-          <span className="text-xs text-gray-500">
+          <span className="whitespace-nowrap text-[11px] text-gray-500 sm:text-xs">
             <a
               href="https://buymeacoffee.com/wilsman77"
               target="_blank"
@@ -30,7 +33,8 @@ export function VersionLabel() {
             >
               Wilsman77
             </a>{" "}
-            updated on 26/09/2026
+            <span className="hidden sm:inline">updated on 28/09/2026</span>
+            <span className="sm:hidden">· 28/09</span>
           </span>
         </div>
       </div>
