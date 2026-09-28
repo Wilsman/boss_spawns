@@ -207,3 +207,12 @@ body {
     transform: translateY(0);
   }
 }
+
+/* The Buy Me a Coffee widget floats over table rows on phones; the footer
+   carries the coffee link there instead. */
+@media (max-width: 639px) {
+  #bmc-wbtn,
+  #bmc-iframe {
+    display: none !important;
+  }
+}

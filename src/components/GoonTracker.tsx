@@ -84,15 +84,25 @@ function formatAge(timestamp: string) {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
+// On phones the outer cards sit at the screen edge, so a centred popover would
+// overflow and widen the page; anchor those to their card's outer edge.
+const POPOVER_ALIGN = {
+  start: "left-0",
+  center: "left-1/2 -translate-x-1/2",
+  end: "right-0",
+} as const;
+
 function ReportPopover({
   reports,
   mapLookup,
+  align = "center",
 }: {
   reports: GoonReport[];
   mapLookup?: Map<string, string>;
+  align?: keyof typeof POPOVER_ALIGN;
 }) {
   return (
-    <div className="pointer-events-none invisible absolute left-1/2 top-full z-20 mt-2 w-56 -translate-x-1/2 translate-y-1 opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:translate-y-0 group-hover:opacity-100 group-focus-within:opacity-100">
+    <div className={`pointer-events-none invisible absolute top-full z-20 mt-2 w-56 ${POPOVER_ALIGN[align]} sm:left-1/2 sm:right-auto sm:-translate-x-1/2 translate-y-1 opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:visible group-hover:translate-y-0 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:translate-y-0 group-hover:opacity-100 group-focus-within:opacity-100`}>
       <div className="rounded-md border border-white/[0.12] bg-[#111113]/[0.98] p-2.5 shadow-2xl shadow-black/40 ring-1 ring-black/40">
         <div className="mb-2 flex items-center justify-between border-b border-white/[0.08] pb-2">
           <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">Recent reports</span>
@@ -131,7 +141,7 @@ export function GoonTracker({
         <span className="ml-auto text-[10px] text-zinc-600">live reports</span>
       </div>
       <div className="mt-2 grid grid-cols-3 gap-2">
-        {modes.map((mode) => {
+        {modes.map((mode, index) => {
           const report = reports?.[mode]?.[0];
           return (
             <div key={mode} tabIndex={0} className="group relative min-w-0 cursor-help rounded border border-white/[0.07] bg-white/[0.025] px-2 py-1.5 outline-none transition-colors hover:border-amber-300/25 focus:border-amber-300/35">
@@ -148,7 +158,11 @@ export function GoonTracker({
               ) : (
                 <div className="truncate text-xs text-zinc-500">Awaiting reports</div>
               )}
-              <ReportPopover reports={reports?.[mode] ?? []} mapLookup={mapLookup} />
+              <ReportPopover
+                reports={reports?.[mode] ?? []}
+                mapLookup={mapLookup}
+                align={index === 0 ? "start" : index === modes.length - 1 ? "end" : "center"}
+              />
             </div>
           );
         })}

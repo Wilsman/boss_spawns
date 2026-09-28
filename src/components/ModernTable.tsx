@@ -429,6 +429,7 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
                         const rateCells = [
                           {
                             key: "pvp",
+                            label: "PvP",
                             value: getComparisonRate(row, "regular"),
                             track: "bg-red-900/20",
                             fill: "bg-red-500/40",
@@ -436,6 +437,7 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
                           },
                           {
                             key: "pve",
+                            label: "PvE",
                             value: getComparisonRate(row, "pve"),
                             track: "bg-green-900/20",
                             fill: "bg-green-500/40",
@@ -443,6 +445,7 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
                           },
                           {
                             key: "season",
+                            label: "Season",
                             value: getComparisonRate(row, "pvp-season"),
                             track: "bg-violet-900/20",
                             fill: "bg-violet-500/40",
@@ -459,6 +462,9 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
                             </div>
                             {rateCells.map((cell) => (
                               <div key={cell.key} className="col-span-4 sm:col-span-3">
+                                <div className={`mb-1 text-[10px] font-semibold uppercase tracking-wide opacity-70 sm:hidden ${cell.text}`}>
+                                  {cell.label}
+                                </div>
                                 <div className={`relative h-5 rounded ${cell.track}`}>
                                   {cell.value !== null && (
                                     <div
@@ -504,11 +510,11 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
                                 : "hover:bg-white/[0.025]"
                             }`}
                           >
-                            <div className="col-span-12 pr-44 sm:col-span-5 sm:pr-0">
+                            <div className="col-span-12 pr-[5.5rem] sm:col-span-5 sm:pr-0">
                               <div className="flex min-w-0 items-center gap-2">
                                 <span
                                   aria-hidden="true"
-                                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all ${
+                                  className={`hidden h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all sm:flex ${
                                     isExpanded
                                       ? "border-white/[0.2] bg-white/[0.08] text-white"
                                       : "border-white/[0.1] bg-[#121214] text-gray-500 group-hover:border-white/[0.18] group-hover:text-gray-200"
@@ -524,8 +530,11 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
                                 </div>
                               </div>
                             </div>
-                            <div className="col-span-6 sm:col-span-3">
-                              <div className="relative h-5 overflow-hidden rounded bg-[#151517]">
+                            <div className="col-span-12 flex items-center gap-2 sm:col-span-3">
+                              <span className="w-16 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-gray-500 sm:hidden">
+                                Spawn
+                              </span>
+                              <div className="relative h-5 flex-1 overflow-hidden rounded bg-[#151517]">
                                 <div
                                   className="absolute left-0 top-0 h-full bg-blue-500/55"
                                   style={{
@@ -540,9 +549,13 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
                                 </div>
                               </div>
                             </div>
-                            <div className="col-span-6 flex flex-wrap gap-1 sm:col-span-4 sm:pr-44">
+                            <div className="col-span-12 flex items-start gap-2 sm:col-span-4 sm:pr-44">
+                              <span className="w-16 shrink-0 pt-1 text-[10px] font-semibold uppercase tracking-wide text-gray-500 sm:hidden">
+                                Locations
+                              </span>
+                              <div className="flex min-w-0 flex-1 flex-wrap gap-1">
                               {locs.length === 0 ? (
-                                <span className="italic text-gray-500">
+                                <span className="text-sm italic text-gray-500 sm:text-base">
                                   (No specific location)
                                 </span>
                               ) : (
@@ -553,7 +566,7 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
                                     aria-label={`Show ${row.boss} at ${l.name} on map`}
                                     onClick={(event) => { event.stopPropagation(); if (mapDetails) onOpenMap?.(mapDetails, row.boss, l.name); }}
                                     key={`${l.name}-${idx}`}
-                                    className={`rounded bg-[#171719] px-2 py-1 text-left text-gray-200 ring-1 ring-white/[0.09] enabled:hover:bg-blue-500/15 enabled:hover:ring-blue-400/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 disabled:cursor-default ${getLocationClasses(
+                                    className={`rounded bg-[#171719] px-2 py-1 text-left text-sm text-gray-200 sm:text-base ring-1 ring-white/[0.09] enabled:hover:bg-blue-500/15 enabled:hover:ring-blue-400/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 disabled:cursor-default ${getLocationClasses(
                                       l.name,
                                       l.chance
                                     )}`}
@@ -567,21 +580,24 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
                                   </button>
                                 ))
                               )}
+                              </div>
                             </div>
                             <div className="absolute right-3 top-3 flex items-center gap-2 sm:top-1/2 sm:-translate-y-1/2">
-                            {onOpenMap && mapDetails && <button type="button" aria-label={`View ${row.boss} spawns on ${mapName}`} title={!getMapMeta(mapDetails.normalizedName) ? "Map background unavailable" : !row.encounters.some((b) => b.spawnLocations.some((l) => l.positions?.length)) ? "No mapped spawn positions" : "View spawns"} disabled={!getMapMeta(mapDetails.normalizedName) || !row.encounters.some((b) => b.spawnLocations.some((l) => l.positions?.length))} onClick={(event) => { event.stopPropagation(); onOpenMap(mapDetails, row.boss); }} className="inline-flex items-center gap-1 rounded-full border border-blue-400/20 bg-blue-500/[0.07] px-2 py-1 text-[10px] text-blue-200/80 hover:bg-blue-500/15 disabled:cursor-default disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400"><MapPin size={12} />View spawns</button>}
+                            {onOpenMap && mapDetails && <button type="button" aria-label={`View ${row.boss} spawns on ${mapName}`} title={!getMapMeta(mapDetails.normalizedName) ? "Map background unavailable" : !row.encounters.some((b) => b.spawnLocations.some((l) => l.positions?.length)) ? "No mapped spawn positions" : "View spawns"} disabled={!getMapMeta(mapDetails.normalizedName) || !row.encounters.some((b) => b.spawnLocations.some((l) => l.positions?.length))} onClick={(event) => { event.stopPropagation(); onOpenMap(mapDetails, row.boss); }} className="inline-flex items-center gap-1 rounded-full border border-blue-400/20 bg-blue-500/[0.07] p-1.5 text-[10px] text-blue-200/80 hover:bg-blue-500/15 disabled:cursor-default disabled:opacity-30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 sm:px-2 sm:py-1"><MapPin size={12} /><span className="hidden sm:inline">View spawns</span></button>}
                             <button
                               type="button"
                               aria-label={`${isExpanded ? "Close" : "Open"} ${row.boss} details`}
                               aria-expanded={isExpanded}
                               onClick={(event) => { event.stopPropagation(); toggleExpanded(); }}
-                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 ${
+                              className={`inline-flex items-center gap-1 rounded-full border p-1.5 text-[10px] font-semibold uppercase sm:px-2 sm:py-1 tracking-[0.08em] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-400 ${
                                 isExpanded
                                   ? "border-white/[0.2] bg-white/[0.08] text-white"
                                   : "border-white/[0.1] bg-[#171719] text-gray-500 group-hover:border-white/[0.18] group-hover:bg-white/[0.05] group-hover:text-gray-200"
                               }`}
                             >
-                              {isExpanded ? "Hide" : "Details"}
+                              <span className="hidden sm:inline">
+                                {isExpanded ? "Hide" : "Details"}
+                              </span>
                               <ChevronRight
                                 size={13}
                                 className={`transition-transform ${isExpanded ? "rotate-90" : ""}`}

@@ -313,7 +313,46 @@ export function ChangesTable({
     }
 
     return (
-      <div className="overflow-x-auto rounded-xl border border-white/[0.09] bg-[#0a0a0b]">
+      <>
+      <ul className="divide-y divide-white/[0.06] overflow-hidden rounded-xl border border-white/[0.09] bg-[#0a0a0b] md:hidden">
+        {changes.map((change, index) => (
+          <li
+            key={`${change.map}-${change.boss}-${change.field}-${index}`}
+            className="space-y-2.5 px-3.5 py-3"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 text-sm font-semibold">
+                <BossNameCell
+                  boss={change.boss}
+                  portraits={bossPortraits}
+                  bossFilterValues={bossFilterValues}
+                  mapBossFilterValues={mapBossFilterValues}
+                  map={change.map}
+                  gameMode={change.gameMode}
+                />
+              </div>
+              <span className={`shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-bold tracking-wide ${getGameModeBadgeClass(change.gameMode)}`}>
+                {change.gameMode}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 pl-[38px] text-xs text-gray-500">
+              <span className="truncate font-medium text-violet-200">
+                {titleCase(change.map)}
+              </span>
+              <span aria-hidden="true">·</span>
+              <Timestamp
+                timestamp={change.timestamp}
+                className="shrink-0 whitespace-nowrap"
+              />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 pl-[38px]">
+              <ChangeTypeBadge field={change.field} />
+              <ChangeValues change={change} />
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden overflow-x-auto rounded-xl border border-white/[0.09] bg-[#0a0a0b] md:block">
         <table className="w-full min-w-[760px]">
           {showHeader && (
           <thead>
@@ -333,7 +372,11 @@ export function ChangesTable({
                 key={`${change.map}-${change.boss}-${change.field}-${index}`}
                 className="group border-t border-white/[0.06] transition-colors duration-200 hover:bg-white/[0.035]"
               >
-                <TimestampCell timestamp={change.timestamp} />
+                <Timestamp
+                  timestamp={change.timestamp}
+                  cell
+                  className="px-6 py-4 whitespace-nowrap"
+                />
                 <td className="px-4 py-3.5 whitespace-nowrap">
                   <span className={`inline-flex rounded-md border px-2 py-1 text-[11px] font-bold tracking-wide ${getGameModeBadgeClass(change.gameMode)}`}>
                     {change.gameMode}
@@ -356,22 +399,14 @@ export function ChangesTable({
                   <ChangeTypeBadge field={change.field} />
                 </td>
                 <td className="px-4 py-3.5">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="min-w-[52px] text-right font-mono text-rose-300/85 line-through decoration-rose-300/35">
-                      {change.oldValue}
-                    </span>
-                    <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-600 transition-colors group-hover:text-gray-400" />
-                    <span className="min-w-[52px] font-mono font-semibold text-emerald-300">
-                      {change.newValue}
-                    </span>
-                    <ChangeDirection change={change} />
-                  </div>
+                  <ChangeValues change={change} aligned />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      </>
     );
   }
 
@@ -515,6 +550,17 @@ export function ChangesTable({
           previousViewedAt={visitSummary.previousViewedAt}
         />
       )}
+      <MobileSortControl
+        field={sortField}
+        direction={sortDirection}
+        onFieldChange={(field) => {
+          setSortField(field);
+          setSortDirection("desc");
+        }}
+        onDirectionToggle={() =>
+          setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+        }
+      />
       {groupedChanges
         ? Object.entries(groupedChanges)
             // Sort groups by date key
@@ -777,6 +823,86 @@ function ChangeTypeBadge({ field }: { field: string }) {
   );
 }
 
+const SORT_FIELD_LABELS: Record<SortField, string> = {
+  timestamp: "Time",
+  gameMode: "Mode",
+  map: "Map",
+  boss: "Boss",
+  field: "Change type",
+  oldValue: "Old value",
+  newValue: "Change",
+};
+
+const MOBILE_SORT_FIELDS: SortField[] = [
+  "timestamp",
+  "gameMode",
+  "map",
+  "boss",
+  "field",
+  "newValue",
+];
+
+function MobileSortControl({
+  field,
+  direction,
+  onFieldChange,
+  onDirectionToggle,
+}: {
+  field: SortField;
+  direction: SortDirection;
+  onFieldChange: (field: SortField) => void;
+  onDirectionToggle: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-end gap-2 text-xs text-gray-400 md:hidden">
+      <label htmlFor="changes-mobile-sort">Sort by</label>
+      <select
+        id="changes-mobile-sort"
+        value={field}
+        onChange={(event) => onFieldChange(event.target.value as SortField)}
+        className="rounded-md border border-white/[0.09] bg-[#0b0b0c] px-2 py-1.5 text-gray-200"
+      >
+        {MOBILE_SORT_FIELDS.map((value) => (
+          <option key={value} value={value}>
+            {SORT_FIELD_LABELS[value]}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={onDirectionToggle}
+        aria-label={`Sort ${direction === "asc" ? "descending" : "ascending"}`}
+        className="inline-flex items-center gap-1 rounded-md border border-white/[0.09] bg-[#0b0b0c] px-2 py-1.5 text-gray-200"
+      >
+        <ArrowUpDown className="h-3.5 w-3.5 text-blue-400" />
+        {direction === "asc" ? "Asc" : "Desc"}
+      </button>
+    </div>
+  );
+}
+
+function ChangeValues({
+  change,
+  aligned = false,
+}: {
+  change: DataChange;
+  aligned?: boolean;
+}) {
+  const width = aligned ? "min-w-[52px]" : "";
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className={`${width} ${aligned ? "text-right" : ""} font-mono text-rose-300/85 line-through decoration-rose-300/35`}>
+        {change.oldValue}
+      </span>
+      <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-600 transition-colors group-hover:text-gray-400" />
+      <span className={`${width} font-mono font-semibold text-emerald-300`}>
+        {change.newValue}
+      </span>
+      <ChangeDirection change={change} />
+    </div>
+  );
+}
+
 function ChangeDirection({ change }: { change: DataChange }) {
   const oldNumber = parseFloat(change.oldValue);
   const newNumber = parseFloat(change.newValue);
@@ -804,8 +930,18 @@ function titleCase(value: string) {
 
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// Enhanced TimestampCell component with tooltip
-const TimestampCell = ({ timestamp }: { timestamp: number }) => {
+// Relative timestamp with the full date in a tooltip; renders a table cell
+// in the desktop table and an inline span in the mobile cards.
+const Timestamp = ({
+  timestamp,
+  cell = false,
+  className = "",
+}: {
+  timestamp: number;
+  cell?: boolean;
+  className?: string;
+}) => {
+  const Element = cell ? "td" : "span";
   const relativeTime = useRelativeTime(timestamp);
   const fullDateTime = timestamp ? new Date(timestamp).toLocaleString(undefined, {
     year: 'numeric',
@@ -821,9 +957,9 @@ const TimestampCell = ({ timestamp }: { timestamp: number }) => {
     <Tooltip.Provider>
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
-          <td className="px-6 py-4 whitespace-nowrap text-gray-400 cursor-help">
+          <Element className={`text-gray-400 cursor-help ${className}`}>
             {relativeTime || "unknown"}
-          </td>
+          </Element>
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content 
