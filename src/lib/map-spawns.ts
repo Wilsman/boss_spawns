@@ -1,5 +1,9 @@
 import type { SpawnData, Boss, GamePosition } from "../types";
-import { bossMatchesQuery, getCanonicalBossName } from "./boss-aliases";
+import {
+  bossMatchesFilter,
+  bossMatchesQuery,
+  getCanonicalBossName,
+} from "./boss-aliases";
 
 export interface SpawnPin {
   id: string;
@@ -32,13 +36,14 @@ export function filterMapBosses(
   map: SpawnData,
   boss: string,
   search: string,
+  exactBoss = false,
 ): SpawnData {
   const query = search.trim().toLowerCase();
   return {
     ...map,
     bosses: map.bosses.filter(
       (b) =>
-        (!boss || bossMatchesQuery(b.boss.name, boss, b.spawnChance)) &&
+        bossMatchesFilter(b.boss.name, boss, b.spawnChance, exactBoss) &&
         (!query ||
           map.name.toLowerCase().includes(query) ||
           bossMatchesQuery(b.boss.name, query, b.spawnChance) ||

@@ -57,3 +57,42 @@ export function bossMatchesQuery(
     (token) => token.includes(queryLower) || token.includes(normalizedQuery)
   );
 }
+
+// The boss filter holds an exact dropdown name ("Black Div") or, from older
+// links, part of a name ("goons"). When it names a boss in the loaded data,
+// match only that boss so "Black Div" does not also bring in Black Division
+// or Black Div. Raider; otherwise keep matching by substring.
+export function isExactBossFilter(
+  filter: string,
+  bosses: Iterable<{ name: string; spawnChance?: number }>
+): boolean {
+  if (!filter) return false;
+  for (const { name, spawnChance } of bosses) {
+    if (bossEqualsFilter(name, filter, spawnChance)) return true;
+  }
+  return false;
+}
+
+export function bossMatchesFilter(
+  name: string,
+  filter: string,
+  spawnChance?: number,
+  exact = false
+): boolean {
+  if (!filter) return true;
+  return exact
+    ? bossEqualsFilter(name, filter, spawnChance)
+    : bossMatchesQuery(name, filter, spawnChance);
+}
+
+function bossEqualsFilter(
+  name: string,
+  filter: string,
+  spawnChance?: number
+): boolean {
+  const filterLower = filter.toLowerCase();
+  const normalizedFilter = sanitizeBossToken(filter);
+  return getBossSearchTokens(name, spawnChance).some(
+    (token) => token === filterLower || token === normalizedFilter
+  );
+}

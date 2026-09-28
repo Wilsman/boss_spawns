@@ -378,6 +378,14 @@ function MainApp() {
     () => [...(regularData || []), ...(pveData || []), ...(seasonData || [])],
     [regularData, pveData, seasonData]
   );
+  const changesSpawnDataByMode = useMemo(
+    () => ({
+      PvP: regularData ?? [],
+      PvE: pveData ?? [],
+      Season: seasonData ?? [],
+    }),
+    [regularData, pveData, seasonData]
+  );
 
   const handleExport = () => {
     if (mode === "changes") {
@@ -693,6 +701,7 @@ function MainApp() {
                   onChangesUpdate={handleChangesUpdate}
                   visitSummary={visitSummary}
                   spawnData={changesSpawnData}
+                  spawnDataByMode={changesSpawnDataByMode}
                 />
               )}
             />

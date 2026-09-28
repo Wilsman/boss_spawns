@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import type { SpawnData } from "../types";
+import { isExactBossFilter } from "./boss-aliases";
 import { filterMapBosses, getSpawnPins } from "./map-spawns";
 
 const point = { x: 12, y: 3, z: 24 };
@@ -46,4 +47,22 @@ test("map filtering preserves boss aliases, location search and bosses without p
   expect(filterMapBosses(data, "Partisan", "").bosses).toHaveLength(1);
   expect(getSpawnPins(filterMapBosses(data, "Partisan", ""))).toEqual([]);
   expect(filterMapBosses(data, "", "no match").bosses).toEqual([]);
+});
+
+test("an exact boss filter excludes bosses whose names only contain it", () => {
+  const blackDiv: SpawnData = {
+    name: "Terminal",
+    bosses: ["Black Div", "Black Division", "Black Div. Raider"].map((name) => ({
+      boss: { name },
+      spawnChance: 1,
+      spawnLocations: [],
+    })),
+  };
+  const names = (map: SpawnData) => map.bosses.map((b) => b.boss.name);
+  expect(isExactBossFilter("Black Div", blackDiv.bosses.map((b) => b.boss))).toBe(true);
+  expect(names(filterMapBosses(blackDiv, "Black Div", "", true))).toEqual(["Black Div"]);
+  expect(isExactBossFilter("raider", blackDiv.bosses.map((b) => b.boss))).toBe(false);
+  expect(names(filterMapBosses(blackDiv, "raider", "", false))).toEqual([
+    "Black Div. Raider",
+  ]);
 });

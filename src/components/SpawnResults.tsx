@@ -6,6 +6,7 @@ import ModernTable from "./ModernTable";
 import type { DataMode, GameMode, MobCatalog, SpawnData } from "@/types";
 import { getMapMeta } from "@/lib/map-meta";
 import { filterMapBosses } from "@/lib/map-spawns";
+import { isExactBossFilter } from "@/lib/boss-aliases";
 import "./boss-map.css";
 
 const BossMapViewer = lazy(() => import("./BossMapViewer"));
@@ -36,6 +37,22 @@ export default function SpawnResults({
   useEffect(() => setPopup(null), [mode]);
   const mapView = mode !== "compare" && params.get("view") === "map";
   const maps = Array.isArray(data) ? data : [];
+  const exactBoss = useMemo(
+    () =>
+      isExactBossFilter(
+        filters.boss,
+        (Array.isArray(data) ? data : Object.values(data ?? {})).flatMap(
+          (modeMaps) =>
+            (Array.isArray(modeMaps) ? modeMaps : [modeMaps]).flatMap((map) =>
+              (map.bosses ?? []).map((b) => ({
+                name: b.boss.name,
+                spawnChance: b.spawnChance,
+              })),
+            ),
+        ),
+      ),
+    [data, filters.boss],
+  );
   const selected = maps.find(
     (m) => m.name.toLowerCase() === filters.map.toLowerCase(),
   );
@@ -43,12 +60,12 @@ export default function SpawnResults({
   const filtered = useMemo(
     () =>
       selected
-        ? filterMapBosses(selected, filters.boss, filters.search)
+        ? filterMapBosses(selected, filters.boss, filters.search, exactBoss)
         : undefined,
-    [selected, filters.boss, filters.search],
+    [selected, filters.boss, filters.search, exactBoss],
   );
   const choices = maps
-    .map((m) => filterMapBosses(m, filters.boss, filters.search))
+    .map((m) => filterMapBosses(m, filters.boss, filters.search, exactBoss))
     .filter((m) => m.bosses.length)
     .sort((a, b) => a.name.localeCompare(b.name));
   return (
@@ -57,7 +74,7 @@ export default function SpawnResults({
         <ModernTable
           data={data}
           mode={mode}
-          filters={filters}
+          filters={{ ...filters, exactBoss }}
           catalog={catalog}
           onOpenMap={(map, boss, location) => {
             returnFocus.current = document.activeElement as HTMLElement;

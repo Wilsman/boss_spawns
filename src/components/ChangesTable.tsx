@@ -13,7 +13,7 @@ import {
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 import type { ChangeVisitSummary } from "@/hooks/useChangeMonitor";
 import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
-import type { SpawnData } from "@/types";
+import type { Boss, SpawnData } from "@/types";
 
 interface ChangesTableProps {
   changes: DataChange[];
@@ -29,6 +29,7 @@ interface ChangesTableProps {
   }) => Promise<void>;
   visitSummary: ChangeVisitSummary | null;
   spawnData?: SpawnData[];
+  spawnDataByMode?: Partial<Record<string, SpawnData[]>>;
 }
 
 export type ChangeGroupBy = "none" | "day" | "week";
@@ -69,6 +70,7 @@ export function ChangesTable({
   onChangesUpdate,
   visitSummary,
   spawnData = [],
+  spawnDataByMode = {},
 }: ChangesTableProps) {
   const [sortField, setSortField] = useState<SortField>("timestamp");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -78,6 +80,10 @@ export function ChangesTable({
   const loadMoreIntersectingRef = useRef(false);
   const bossPortraits = useMemo(() => buildBossPortraitLookup(spawnData), [spawnData]);
   const bossFilterValues = useMemo(() => buildBossFilterLookup(spawnData), [spawnData]);
+  const mapBossFilterValues = useMemo(
+    () => buildMapBossFilterLookup(spawnDataByMode),
+    [spawnDataByMode]
+  );
 
   // Apply date range filter before other filters
   const filteredChanges = useMemo(() => {
@@ -341,6 +347,8 @@ export function ChangesTable({
                     boss={change.boss}
                     portraits={bossPortraits}
                     bossFilterValues={bossFilterValues}
+                    mapBossFilterValues={mapBossFilterValues}
+                    map={change.map}
                     gameMode={change.gameMode}
                   />
                 </td>
@@ -595,11 +603,11 @@ function buildBossPortraitLookup(maps: SpawnData[]): Map<string, string> {
   const lookup = new Map<string, string>();
   for (const map of maps) {
     for (const encounter of map.bosses ?? []) {
-      const { name, normalizedName, imagePortraitLink } = encounter.boss;
+      const { name, imagePortraitLink } = encounter.boss;
       const url = BOSS_PORTRAIT_OVERRIDES[name] ?? imagePortraitLink;
       if (!url) continue;
-      for (const key of [encounter.mobKey, normalizedName, name]) {
-        if (key && !lookup.has(toBossKey(key))) lookup.set(toBossKey(key), url);
+      for (const key of encounterLookupKeys(encounter, name)) {
+        if (!lookup.has(toBossKey(key))) lookup.set(toBossKey(key), url);
       }
     }
   }
@@ -616,10 +624,8 @@ function buildBossFilterLookup(maps: SpawnData[]): Map<string, string> {
   const ambiguous = new Set<string>();
   for (const map of maps) {
     for (const encounter of map.bosses ?? []) {
-      const { name, normalizedName } = encounter.boss;
-      const value = getCanonicalBossName(name, encounter.spawnChance);
-      for (const key of [value, encounter.mobKey, normalizedName, name]) {
-        if (!key) continue;
+      const value = getCanonicalBossName(encounter.boss.name, encounter.spawnChance);
+      for (const key of encounterLookupKeys(encounter, value)) {
         const bossKey = toBossKey(key);
         const existing = bosses.get(bossKey);
         if (existing === undefined) bosses.set(bossKey, value);
@@ -629,6 +635,60 @@ function buildBossFilterLookup(maps: SpawnData[]): Map<string, string> {
   }
   for (const key of ambiguous) bosses.delete(key);
   return bosses;
+}
+
+// Change rows may still carry a mob's older slug ("black-div-season" for
+// pmcBotBlackDivSeason), so also match mob keys without their type prefix.
+function encounterLookupKeys(encounter: Boss, value: string): string[] {
+  const { name, normalizedName } = encounter.boss;
+  const mobKey = encounter.mobKey;
+  return [
+    value,
+    mobKey,
+    mobKey?.replace(/^(pmcBot|boss)(?=[A-Z])/, ""),
+    normalizedName,
+    name,
+  ].filter((key): key is string => Boolean(key));
+}
+
+const ANY_MODE = "*";
+
+// A slug shared across bosses usually names one boss on a given map: on
+// Icebreaker "black-div" is the Raider, on Terminal it is Black Division. Key
+// the lookup by the change row's mode and map to pick the boss it refers to.
+// The same map in other modes is a fallback for maps missing from the row's
+// mode data.
+function buildMapBossFilterLookup(
+  mapsByMode: Partial<Record<string, SpawnData[]>>
+): Map<string, string> {
+  const bosses = new Map<string, string>();
+  const ambiguous = new Set<string>();
+  for (const [gameMode, maps] of Object.entries(mapsByMode)) {
+    for (const map of maps ?? []) {
+      const mapKeys = [map.normalizedName, map.nameId, map.id, map.name]
+        .filter((key): key is string => Boolean(key))
+        .map(toBossKey);
+      for (const encounter of map.bosses ?? []) {
+        const value = getCanonicalBossName(encounter.boss.name, encounter.spawnChance);
+        for (const key of encounterLookupKeys(encounter, value)) {
+          for (const mapKey of new Set(mapKeys)) {
+            for (const mode of [gameMode, ANY_MODE]) {
+              const lookupKey = mapBossKey(mode, mapKey, key);
+              const existing = bosses.get(lookupKey);
+              if (existing === undefined) bosses.set(lookupKey, value);
+              else if (existing !== value) ambiguous.add(lookupKey);
+            }
+          }
+        }
+      }
+    }
+  }
+  for (const key of ambiguous) bosses.delete(key);
+  return bosses;
+}
+
+function mapBossKey(gameMode: string, map: string, boss: string) {
+  return `${gameMode}|${toBossKey(map)}|${toBossKey(boss)}`;
 }
 
 // Unresolved slugs ("black-div") become words ("Black Div") for the filter.
@@ -648,29 +708,34 @@ function BossNameCell({
   boss,
   portraits,
   bossFilterValues,
+  mapBossFilterValues,
+  map,
   gameMode,
 }: {
   boss: string;
   portraits: Map<string, string>;
   bossFilterValues: Map<string, string>;
+  mapBossFilterValues: Map<string, string>;
+  map: string;
   gameMode: string;
 }) {
   const canonical = getCanonicalBossName(boss);
   const name = titleCase(canonical);
   const portrait =
     portraits.get(toBossKey(boss)) ?? portraits.get(toBossKey(name));
-  const params = new URLSearchParams({
-    boss:
-      bossFilterValues.get(toBossKey(boss)) ??
-      bossFilterValues.get(toBossKey(canonical)) ??
-      slugToBossFilter(canonical),
-  });
+  const bossFilter =
+    mapBossFilterValues.get(mapBossKey(gameMode, map, boss)) ??
+    mapBossFilterValues.get(mapBossKey(ANY_MODE, map, boss)) ??
+    bossFilterValues.get(toBossKey(boss)) ??
+    bossFilterValues.get(toBossKey(canonical)) ??
+    slugToBossFilter(canonical);
+  const params = new URLSearchParams({ boss: bossFilter });
   const target = `${bossSpawnsPathForMode(gameMode)}?${params}`;
 
   return (
     <Link
       to={target}
-      title={`View ${name} spawns on the main page`}
+      title={`View ${bossFilter} spawns on the main page`}
       className="group/boss flex items-center gap-2.5 text-sky-200 transition-colors hover:text-sky-300"
     >
       {portrait ? (

@@ -2,7 +2,11 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUpDown, ChevronDown, ChevronRight, ChevronUp, Info, MapPin, X } from "lucide-react";
 import { SpawnData, Boss, DataMode, Health, Escort, GameMode, MobCatalog } from "@/types";
-import { bossMatchesQuery, getCanonicalBossName } from "@/lib/boss-aliases";
+import {
+  bossMatchesFilter,
+  bossMatchesQuery,
+  getCanonicalBossName,
+} from "@/lib/boss-aliases";
 import { mergeSpawnLocations } from "@/lib/spawn-location-utils";
 import { BossDetailsPanel } from "@/components/BossDetailsPanel";
 import { buildBossComparisons } from "@/lib/compare";
@@ -19,7 +23,7 @@ type NormalizedData = SpawnData[] | CompareData;
 interface DataTableProps {
   data: NormalizedData | null;
   mode: DataMode;
-  filters: { map: string; boss: string; search: string };
+  filters: { map: string; boss: string; search: string; exactBoss?: boolean };
   catalog?: MobCatalog;
   onOpenMap?: (map: SpawnData, boss: string, location?: string) => void;
 }
@@ -198,8 +202,7 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
         )
           return false;
         if (
-          filters.boss &&
-          !bossMatchesQuery(entry.boss, filters.boss)
+          !bossMatchesFilter(entry.boss, filters.boss, undefined, filters.exactBoss)
         )
           return false;
         if (filters.search) {
@@ -223,8 +226,12 @@ export function ModernTable({ data, mode, filters, catalog = {}, onOpenMap }: Da
         map.bosses.forEach((b) => {
           const bossName = getCanonicalBossName(b.boss.name, b.spawnChance);
           if (
-            filters.boss &&
-            !bossMatchesQuery(b.boss.name, filters.boss, b.spawnChance)
+            !bossMatchesFilter(
+              b.boss.name,
+              filters.boss,
+              b.spawnChance,
+              filters.exactBoss
+            )
           )
             return;
           if (filters.search) {
