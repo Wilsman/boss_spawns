@@ -36,15 +36,15 @@ export function Notice() {
   return (
     <section
       className={cn(
-        "mt-3 w-full rounded-lg border border-white/[0.1] bg-[#09090a] px-4 py-4",
+        "mt-3 w-full rounded-lg border border-white/[0.1] bg-[#09090a] px-4 py-3",
         "opacity-0 transition-opacity duration-200 ease-out",
         isVisible && "opacity-100",
       )}
       role="status"
       aria-live="polite"
     >
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-2">
           <h2 className="text-base font-semibold text-zinc-100">
             {manualNotice.title}
           </h2>
@@ -79,7 +79,7 @@ export function Notice() {
                       "rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3",
                   )}
                 >
-                <div className="flex items-center gap-3 border-b border-white/[0.07] pb-3">
+                <div className="flex items-center gap-3">
                   {event.imageUrl ? (
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/[0.1] bg-black">
                       <img
@@ -90,7 +90,7 @@ export function Notice() {
                     </div>
                   ) : null}
 
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3
                         id={titleId}
@@ -105,7 +105,7 @@ export function Notice() {
                     {changeDateLabel && event.changedAt ? (
                       <time
                         dateTime={event.changedAt}
-                        className="mt-1 block text-xs text-zinc-400"
+                        className="mt-1 block text-xs text-zinc-400 sm:mt-0"
                       >
                         Updated: {changeDateLabel}
                       </time>
@@ -114,11 +114,12 @@ export function Notice() {
                 </div>
 
                 {event.summary ? (
-                  <p className="mt-3 text-sm text-gray-200">{event.summary}</p>
+                  <p className="mt-2 text-sm text-gray-200">{event.summary}</p>
                 ) : null}
 
+                <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4">
                 {event.highlights && event.highlights.length > 0 ? (
-                  <details className="group mt-2">
+                  <details className="group col-span-2 col-start-1 row-start-1">
                     <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 rounded-sm py-2 text-xs font-medium text-blue-300 hover:text-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 [&::-webkit-details-marker]:hidden">
                       <ChevronDown
                         className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
@@ -142,12 +143,13 @@ export function Notice() {
                     href={event.linkUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 inline-flex min-h-11 w-fit items-center gap-1 rounded-sm py-2 text-xs font-medium text-zinc-400 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                    className="col-start-2 row-start-1 inline-flex min-h-11 w-fit items-center gap-1 rounded-sm py-2 text-xs font-medium text-zinc-400 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                   >
                     {event.linkLabel ?? "Read more"}
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
                   </a>
                 ) : null}
+                </div>
 
                 {event.bossDisplayName ? (
                 <dl className="mt-3 grid min-w-0 flex-1 grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
