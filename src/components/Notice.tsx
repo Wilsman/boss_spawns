@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { BellRing, Sparkles } from "lucide-react";
+import { ChevronDown, ExternalLink, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { manualNotice } from "@/config/manualNotice";
 
@@ -8,6 +8,19 @@ const changeDateFormatter = new Intl.DateTimeFormat("en-GB", {
   dateStyle: "long",
   timeStyle: "short",
 });
+
+const changeDayFormatter = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "long",
+  timeZone: "UTC",
+});
+
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function formatChangeDate(changedAt: string) {
+  return DATE_ONLY_PATTERN.test(changedAt)
+    ? changeDayFormatter.format(new Date(changedAt))
+    : changeDateFormatter.format(new Date(changedAt));
+}
 
 export function Notice() {
   const [isVisible, setIsVisible] = useState(false);
@@ -35,7 +48,7 @@ export function Notice() {
           <h2 className="text-base font-semibold text-zinc-100">
             {manualNotice.title}
           </h2>
-          {manualNotice.events.length > 0 ? (
+          {manualNotice.events.length > 0 && manualNotice.badgeLabel ? (
             <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-white/[0.045] px-2.5 py-1 text-xs font-medium text-gray-300">
               <Sparkles className="h-3.5 w-3.5" />
               {manualNotice.badgeLabel}
@@ -44,10 +57,15 @@ export function Notice() {
         </div>
 
         {manualNotice.events.length > 0 ? (
-          <div className="grid gap-3 lg:grid-cols-2">
+          <div
+            className={cn(
+              "grid gap-3",
+              manualNotice.events.length > 1 && "lg:grid-cols-2",
+            )}
+          >
             {manualNotice.events.map((event) => {
             const changeDateLabel = event.changedAt
-              ? changeDateFormatter.format(new Date(event.changedAt))
+              ? formatChangeDate(event.changedAt)
               : null;
             const titleId = `notice-${event.id}-title`;
 
@@ -58,17 +76,15 @@ export function Notice() {
                   className="flex h-full flex-col rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3"
                 >
                 <div className="flex items-center gap-3 border-b border-white/[0.07] pb-3">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/[0.1] bg-black text-blue-300">
-                    {event.imageUrl ? (
+                  {event.imageUrl ? (
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/[0.1] bg-black">
                       <img
                         src={event.imageUrl}
-                        alt={`${event.bossDisplayName} portrait`}
+                        alt={`${event.bossDisplayName ?? event.title} portrait`}
                         className="h-full w-full object-cover"
                       />
-                    ) : (
-                      <BellRing className="h-8 w-8" aria-hidden="true" />
-                    )}
-                  </div>
+                    </div>
+                  ) : null}
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -93,6 +109,43 @@ export function Notice() {
                   </div>
                 </div>
 
+                {event.summary ? (
+                  <p className="mt-3 text-sm text-gray-200">{event.summary}</p>
+                ) : null}
+
+                {event.highlights && event.highlights.length > 0 ? (
+                  <details className="group mt-2">
+                    <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-blue-300 hover:text-blue-200 [&::-webkit-details-marker]:hidden">
+                      <ChevronDown
+                        className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
+                        aria-hidden="true"
+                      />
+                      <span className="group-open:hidden">Show details</span>
+                      <span className="hidden group-open:inline">
+                        Hide details
+                      </span>
+                    </summary>
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-300">
+                      {event.highlights.map((highlight) => (
+                        <li key={highlight}>{highlight}</li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
+
+                {event.linkUrl ? (
+                  <a
+                    href={event.linkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex w-fit items-center gap-1 text-xs font-medium text-zinc-400 hover:text-zinc-200"
+                  >
+                    {event.linkLabel ?? "Read more"}
+                    <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                  </a>
+                ) : null}
+
+                {event.bossDisplayName ? (
                 <dl className="mt-3 grid min-w-0 flex-1 grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
                   <dt className="text-zinc-500">Boss</dt>
                   <dd className="min-w-0 text-zinc-100">
@@ -106,7 +159,7 @@ export function Notice() {
 
                   <dt className="text-zinc-500">Maps</dt>
                   <dd className="min-w-0 space-y-1 text-zinc-300">
-                    {event.mapRows.map((row) => (
+                    {event.mapRows?.map((row) => (
                       <div
                         key={`${row.bossName ?? event.bossDisplayName}-${row.mapName}`}
                       >
@@ -120,16 +173,17 @@ export function Notice() {
 
                   <dt className="text-zinc-500">Modes</dt>
                   <dd className="min-w-0 text-zinc-300">
-                    {event.modes.join(", ")}
+                    {event.modes?.join(", ")}
                   </dd>
                 </dl>
+                ) : null}
                 </article>
               );
             })}
           </div>
         ) : (
           <p className="border-t border-white/[0.08] pt-4 text-center text-sm text-zinc-500">
-            No current events active.
+            No recent updates.
           </p>
         )}
       </div>
