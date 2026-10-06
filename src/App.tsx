@@ -881,7 +881,7 @@ function App() {
     <BrowserRouter>
       <div className="flex flex-col min-h-screen">
         {/* <NavBar items={navItems} className="pt-4" /> */}
-        <main className="flex-grow">
+        <main className="flex-grow pb-24 sm:pb-16">
           <Routes>
             <Route path="/about" element={<About />} />
             <Route path="/privacy" element={<Privacy />} />

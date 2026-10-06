@@ -73,7 +73,11 @@ export function Notice() {
                 <article
                   key={event.id}
                   aria-labelledby={titleId}
-                  className="flex h-full flex-col rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3"
+                  className={cn(
+                    "flex h-full flex-col",
+                    manualNotice.events.length > 1 &&
+                      "rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3",
+                  )}
                 >
                 <div className="flex items-center gap-3 border-b border-white/[0.07] pb-3">
                   {event.imageUrl ? (
@@ -101,7 +105,7 @@ export function Notice() {
                     {changeDateLabel && event.changedAt ? (
                       <time
                         dateTime={event.changedAt}
-                        className="mt-1 block text-xs text-zinc-500"
+                        className="mt-1 block text-xs text-zinc-400"
                       >
                         Updated: {changeDateLabel}
                       </time>
@@ -115,7 +119,7 @@ export function Notice() {
 
                 {event.highlights && event.highlights.length > 0 ? (
                   <details className="group mt-2">
-                    <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-medium text-blue-300 hover:text-blue-200 [&::-webkit-details-marker]:hidden">
+                    <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 rounded-sm py-2 text-xs font-medium text-blue-300 hover:text-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 [&::-webkit-details-marker]:hidden">
                       <ChevronDown
                         className="h-3.5 w-3.5 transition-transform group-open:rotate-180"
                         aria-hidden="true"
@@ -138,7 +142,7 @@ export function Notice() {
                     href={event.linkUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-3 inline-flex w-fit items-center gap-1 text-xs font-medium text-zinc-400 hover:text-zinc-200"
+                    className="mt-3 inline-flex min-h-11 w-fit items-center gap-1 rounded-sm py-2 text-xs font-medium text-zinc-400 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                   >
                     {event.linkLabel ?? "Read more"}
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />

@@ -1,12 +1,6 @@
 import { memo } from "react";
 import { BossSwitcher } from "./BossSwitcher";
 import { Calculator, Database } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { BossNotice } from "./BossNotice";
 import { Notice } from "./Notice";
 // import { MaintenanceNotice } from "./MaintenanceNotice";
@@ -145,40 +139,6 @@ export const Header = memo(function Header({
             <GoonTracker reports={goonReports} spawnData={spawnData} />
           </div>
 
-          {/* Collapsible Update Message */}
-          <Accordion
-            type="single"
-            collapsible
-            className="w-full md:col-span-3 mx-auto"
-          >
-            <AccordionItem value="item-1" className="border-b-0">
-              <AccordionTrigger className="text-xs text-gray-500 hover:text-gray-300 justify-center py-1 font-normal hover:no-underline data-[state=open]:text-gray-300">
-                Recent Updates
-              </AccordionTrigger>
-              <AccordionContent className="text-center text-xs text-gray-400 pb-2">
-                <span className="block mb-1">
-                  (2026/08/03): Added Season mode tracking, three-way Compare,
-                  and Season change notifications.
-                </span>
-                <span className="block mb-1">
-                  (2026/07/29): Improved refresh reliability and added support
-                  for multiple active event notices.
-                </span>
-                <span className="block mb-1">
-                  (2026/07/23): Added detailed boss health profiles and cleaner
-                  hover cards.
-                </span>
-                <span className="block mb-1">
-                  (2026/07/14): Fixed stale and duplicate entries on the Changes
-                  page.
-                </span>
-                <span className="block mb-1">
-                  (2026/07/08): Moved boss spawn data to the faster Tarkov.dev
-                  JSON API.
-                </span>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
         </div>
       </div>
     </div>
