@@ -31,6 +31,30 @@ export const manualNotice: ManualNoticeConfig = {
   badgeLabel: "",
   events: [
     {
+      badgeLabel: "All modes",
+      bossDisplayName: "Scourge",
+      changedAt: "2026-10-16",
+      highlights: [
+        "Scourge and all four guards wear Arena Battle Pass gear.",
+        "The squad spawns in either the Armory or the Green Office (50% each).",
+        "Live in PvP, PvE and Season.",
+      ],
+      id: "scourge-lab-event",
+      mapRows: [
+        {
+          bossName: "Scourge + 4 guards",
+          locations: "Armory or Green Office (50% each)",
+          mapName: "The Lab",
+          value: "100%",
+        },
+      ],
+      modes: ["PvP", "PvE", "Season"],
+      statusLine: "Spawns on The Lab every raid with four Scourge Guards.",
+      summary:
+        "Possible new event: Scourge and four guards, all in Arena Battle Pass gear, now spawn on The Lab.",
+      title: "Scourge on The Lab",
+    },
+    {
       badgeLabel: "PvE",
       changedAt: "2026-10-06",
       highlights: [
