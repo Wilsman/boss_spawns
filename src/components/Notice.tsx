@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ExternalLink, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { manualNotice } from "@/config/manualNotice";
+import { EventCountdown } from "@/components/EventCountdown";
 
 const changeDateFormatter = new Intl.DateTimeFormat("en-GB", {
   dateStyle: "long",
@@ -32,6 +33,8 @@ export function Notice() {
 
     return () => window.clearTimeout(timer);
   }, []);
+
+  const isSingleEvent = manualNotice.events.length === 1;
 
   return (
     <section
@@ -74,11 +77,12 @@ export function Notice() {
                   key={event.id}
                   aria-labelledby={titleId}
                   className={cn(
-                    "flex h-full flex-col",
-                    manualNotice.events.length > 1 &&
-                      "rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3",
+                    isSingleEvent
+                      ? "flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-x-6"
+                      : "flex h-full flex-col rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3",
                   )}
                 >
+                <div className="min-w-0">
                 <div className="flex items-center gap-3">
                   {event.imageUrl ? (
                     <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/[0.1] bg-black">
@@ -151,8 +155,16 @@ export function Notice() {
                 ) : null}
                 </div>
 
+                </div>
+
                 {event.bossDisplayName ? (
-                <dl className="mt-3 grid min-w-0 flex-1 grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm">
+                <dl
+                  className={cn(
+                    "mt-3 grid min-w-0 flex-1 grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm",
+                    isSingleEvent &&
+                      "md:mt-0 md:self-start md:border-l md:border-white/[0.08] md:pl-6",
+                  )}
+                >
                   <dt className="text-zinc-500">Boss</dt>
                   <dd className="min-w-0 text-zinc-100">
                     {event.bossDisplayName}
@@ -182,6 +194,17 @@ export function Notice() {
                     {event.modes?.join(", ")}
                   </dd>
                 </dl>
+                ) : null}
+
+                {event.endsAt ? (
+                  <div className="mt-4 border-t border-white/[0.08] pt-3 md:col-span-2">
+                    <EventCountdown
+                      endsAt={event.endsAt}
+                      note={event.endsNote}
+                      originalEndsAt={event.originalEndsAt}
+                      startsAt={event.startsAt}
+                    />
+                  </div>
                 ) : null}
                 </article>
               );

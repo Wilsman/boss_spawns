@@ -70,11 +70,20 @@ export default {
   				to: {
   					height: '0'
   				}
+  			},
+  			'bar-shimmer': {
+  				from: {
+  					transform: 'translateX(-100%)'
+  				},
+  				to: {
+  					transform: 'translateX(400%)'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'bar-shimmer': 'bar-shimmer 2.8s ease-in-out infinite'
   		}
   	}
   },
