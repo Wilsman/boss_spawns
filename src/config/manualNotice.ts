@@ -39,33 +39,16 @@ export const manualNotice: ManualNoticeConfig = {
   badgeLabel: "",
   events: [
     {
-      badgeLabel: "All modes",
-      bossDisplayName: "Scourge",
-      changedAt: "2026-10-22",
+      badgeLabel: "Ended",
+      changedAt: "2026-10-26",
       endsAt: "2026-10-26T07:00:00Z",
-      endsNote: "Extended by BSG (3:00 AM EDT).",
-      originalEndsAt: "2026-10-20T07:00:00Z",
+      id: "scourge-lab-event",
+      linkLabel: "View removal in Changes",
+      linkUrl: "/changes?boss=Scourge",
       // Start day per Tarkov Market; exact start hour not published.
       startsAt: "2026-10-16T07:00:00Z",
-      highlights: [
-        "Event extended until 26 October, 07:00 GMT / 3:00 AM EDT.",
-        "Scourge and all four guards wear Arena Battle Pass gear.",
-        "The squad spawns in either the Armory or the Green Office (50% each).",
-        "Live in PvP, PvE and Season.",
-      ],
-      id: "scourge-lab-event",
-      mapRows: [
-        {
-          bossName: "Scourge + 4 guards",
-          locations: "Armory or Green Office (50% each)",
-          mapName: "The Lab",
-          value: "100%",
-        },
-      ],
-      modes: ["PvP", "PvE", "Season"],
-      statusLine: "Spawns on The Lab every raid with four Scourge Guards.",
       summary:
-        "Scourge Incursion: Scourge and four guards, all in Arena Battle Pass gear, spawn on The Lab. Extended until 26 October.",
+        "The Scourge Incursion has ended. Scourge and his guards no longer spawn on The Lab.",
       title: "Scourge on The Lab",
     },
   ],

@@ -78,7 +78,11 @@ export function Notice() {
                   aria-labelledby={titleId}
                   className={cn(
                     isSingleEvent
-                      ? "flex flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-x-6"
+                      ? cn(
+                          "flex flex-col",
+                          event.bossDisplayName &&
+                            "md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-x-6",
+                        )
                       : "flex h-full flex-col rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3",
                   )}
                 >
