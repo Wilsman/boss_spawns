@@ -4,6 +4,7 @@ import { ChevronDown, ExternalLink, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { manualNotice } from "@/config/manualNotice";
 import { EventCountdown } from "@/components/EventCountdown";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 const changeDateFormatter = new Intl.DateTimeFormat("en-GB", {
   dateStyle: "long",
@@ -80,7 +81,7 @@ export function Notice() {
                     isSingleEvent
                       ? cn(
                           "flex flex-col",
-                          event.bossDisplayName &&
+                          (event.bossDisplayName || event.enlargeImage) &&
                             "md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-x-6",
                         )
                       : "flex h-full flex-col rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3",
@@ -161,6 +162,15 @@ export function Notice() {
 
                 </div>
 
+                {event.enlargeImage ? (
+                  <ImageLightbox
+                    className="md:mt-1"
+                    alt={event.enlargeImage.alt}
+                    src={event.enlargeImage.src}
+                    thumbSrc={event.enlargeImage.thumbSrc}
+                  />
+                ) : null}
+
                 {event.bossDisplayName ? (
                 <dl
                   className={cn(
@@ -204,6 +214,7 @@ export function Notice() {
                   <div className="mt-4 border-t border-white/[0.08] pt-3 md:col-span-2">
                     <EventCountdown
                       endsAt={event.endsAt}
+                      mode={event.countdownMode}
                       note={event.endsNote}
                       originalEndsAt={event.originalEndsAt}
                       startsAt={event.startsAt}

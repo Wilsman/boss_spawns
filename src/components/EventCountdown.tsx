@@ -140,6 +140,8 @@ interface EventCountdownProps {
   className?: string;
   endsAt: string;
   label?: string;
+  /** "start" counts down to an upcoming event instead of its end. */
+  mode?: "start" | "end";
   note?: string;
   /** Original end before an extension; marked on the bar. */
   originalEndsAt?: string;
@@ -149,11 +151,16 @@ interface EventCountdownProps {
 export function EventCountdown({
   className,
   endsAt,
-  label = "Ends in",
+  label,
+  mode = "end",
   note,
   originalEndsAt,
   startsAt,
 }: EventCountdownProps) {
+  const isStart = mode === "start";
+  const verb = isStart ? "Starts" : "Ends";
+  const pastVerb = isStart ? "Started" : "Ended";
+  const shownLabel = label ?? `${verb} in`;
   const end = parseTime(endsAt) ?? NaN;
   const now = useNow(end);
   const mounted = useMounted();
@@ -218,11 +225,13 @@ export function EventCountdown({
                   />
                 </span>
                 {ended ? (
-                  <span className="text-sm font-medium">Event ended</span>
+                  <span className="text-sm font-medium">
+                    {isStart ? "Event started" : "Event ended"}
+                  </span>
                 ) : (
                   <>
                     <span className="text-xs uppercase tracking-[0.14em] text-zinc-500">
-                      {label}
+                      {shownLabel}
                     </span>
                     <time
                       dateTime={new Date(end).toISOString()}
@@ -247,7 +256,7 @@ export function EventCountdown({
               ) : null}
 
               <span className="sr-only">
-                {ended ? "Ended" : "Ends"} {localLabel}
+                {ended ? pastVerb : verb} {localLabel}
               </span>
             </span>
 
