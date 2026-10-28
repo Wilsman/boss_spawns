@@ -159,7 +159,7 @@ export function EventCountdown({
 }: EventCountdownProps) {
   const isStart = mode === "start";
   const verb = isStart ? "Starts" : "Ends";
-  const pastVerb = isStart ? "Started" : "Ended";
+  const pastVerb = isStart ? "Awaiting event start, scheduled" : "Ended";
   const shownLabel = label ?? `${verb} in`;
   const end = parseTime(endsAt) ?? NaN;
   const now = useNow(end);
@@ -226,7 +226,7 @@ export function EventCountdown({
                 </span>
                 {ended ? (
                   <span className="text-sm font-medium">
-                    {isStart ? "Event started" : "Event ended"}
+                    {isStart ? "Awaiting event start" :"Event ended"}
                   </span>
                 ) : (
                   <>
