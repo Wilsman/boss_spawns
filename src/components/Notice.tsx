@@ -81,7 +81,7 @@ export function Notice() {
                     isSingleEvent
                       ? cn(
                           "flex flex-col",
-                          (event.bossDisplayName || event.enlargeImage) &&
+                          event.enlargeImage &&
                             "md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-x-6",
                         )
                       : "flex h-full flex-col rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3",
@@ -127,7 +127,7 @@ export function Notice() {
                 ) : null}
 
                 <div className="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4">
-                {event.highlights && event.highlights.length > 0 ? (
+                {(event.highlights && event.highlights.length > 0) || event.bossDisplayName ? (
                   <details className="group col-span-2 col-start-1 row-start-1">
                     <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-1 rounded-sm py-2 text-xs font-medium text-blue-300 hover:text-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 [&::-webkit-details-marker]:hidden">
                       <ChevronDown
@@ -139,11 +139,45 @@ export function Notice() {
                         Hide details
                       </span>
                     </summary>
-                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-300">
-                      {event.highlights.map((highlight) => (
-                        <li key={highlight}>{highlight}</li>
-                      ))}
-                    </ul>
+                    {event.highlights && event.highlights.length > 0 ? (
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-300">
+                        {event.highlights.map((highlight) => (
+                          <li key={highlight}>{highlight}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {event.bossDisplayName ? (
+                      <dl className="mt-3 grid min-w-0 grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-2 border-t border-white/[0.06] pb-2 pt-3 text-sm">
+                        <dt className="text-zinc-500">Boss</dt>
+                        <dd className="min-w-0 text-zinc-100">
+                          {event.bossDisplayName}
+                        </dd>
+
+                        <dt className="text-zinc-500">Status</dt>
+                        <dd className="min-w-0 text-gray-200">
+                          {event.statusLine}
+                        </dd>
+
+                        <dt className="text-zinc-500">Maps</dt>
+                        <dd className="grid min-w-0 gap-x-6 gap-y-1 text-zinc-300 lg:grid-cols-2">
+                          {event.mapRows?.map((row) => (
+                            <div
+                              key={`${row.bossName ?? event.bossDisplayName}-${row.mapName}`}
+                            >
+                              <span className="text-zinc-100">
+                                {row.mapName} ({row.value})
+                              </span>
+                              {`: ${row.bossName ?? event.bossDisplayName} - ${row.locations}`}
+                            </div>
+                          ))}
+                        </dd>
+
+                        <dt className="text-zinc-500">Modes</dt>
+                        <dd className="min-w-0 text-zinc-300">
+                          {event.modes?.join(", ")}
+                        </dd>
+                      </dl>
+                    ) : null}
                   </details>
                 ) : null}
 
@@ -169,45 +203,6 @@ export function Notice() {
                     src={event.enlargeImage.src}
                     thumbSrc={event.enlargeImage.thumbSrc}
                   />
-                ) : null}
-
-                {event.bossDisplayName ? (
-                <dl
-                  className={cn(
-                    "mt-3 grid min-w-0 flex-1 grid-cols-[72px_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm",
-                    isSingleEvent &&
-                      "md:mt-0 md:self-start md:border-l md:border-white/[0.08] md:pl-6",
-                  )}
-                >
-                  <dt className="text-zinc-500">Boss</dt>
-                  <dd className="min-w-0 text-zinc-100">
-                    {event.bossDisplayName}
-                  </dd>
-
-                  <dt className="text-zinc-500">Status</dt>
-                  <dd className="min-w-0 text-gray-200">
-                    {event.statusLine}
-                  </dd>
-
-                  <dt className="text-zinc-500">Maps</dt>
-                  <dd className="grid min-w-0 gap-x-6 gap-y-1 text-zinc-300 lg:grid-cols-2">
-                    {event.mapRows?.map((row) => (
-                      <div
-                        key={`${row.bossName ?? event.bossDisplayName}-${row.mapName}`}
-                      >
-                        <span className="text-zinc-100">
-                          {row.mapName} ({row.value})
-                        </span>
-                        {`: ${row.bossName ?? event.bossDisplayName} - ${row.locations}`}
-                      </div>
-                    ))}
-                  </dd>
-
-                  <dt className="text-zinc-500">Modes</dt>
-                  <dd className="min-w-0 text-zinc-300">
-                    {event.modes?.join(", ")}
-                  </dd>
-                </dl>
                 ) : null}
 
                 {event.endsAt ? (
