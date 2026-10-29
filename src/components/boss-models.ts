@@ -1369,3 +1369,6 @@ export function buildBossModel(boss: BossModelId): THREE.Group {
     case "zryachiy": return makeZryachiy();
   }
 }
+
+// Shared minifigure parts, reused by the animated infected walkers.
+export { beanie, box, curve, hand, limb, material, mesh, oval, texture, tube, vest };
