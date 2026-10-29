@@ -43,29 +43,48 @@ export const manualNotice: ManualNoticeConfig = {
   badgeLabel: "",
   events: [
     {
-      badgeLabel: "Teaser",
-      changedAt: "2026-10-27",
-      countdownMode: "start",
-      // The hidden message decodes to "Tomorrow at 3" (in Russian).
-      // 15:00 Moscow time (12:00 UTC) is a guess.
-      endsAt: "2026-10-28T12:00:00Z",
-      endsNote: "Estimated: 3 PM Moscow time (12:00 UTC). Not confirmed.",
-      enlargeImage: {
-        alt: "Handwritten note from the Tarkov Discord teaser",
-        src: "/discord-teaser.webp",
-        thumbSrc: "/discord-teaser-thumb.webp",
-      },
+      badgeLabel: "PvE and Season",
+      bossDisplayName: "Infected",
+      changedAt: "2026-10-29",
       highlights: [
-        "The image's hidden binary message decodes to 'Tomorrow at 3' (in Russian).",
-        "The note says the boss wants deliveries to Tarkov to start soon, and not to open the boxes.",
-        "Start time and event details are not confirmed by BSG.",
+        "Infected Screamer now spawns on almost every map: about 83-89% on most, 100% on Factory and Night Factory.",
+        "Two new maps, Infected Lab and Infected Factory, are full of Infected and an Infected Tagilla.",
+        "Tagilla is removed from Factory, Night Factory and Interchange. Partisan is removed from Customs, Woods, Shoreline and Lighthouse.",
+        "Most regular boss spawn chances dropped by about 5-15 points.",
+        "End date is not announced.",
       ],
-      id: "tarkov-discord-teaser",
-      // Teaser post time unknown; bar covers the final 24h before the guess.
-      startsAt: "2026-10-27T12:00:00Z",
+      id: "halloween-infected-event",
+      mapRows: [
+        {
+          bossName: "Infected + Infected Tagilla",
+          locations: "Infected Tagilla: 75% in PvE, 100% in Season",
+          mapName: "Infected Lab",
+          value: "100%",
+        },
+        {
+          bossName: "Infected + Infected Tagilla",
+          locations: "Infected Tagilla: 75% in PvE, 100% in Season",
+          mapName: "Infected Factory",
+          value: "100%",
+        },
+        {
+          bossName: "Infected Screamer",
+          locations: "Most maps",
+          mapName: "Factory, Night Factory",
+          value: "100%",
+        },
+        {
+          bossName: "Infected Screamer",
+          locations: "Most maps",
+          mapName: "Other maps",
+          value: "83-89%",
+        },
+      ],
+      modes: ["PvE", "Season"],
+      statusLine: "Live since 29 October.",
       summary:
-        "A possible Halloween event may start tomorrow, 28 October, around 3 PM Moscow time (12:00 UTC), based on a teaser posted on the Tarkov Discord.",
-      title: "Possible Halloween event",
+        "The Halloween event is live. Infected Screamers spawn on almost every map, and two new infected maps are open. Several bosses were removed and regular spawn chances dropped.",
+      title: "Halloween event is live",
     },
   ],
   title: "Recent updates",

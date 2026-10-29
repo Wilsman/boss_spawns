@@ -169,6 +169,8 @@ const MAP_NAME_OVERRIDES: Record<string, string> = {
   "the-labyrinth": "The Labyrinth",
   terminal: "Terminal",
   icebreaker: "Icebreaker",
+  "infected-lab": "Infected Lab",
+  "infected-factory": "Infected Factory",
 };
 
 // Dark Labs is not currently active in PvE; the upstream payload still lists
@@ -242,6 +244,12 @@ const DISPLAY_NAME_TRANSLATIONS: Record<string, string> = {
   followerSanitar: "Sanitar Guard",
   followerScourgeEventLab: "Scourge Guard",
   followerZryachiy: "Zryachiy Guard",
+  infectedAssault: "Infected",
+  infectedCivil: "Infected",
+  infectedLaborant: "Infected",
+  infectedPmc: "Infected",
+  infectedScreamer: "Infected Screamer",
+  infectedTagilla: "Infected Tagilla",
   followerWedgeLab: "The Wedge Guard (Dark Labs)",
   PmcBot: "Raider",
   pmcBEAR: "BEAR",
