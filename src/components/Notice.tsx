@@ -40,7 +40,7 @@ export function Notice() {
   return (
     <section
       className={cn(
-        "mt-3 w-full rounded-lg border border-white/[0.1] bg-[#09090a] px-4 py-3",
+        "mt-3 w-full px-1 py-1",
         "opacity-0 transition-opacity duration-200 ease-out",
         isVisible && "opacity-100",
       )}
@@ -49,7 +49,7 @@ export function Notice() {
     >
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.08] pb-2">
-          <h2 className="text-base font-semibold text-zinc-100">
+          <h2 className="text-sm font-semibold text-zinc-300">
             {manualNotice.title}
           </h2>
           {manualNotice.events.length > 0 && manualNotice.badgeLabel ? (
@@ -82,7 +82,7 @@ export function Notice() {
                       ? cn(
                           "flex flex-col",
                           (event.bossDisplayName || event.enlargeImage) &&
-                            "md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-x-6",
+                            "md:grid md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-x-6",
                         )
                       : "flex h-full flex-col rounded-md border border-white/[0.09] bg-[#0d0d0e] px-3 py-3",
                   )}
@@ -190,7 +190,7 @@ export function Notice() {
                   </dd>
 
                   <dt className="text-zinc-500">Maps</dt>
-                  <dd className="min-w-0 space-y-1 text-zinc-300">
+                  <dd className="grid min-w-0 gap-x-6 gap-y-1 text-zinc-300 lg:grid-cols-2">
                     {event.mapRows?.map((row) => (
                       <div
                         key={`${row.bossName ?? event.bossDisplayName}-${row.mapName}`}

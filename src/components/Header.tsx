@@ -110,8 +110,10 @@ export const Header = memo(function Header({
             <Database className="w-5 h-5 text-gray-500 transition-colors duration-200 group-hover:text-blue-400" />
           </a>
 
-          {/* Boss Event Notice - spans all columns */}
-          <div className="md:col-span-3 space-y-3">
+        </div>
+
+        {/* Boss Event Notice - full container width, matching the table */}
+        <div className="w-full space-y-3">
             {NOTICE_VARIANT === "maintenance" ? (
               <>
                 {/* <MaintenanceNotice /> */}
@@ -137,8 +139,6 @@ export const Header = memo(function Header({
               )
             )}
             <GoonTracker reports={goonReports} spawnData={spawnData} />
-          </div>
-
         </div>
       </div>
     </div>

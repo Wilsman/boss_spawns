@@ -67,7 +67,7 @@ export function InfectedModel3D({ variant, height = 250, animate = true }: Infec
 
     const figure = buildInfectedModel(variant);
     scene.add(figure.root);
-    const fog = createFog(scene);
+    const fog = createFog(scene, camera);
 
     let raf = 0;
     let elapsed = 0.4;
@@ -123,7 +123,7 @@ export function InfectedModel3D({ variant, height = 250, animate = true }: Infec
 }
 
 // Low fog banks sliding towards the camera at about walking speed.
-function createFog(scene: THREE.Scene) {
+function createFog(scene: THREE.Scene, camera: THREE.Camera) {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = 128;
   const ctx = canvas.getContext("2d")!;
@@ -148,12 +148,23 @@ function createFog(scene: THREE.Scene) {
     return { sprite, material, phase: i / 16, x: ((i * 37) % 9) / 8 * 4.4 - 2.2, y: 0.15 + (i % 4) * 0.14 };
   });
   const travel = 4.8, speed = 0.7;
+  const edge = new THREE.Vector3();
   return {
     update(time: number) {
+      camera.updateMatrixWorld();
       for (const { sprite, material, phase, x, y } of wisps) {
         const progress = (phase + time * speed / travel) % 1;
         sprite.position.set(x + Math.sin(time * 0.2 + phase * 9) * 0.25, y, -3.4 + progress * travel);
-        material.opacity = 0.2 * Math.sin(progress * Math.PI) ** 2;
+        // Fade wisps out as they approach the frame edge so they never get cut off by it.
+        edge.copy(sprite.position).project(camera);
+        const centreX = edge.x;
+        edge.copy(sprite.position);
+        edge.x += sprite.scale.x / 2;
+        edge.project(camera);
+        const halfWidth = Math.min(Math.abs(edge.x - centreX), 0.9);
+        const inside = THREE.MathUtils.clamp((1 - Math.abs(centreX)) / Math.max(halfWidth, 0.05), 0, 1);
+        const edgeFade = inside * inside * (3 - 2 * inside);
+        material.opacity = 0.2 * Math.sin(progress * Math.PI) ** 2 * edgeFade;
       }
     },
     dispose() {

@@ -135,7 +135,7 @@ export function GoonTracker({
   const modes: GameMode[] = ["regular", "pve", "pvp-season"];
   const mapLookup = buildMapLookup(spawnData);
   return (
-    <section className="rounded-md border border-amber-300/15 bg-[#0b0b0c] px-3 py-2.5" aria-label="Goons reports">
+    <section className="relative z-20 px-1 py-1" aria-label="Goons reports">
       <div className="flex items-center gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-300">Goons reports</h2>
         <span className="ml-auto text-[10px] text-zinc-600">live reports</span>
@@ -144,7 +144,7 @@ export function GoonTracker({
         {modes.map((mode, index) => {
           const report = reports?.[mode]?.[0];
           return (
-            <div key={mode} tabIndex={0} className="group relative min-w-0 cursor-help rounded border border-white/[0.07] bg-white/[0.025] px-2 py-1.5 outline-none transition-colors hover:border-amber-300/25 focus:border-amber-300/35">
+            <div key={mode} tabIndex={0} className="group relative min-w-0 cursor-help rounded border border-transparent bg-white/[0.02] px-2 py-1.5 outline-none transition-colors hover:border-amber-300/25 focus:border-amber-300/35">
               <div className="flex items-center gap-1.5 text-[10px] font-medium text-zinc-500">
                 <span>{modeLabel(mode)}</span>
               </div>
