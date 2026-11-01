@@ -25,6 +25,7 @@ import bossEvents from "@/config/bossEvents";
 import { About, Privacy } from "@/pages";
 import { lazy, Suspense } from "react";
 import { useChangeMonitor } from "@/hooks/useChangeMonitor";
+import { AdRail } from "@/components/AdRail";
 
 const CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -641,6 +642,8 @@ function MainApp() {
         !loading && (regularData || pveData || seasonData) ? "true" : "false"
       }
     >
+      <AdRail side="left" />
+      <AdRail side="right" />
       <div className="container mx-auto px-3 py-4 sm:px-4 sm:py-5 flex flex-col gap-4 pb-10">
         <Header
           primaryDisplayEvent={primaryDisplayEvent}
