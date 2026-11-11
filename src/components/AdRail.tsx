@@ -15,9 +15,17 @@ const RAIL_SLOTS = { left: "4899010325", right: "2165035774" } as const;
 const SHOW_RAIL =
   "hidden [@media(min-width:1888px)_and_(min-height:720px)]:block";
 
+// Centers the rail in the margin between the content and the window edge.
+// Each margin is (100% - 1536px) / 2, so its middle sits a quarter of the way in.
+const RAIL_OFFSET = "calc((100% - 1536px) / 4 - 80px)";
+
 type AdRailProps = { side: keyof typeof RAIL_SLOTS };
 
-/** A fixed 160x600 ad in the empty page margin. It never overlaps content. */
+/**
+ * A fixed 160x600 ad centered in the empty page margin. It never overlaps
+ * content. Auto Ads side rails are turned off in AdSense so they don't stack
+ * with these.
+ */
 export function AdRail({ side }: AdRailProps) {
   const adRef = useRef<HTMLModElement>(null);
 
@@ -37,7 +45,7 @@ export function AdRail({ side }: AdRailProps) {
     <aside
       aria-label="Advertisement"
       className={`${SHOW_RAIL} fixed top-24 z-0 w-[160px]`}
-      style={side === "left" ? { left: "calc(50% - 944px)" } : { right: "calc(50% - 944px)" }}
+      style={{ [side]: RAIL_OFFSET }}
     >
       <ins
         ref={adRef}
